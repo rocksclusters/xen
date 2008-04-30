@@ -1,0 +1,126 @@
+<chapter id="using" xreflabel="Using the Xen Roll">
+	<title>Using the Xen Roll</title>
+
+<section id="using-vm-container" xreflabel="Installing VM Containers">
+	<title>Installing VM Containers </title>
+
+<para>
+First, you will need to install a physical machine that will act as the
+"container" for your VMs.
+This method is very similar to the method for installing compute nodes.
+</para>
+
+<para>
+On the frontend, execute:
+</para>
+
+<screen>
+# insert-ethers
+</screen>
+
+<para>
+You will see a screen that looks like:
+</para>
+
+<para>
+<mediaobject>
+	<imageobject>
+		<imagedata fileref="images/vm-container.png">
+	</imageobject>
+</mediaobject>
+</para>
+
+<para>
+Select the 'VM Container' appliance, then hit 'OK'.
+</para>
+
+<para>
+Now PXE boot the physical machine that will be your VM container.
+Just like a compute node, the VM container will be recognized by insert-ethers
+and installed.
+The default name of the node will be
+<computeroutput>vm-container-X-Y</computeroutput>.
+</para>
+
+<para>
+You can install as many VM containers as you like.
+</para>
+
+</section>
+
+
+<section id="using-vm" xreflabel="Adding, Installing and Booting VMs">
+	<title> Adding, Installing and Booting VMs </title>
+
+<para>
+In the common case, you will execute three Rocks commands over the
+lifetime of your VMs: add (to add VM info to the database), create (to
+install a newly added VM) and start (to boot an installed VM).
+</para>
+
+<para>
+To add a VM to the system, you need to associate a VM with a physical
+machine (i.e., a VM container) and you need to assign an appliance type to
+the VM.
+Here's an example:
+</para>
+
+<screen>
+# rocks add host vm vm-container-0-0 membership="Compute"
+</screen>
+
+<para>
+The above command will output a message similar to:
+</para>
+
+<screen>
+added VM on node "vm-container-0-0" slice "0" with vm_name "compute-0-0-0"
+</screen>
+
+<para>
+This tells us that, in the database, the compute VM named "compute-0-0-0"
+has been assigned to the physical machine "vm-container-0-0".
+</para>
+
+<para>
+The next step is to install the VM.
+</para>
+
+<para>
+VMs are installed with the <computeroutput>create</computeroutput> command.
+Here's how to install the VM that was added above:
+</para>
+
+<screen>
+# rocks create host vm compute-0-0-0
+</screen>
+
+<para>
+The above command will start the standard Rocks installation process for
+the VM named "compute-0-0-0".
+After the installation process initializes the network inside the VM, you
+can monitor the installation just like a physical machine installation
+by executing:
+</para>
+
+<screen>
+# rocks-console compute-0-0-0
+</screen>
+
+<para>
+After the installation completes, you can boot the VM by executing:
+</para>
+
+<screen>
+# rocks start host vm compute-0-0-0
+</screen>
+
+<para>
+After the VM boots, you can interact with the VM just like any other physical
+machine.
+</para>
+
+</section>
+
+
+</chapter>

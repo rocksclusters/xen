@@ -1,0 +1,86 @@
+<?xml version="1.0" standalone="no"?>
+
+<kickstart>
+
+
+<description>
+</description>
+
+
+<copyright>
+Copyright (c) 2000 - 2007 The Regents of the University of California.
+All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
+</copyright>
+
+
+<changelog>
+$Log: xen-base.xml,v $
+Revision 1.12  2008/04/17 22:59:42  bruno
+move the bootflag setting into xen-server.xml
+
+Revision 1.11  2008/03/25 19:18:08  bruno
+make sure all the kernel packages get put on the OS roll.
+
+Revision 1.10  2008/02/21 21:37:55  bruno
+set the global bootflags to restrict dom0 to 1024 MB
+
+Revision 1.9  2008/02/12 00:01:25  bruno
+fixes
+
+Revision 1.8  2008/02/07 20:34:00  bruno
+give DOM0 only 1 cpu
+
+Revision 1.7  2008/02/01 21:38:54  bruno
+closer
+
+Revision 1.6  2007/12/03 19:48:51  bruno
+xen for V
+
+Revision 1.5  2007/06/23 04:04:07  mjk
+mars hill copyright
+
+Revision 1.4  2006/09/11 22:50:48  mjk
+monkey face copyright
+
+Revision 1.3  2006/08/10 00:12:24  mjk
+4.2 copyright
+
+Revision 1.2  2005/12/30 16:47:30  mjk
+copyrights in place
+
+Revision 1.1  2005/12/17 05:27:19  mjk
+*** empty log message ***
+</changelog>
+
+
+<package>xen</package>
+<package>kernel-xen</package>
+<package>kernel-xen-devel</package>
+<package>virt-manager</package>
+<package>rocks-boot-xen</package>
+
+
+<post>
+
+<file name="/etc/xen/scripts/rocks-network-bridge" perms="755">
+<eval>
+/opt/rocks/bin/rocks report host xen bridge $Node_Hostname
+</eval>
+</file>
+
+<file name="/etc/xen/xend-config.sxp">
+(xend-unix-server yes)
+(xend-unix-path /var/lib/xend/xend-socket)
+(xend-relocation-hosts-allow '^localhost$ ^localhost\\.localdomain$')
+(network-script 'rocks-network-bridge')
+(vif-script vif-bridge) 
+(dom0-min-mem 1024)
+(dom0-cpus 1)
+(vncpasswd '')
+</file>
+
+</post>
+
+
+</kickstart>
+

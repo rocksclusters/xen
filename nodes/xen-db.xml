@@ -1,0 +1,72 @@
+<?xml version="1.0" standalone="no"?>
+
+<kickstart>
+
+
+<description>
+Xen database tables
+</description>
+
+
+<copyright>
+Copyright (c) 2000 - 2007 The Regents of the University of California.
+All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
+</copyright>
+
+
+<changelog>
+$Log: xen-db.xml,v $
+Revision 1.4  2008/04/21 16:37:35  bruno
+nuked the vm_macs table -- now using the networks table to store/retrieve
+mac addresses for VMs
+
+Revision 1.3  2008/03/27 19:36:17  bruno
+add a 'virt_type' column to the vm_nodes table. we can use this to
+distinguish between xen para/hw VMs and between xen and vmware VMs.
+
+Revision 1.2  2008/02/07 20:08:24  bruno
+retooled the commands and database tables to handle moving running VMs
+
+Revision 1.1  2007/12/03 19:48:51  bruno
+xen for V
+
+</changelog>
+
+
+<post>
+
+<file name="/tmp/xen-tables.sql">
+
+DROP TABLE IF EXISTS vm_nodes;
+CREATE TABLE vm_nodes (
+	ID		int(11) NOT NULL auto_increment,
+	PhysNode	int(11) NOT NULL default '0',
+	Node		int(11) NOT NULL default '0',
+	Mem		int(11) NOT NULL default '1024',
+	Slice		int(11) NOT NULL default '0',
+	Virt_Type	varchar(64) default NULL,
+	PRIMARY KEY (ID)
+) TYPE=MyISAM;
+
+DROP TABLE IF EXISTS vm_disks;
+CREATE TABLE vm_disks (
+	ID		int(11) NOT NULL auto_increment,
+	Vm_Node		int(11) NOT NULL default '0',
+	VBD_Type	varchar(64) default NULL,
+	Prefix		varchar(512) default NULL,
+	Name		varchar(512) default NULL,
+	Device		varchar(512) default NULL,
+	Mode		varchar(64) default NULL,
+	Size		int(11) NOT NULL default '0',
+	PRIMARY KEY (ID)
+) TYPE=MyISAM;
+
+</file>
+
+/usr/bin/mysql cluster &lt; /tmp/xen-tables.sql
+
+</post>
+
+
+</kickstart>
+

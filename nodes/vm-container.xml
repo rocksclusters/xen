@@ -1,0 +1,33 @@
+<?xml version="1.0" standalone="no"?>
+
+<kickstart>
+
+
+<description>
+</description>
+
+
+<copyright>
+Copyright (c) 2000 - 2007 The Regents of the University of California.
+All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
+</copyright>
+
+
+<changelog>
+$Log: vm-container.xml,v $
+Revision 1.2  2008/04/17 16:39:38  bruno
+more phil VM changes
+
+Revision 1.1  2007/12/03 19:48:51  bruno
+xen for V
+</changelog>
+
+
+<post>
+mkdir -p /etc/xen/rocks
+mkdir -p /var/lib/xen/save
+</post>
+
+
+</kickstart>
+
