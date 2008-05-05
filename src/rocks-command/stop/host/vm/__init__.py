@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.2 2008/03/06 23:42:05 mjk Exp $
+# $Id: __init__.py,v 1.3 2008/05/05 22:04:11 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.3  2008/05/05 22:04:11  bruno
+# doc fix
+#
 # Revision 1.2  2008/03/06 23:42:05  mjk
 # copyright storm on
 #
@@ -68,7 +71,7 @@ import rocks.commands
 
 class Command(rocks.commands.stop.host.command):
 	"""
-	Boots a VM slice on a physical node.
+	Destroy a VM slice on a physical node.
 
 	<arg type='string' name='host' repeat='1'>
 	A list of one or more VM host names.
