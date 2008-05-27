@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.1 2008/04/21 16:36:54 bruno Exp $
+# $Id: __init__.py,v 1.2 2008/05/27 19:33:35 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.2  2008/05/27 19:33:35  bruno
+# touch up doc
+#
 # Revision 1.1  2008/04/21 16:36:54  bruno
 # added dump command for restore roll
 #
@@ -66,7 +69,7 @@ import rocks.commands
 
 class Command(rocks.commands.dump.host.command):
 	"""
-	Dump host VM information as rocks commands.
+	Dump host VM information as Rocks commands.
 		
 	<arg optional='1' type='string' name='host' repeat='1'>
 	Zero, one or more host names. If no host names are supplied, 
@@ -77,7 +80,7 @@ class Command(rocks.commands.dump.host.command):
 	Dump VM info for compute-0-0-0.
 	</example>
 
-	<example cmd='dump host interface'>
+	<example cmd='dump host vm'>
 	Dump VM info for all configured virtual machines.
 	</example>
 		
