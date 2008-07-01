@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.6 2008/03/06 23:42:04 mjk Exp $
+# $Id: __init__.py,v 1.7 2008/07/01 22:57:08 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.7  2008/07/01 22:57:08  bruno
+# fixes to the xen reports which generate xen configuration files
+#
 # Revision 1.6  2008/03/06 23:42:04  mjk
 # copyright storm on
 #
@@ -94,6 +97,5 @@ class Command(rocks.commands.create.host.command):
 	"""
 
 	def run(self, params, args):
-		args.append('create=true')
 		self.command('start.host.vm', args)
 

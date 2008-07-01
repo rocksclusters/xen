@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.17 2008/04/25 17:17:17 bruno Exp $
+# $Id: __init__.py,v 1.18 2008/07/01 22:57:08 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.18  2008/07/01 22:57:08  bruno
+# fixes to the xen reports which generate xen configuration files
+#
 # Revision 1.17  2008/04/25 17:17:17  bruno
 # set the root to be the first partition on the boot disk and get the device
 # name from the database
@@ -189,11 +192,6 @@ class Command(rocks.commands.report.host.command):
 	One VM host name (e.g., compute-0-0-0).
 	</arg>
 
-	<param type='bool' name='create'>
-	If set, then output a configuration specification that will be used
-	to create (install) a VM.
-        </param>
-
 	<example cmd='report host vm compute-0-0-0'>
 	Outputs a configuration file for the VM host compute-0-0-0.
 	</example>
@@ -201,12 +199,14 @@ class Command(rocks.commands.report.host.command):
 
 	def outputVMConfig(self, host):
 		#
-		# lookup the pxeboot action for this VM host. if is 'install' or
-		# NULL, then output a configuration file that will put the
-		# VM host into installation mode.
-		#
-		# otherwise, output a configuration file that puts the VM host
+		# lookup the pxeboot action for this VM host. if the action is
+		# 'os', then output a configuration file that puts the VM host
 		# into 'normal boot' mode.
+		#
+		# otherwise, assume it is an installation and output a
+		# configuration file that will put the  VM host into
+		# installation mode.
+		#
 		#
 		action = None
 		rows = self.db.execute("""select p.action from pxeboot p,
@@ -295,7 +295,7 @@ class Command(rocks.commands.report.host.command):
 		if dirprefix:
 			self.addOutput(host, "dirprefix = '%s'" % dirprefix)
 
-		if not action or self.create:
+		if not action:
 			action = 'install'
 
 		if action == 'os':
@@ -317,7 +317,8 @@ class Command(rocks.commands.report.host.command):
 				# get the global specification
 				#
 				rows = self.db.execute("""select args from
-					pxeaction where node = 0""")
+					pxeaction where node = 0 and
+					action = "%s" """ % action)
 
 			if rows > 0:
 				extra, = self.db.fetchone()
@@ -363,8 +364,6 @@ class Command(rocks.commands.report.host.command):
 				
 	def run(self, params, args):
 		hosts = self.getHostnames(args)
-		(self.create, ) = self.fillParams([('create', 'n')])
-		self.create = self.str2bool(self.create)
 		
 		if len(hosts) < 1:
 			self.abort('must supply host')

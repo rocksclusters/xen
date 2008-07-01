@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.6 2008/04/17 16:38:21 bruno Exp $
+# $Id: __init__.py,v 1.7 2008/07/01 22:57:09 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.7  2008/07/01 22:57:09  bruno
+# fixes to the xen reports which generate xen configuration files
+#
 # Revision 1.6  2008/04/17 16:38:21  bruno
 # incorporate phil's vm changes
 #
@@ -86,11 +89,6 @@ class Command(rocks.commands.start.host.command):
 	A list of one or more VM host names.
 	</arg>
 
-	<param type='bool' name='create'>
-	If set, then output a configuration specification that will be used
-	to create (install) a VM.
-	</param>
-
 	<example cmd='start host vm compute-0-0-0'>
 	Start VM host compute-0-0-0.
 	</example>
@@ -98,7 +96,6 @@ class Command(rocks.commands.start.host.command):
 
 	def run(self, params, args):
 		hosts = self.getHostnames(args)
-		(create, ) = self.fillParams([('create', 'n')])
 		
 		if len(hosts) < 1:
 			self.abort('must supply at least one host')
@@ -130,8 +127,7 @@ class Command(rocks.commands.start.host.command):
 			#
 			temp = tempfile.mktemp()
 			fout = open(temp, 'w')
-			fout.write(self.command('report.host.vm',
-				[host, 'create=%s' % create]))
+			fout.write(self.command('report.host.vm', [host]))
 			fout.close()
 			os.system('scp -q %s %s:/etc/xen/rocks/%s' % 
 				(temp, physhost, host))
