@@ -16,6 +16,13 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-server.xml,v $
+Revision 1.9  2008/07/18 20:49:07  bruno
+now have ability to build any appliance from rocks 'boot:' prompt. just
+type 'bulid appliance=xml-node-name', for example:
+'build appliance=vm-container-sever'
+
+change 'boot:' directive of 'frontend' to 'build'
+
 Revision 1.8  2008/04/17 22:59:42  bruno
 move the bootflag setting into xen-server.xml
 
@@ -53,7 +60,7 @@ Revision 1.1  2005/12/17 05:27:19  mjk
 
 /opt/rocks/bin/rocks add appliance vm-container \
 	membership='VM Container' short-name='vc' \
-	node='vm-container' graph='default' \
+	node='vm-container-client' graph='default' \
 	compute='no' public='yes'
 
 /opt/rocks/bin/rocks set host bootflags flags="dom0_mem=1024M"

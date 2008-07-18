@@ -15,6 +15,13 @@
 
 	<changelog>
 	$Log: xen.xml,v $
+	Revision 1.8  2008/07/18 20:49:07  bruno
+	now have ability to build any appliance from rocks 'boot:' prompt. just
+	type 'bulid appliance=xml-node-name', for example:
+	'build appliance=vm-container-sever'
+	
+	change 'boot:' directive of 'frontend' to 'build'
+	
 	Revision 1.7  2008/03/06 23:42:03  mjk
 	copyright storm on
 	
@@ -50,9 +57,16 @@
 		<to>xen-db</to>
 	</edge>
 
-	<edge from="vm-container">
+	<edge from="vm-container-client">
 		<to>client</to>
 		<to>xen-base</to>
+		<to>vm-container</to>
+	</edge>
+
+	<edge from="vm-container-server">
+		<to>server</to>
+		<to>xen-base</to>
+		<to>vm-container</to>
 	</edge>
 
 </graph>
