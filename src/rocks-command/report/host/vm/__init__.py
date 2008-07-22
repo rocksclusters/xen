@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.18 2008/07/01 22:57:08 bruno Exp $
+# $Id: __init__.py,v 1.19 2008/07/22 00:16:20 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.19  2008/07/22 00:16:20  bruno
+# support for VLANs
+#
 # Revision 1.18  2008/07/01 22:57:08  bruno
 # fixes to the xen reports which generate xen configuration files
 #
@@ -197,6 +200,39 @@ class Command(rocks.commands.report.host.command):
 	</example>
 	"""
 
+	def getBridgeName(self, host, subnetid, vlanid):
+		bridge = None
+
+		if vlanid:
+			#
+			# first make sure the vlan is defined for the physical
+			# host
+			#
+			rows = self.db.execute("""select net.device from
+				networks net, nodes n where net.node = n.id and
+				n.name = '%s' and net.device = 'vlan%d' and
+				net.subnet = %d and net.vlanid = %d""" %
+				(host, vlanid, subnetid, vlanid))
+
+			if rows == 0:
+				self.abort('vlan%d not defined for host %s' %
+					(vlanid, host))
+
+		rows = self.db.execute("""select net.device from networks net,
+			nodes n where net.node = n.id and n.name = '%s' and
+			net.ip is not NULL and net.device not like 'vlan%%' and
+			net.subnet = %d""" % (host, subnetid))
+
+		if rows:
+			dev, = self.db.fetchone()
+			if vlanid:
+				bridge = 'xenbr.%s.%d' % (dev, vlanid)
+			else:
+				bridge = 'xenbr.%s' % (dev)
+
+		return bridge
+
+
 	def outputVMConfig(self, host):
 		#
 		# lookup the pxeboot action for this VM host. if the action is
@@ -332,7 +368,7 @@ class Command(rocks.commands.report.host.command):
 		self.addOutput(host, 'memory = %s' % mem)
 		self.addOutput(host, 'vcpus = %s' % cpus)
 
-		rows = self.db.execute("""select net.mac 
+		rows = self.db.execute("""select net.mac, net.subnet, net.vlanid
 			from networks net, nodes n, vm_nodes vn
 			where vn.node = n.id and net.node = n.id and
 			n.name = '%s'""" % host)
@@ -343,9 +379,11 @@ class Command(rocks.commands.report.host.command):
 
 		vifs = []
 		index = 0
-		for mac, in macs:
-			vifs.append("'mac=%s, bridge=xenbr%d'" % (mac, index))
+		for mac, subnetid, vlanid in macs:
+			bridge = self.getBridgeName(physhost, subnetid, vlanid)
+			vifs.append("'mac=%s, bridge=%s'" % (mac, bridge))
 			index += 1
+
 		self.addOutput(host, 'vif = [')
 		self.addOutput(host, string.join(vifs, ',\n'))
 		self.addOutput(host, ']')

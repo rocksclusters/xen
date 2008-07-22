@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.3 2008/03/06 23:42:04 mjk Exp $
+# $Id: __init__.py,v 1.4 2008/07/22 00:16:20 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@ 
 #
 # $Log: __init__.py,v $
+# Revision 1.4  2008/07/22 00:16:20  bruno
+# support for VLANs
+#
 # Revision 1.3  2008/03/06 23:42:04  mjk
 # copyright storm on
 #
@@ -79,55 +82,59 @@ class Command(rocks.commands.report.host.command):
 	</example>
 	"""
 		
+	def getVlanDevice(self, host, subnetid, vlanid):
+		device = None
+
+		rows = self.db.execute("""select net.device from networks net,
+			nodes n where net.node = n.id and n.name = '%s' and
+			net.ip is not NULL and net.device not like 'vlan%%' and
+			net.subnet = %d""" % (host, subnetid))
+
+		if rows:
+			dev, = self.db.fetchone()
+			device = '%s.%d' % (dev, vlanid)
+
+		return device
+			
+
 	def addNetworkBridge(self, device, vifnum):
 		self.addText('/etc/xen/scripts/network-bridge ' +
-			'"$@" netdev=%s vifnum=%d\n' % (device, vifnum))
+			'"$@" netdev=%s bridge=xenbr.%s vifnum=%d\n' 
+			% (device, device, vifnum))
 		
 
 	def run(self, params, args):
 		self.addText('#!/bin/bash\n')
 
 		for host in self.getHostnames(args):
-			#
-			# add the private network first
-			#
 			vifnum = 0
-			rows = self.db.execute("""select net.device from
-				networks net, nodes n, subnets s where
-				s.name = "private" and s.id = net.subnet and
-				net.node = n.id and
-				n.name = "%s" """  % (host))
 
-			if rows > 0:
-				device, = self.db.fetchone()
+			#
+			# create bridges for all physical interfaces that
+			# are configured with an IP address
+			#
+			rows = self.db.execute("""select net.device from
+				networks net, nodes n where net.node = n.id and
+				n.name = "%s" and net.ip is not NULL and
+				net.vlanid is NULL order by net.id""" % (host))
+
+			for device, in self.db.fetchall():
 				self.addNetworkBridge(device, vifnum)
 				vifnum += 1
 
 			#
-			# add the public network next (if present)
+			# create bridges for all VLANs
 			#
-			rows = self.db.execute("""select net.device from
-				networks net, nodes n, subnets s where
-				s.name = "public" and s.id = net.subnet and
-				net.node = n.id and
-				n.name = "%s" """  % (host))
+			rows = self.db.execute("""select net.subnet, net.vlanid
+				from networks net, nodes n where
+				net.node = n.id and n.name = "%s" and
+				net.vlanid is not NULL and
+				net.device like 'vlan%%' order by net.id"""
+				% (host))
 
-			if rows > 0:
-				device, = self.db.fetchone()
+			for subnetid, vlanid in self.db.fetchall():
+				device = self.getVlanDevice(host, subnetid,
+					vlanid)
 				self.addNetworkBridge(device, vifnum)
 				vifnum += 1
 
-			#
-			# all all other networks
-			#
-			rows = self.db.execute("""select net.device from
-				networks net, nodes n, subnets s where
-				(s.name != "private" and s.name != "public")
-				and s.id = net.subnet and net.node = n.id and
-				n.name = "%s" """  % (host))
-
-			if rows > 0:
-				for device, in self.db.fetchall():
-					self.addNetworkBridge(device, vifnum)
-					vifnum += 1
-		
