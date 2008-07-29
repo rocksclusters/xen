@@ -15,6 +15,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-base.xml,v $
+Revision 1.14  2008/07/29 16:47:24  bruno
+more vlan support for xen VMs
+
 Revision 1.13  2008/07/22 00:16:20  bruno
 support for VLANs
 
@@ -65,11 +68,12 @@ Revision 1.1  2005/12/17 05:27:19  mjk
 
 <post>
 
-<file name="/etc/xen/scripts/rocks-network-bridge" perms="755">
-<eval>
-/opt/rocks/bin/rocks report host xen bridge $Node_Hostname
-</eval>
-</file>
+/opt/rocks/bin/rocks report host xen bridge $Node_Hostname | \
+	/opt/rocks/bin/rocks report script | bash
+
+</post>
+
+<post>
 
 <file name="/etc/xen/xend-config.sxp">
 (xend-unix-server yes)

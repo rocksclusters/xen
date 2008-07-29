@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.16 2008/04/21 16:37:35 bruno Exp $
+# $Id: __init__.py,v 1.17 2008/07/29 16:47:24 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.17  2008/07/29 16:47:24  bruno
+# more vlan support for xen VMs
+#
 # Revision 1.16  2008/04/21 16:37:35  bruno
 # nuked the vm_macs table -- now using the networks table to store/retrieve
 # mac addresses for VMs
@@ -186,6 +189,16 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 	specification.
 	The default is: 36.
 	</param>
+
+	<param type='string' name='vlan'>
+	The vlan ID to set for each interface. If you supply multiple MACs
+	(e.g., 'num-macs' > 1), you can specify multiple vlan IDs by a
+	comma separated list (e.g., vlan="2,3,4"). To not specify a vlanid
+	for a MAC, use the keyword 'none'. For example, if you want to
+	specify a vlan ID for interface 1 and 3, but not interface 2, type:
+	vlan="2,none,4".
+	The default is to not assign a vlan ID.
+	</param>
 	
 	<example cmd='add host vm'>
 	Create a default VM.
@@ -197,7 +210,7 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 	"""
 
 	def addToDB(self, nodename, membership, ip, subnet, physnodeid, rack,
-		rank, mem, cpus, slice, mac, num_macs, disk, disksize):
+		rank, mem, cpus, slice, mac, num_macs, disk, disksize, vlanids):
 
 		#
 		# need to add entry in node and networks tables here
@@ -245,20 +258,50 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 			else:
 				self.abort('could not get node id for new VM')
 
-		self.db.execute("""insert into networks (node, mac, ip, name,
-			device, subnet, module) values (%s, '%s', '%s', '%s',
-			'%s', %s, '%s')""" % (vmnodeid, mac, ip, nodename,
+		rows = self.db.execute("""insert into networks (node, mac, ip,
+			name, device, subnet, module) values (%s, '%s', '%s',
+			'%s', '%s', %s, '%s')""" % (vmnodeid, mac, ip, nodename,
 			'eth0', subnetid, 'xennet'))
 
+		vlanindex = 0
+		if rows == 1 and vlanids and len(vlanids) > vlanindex:
+			if vlanids[vlanindex] != 'none':
+				rows = self.db.execute("""select
+					last_insert_id()""")
+				if rows == 1:
+					networksid, = self.db.fetchone()
+					self.db.execute("""update networks set
+						vlanid = %s where id = %d""" %
+						(vlanids[vlanindex],
+						networksid))
+
+			vlanindex += 1
+		
 		#
 		# put in additional MACs here
 		#
 		for m in range(1, num_macs):
 			mac = self.getNextMac()
 
-			self.db.execute("""insert into networks (node, mac,
-				device, module) values (%s, '%s', '%s', '%s')
-				""" % (vmnodeid, mac, 'eth%d' % (m) , 'xennet'))
+			rows = self.db.execute("""insert into networks (node,
+				mac, device, module) values (%s, '%s', '%s',
+				'%s')""" % (vmnodeid, mac, 'eth%d' % (m),
+				'xennet'))
+
+			if rows == 1 and vlanids and len(vlanids) > vlanindex:
+				if vlanids[vlanindex] != 'none':
+					rows = self.db.execute("""select
+						last_insert_id()""")
+					if rows == 1:
+						networksid, = self.db.fetchone()
+						self.db.execute("""update
+							networks set
+							vlanid = %s where
+							id = %d""" %
+							(vlanids[vlanindex],
+							networksid))
+
+				vlanindex += 1
 
 		rows = self.db.execute("""insert into vm_nodes (physnode, node,
 			mem, slice) values (%s, %s, %s, %s)""" %
@@ -382,7 +425,7 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 
 
 	def addVMHost(self, host, membership, nodename, ip, subnet, mem, cpus,
-		slice, mac, num_macs, disk, disksize):
+		slice, mac, num_macs, disk, disksize, vlan):
 
 		rows = self.db.execute("""select id, rack, rank from nodes where
 			name = '%s'""" % (host))
@@ -463,11 +506,17 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 		if not ip:
 			ip = self.getNextIP(subnet)
 
+		if vlan:
+			vlanids = vlan.split(',')
+		else:
+			vlanids = None
+
 		#
 		# we now have all the parameters -- add them to the database
 		#
 		self.addToDB(nodename, membership, ip, subnet, nodeid, rack,
-			rank, mem, cpus, slice, mac, num_macs, disk, disksize)
+			rank, mem, cpus, slice, mac, num_macs, disk, disksize,
+			vlanids)
 
 		#
 		# print the name of the new VM
@@ -492,7 +541,7 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 		# fillParams with the above default values
 		#
 		(nodename, ip, subnet, mem, cpus, slice, mac, macs, disk,
-			disksize) = self.fillParams(
+			disksize, vlan) = self.fillParams(
 				[('name', None),
 				('ip', None),
 				('subnet', 'private'),
@@ -502,7 +551,9 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 				('mac', None),
 				('num-macs', '1'),
 				('disk', None),
-				('disksize', 36)])
+				('disksize', 36),
+				('vlan', None)
+				])
 
 		hosts = self.getHostnames(args)
 
@@ -527,7 +578,8 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 			
 		for host in hosts:
 			self.addVMHost(host, membership, nodename, ip, subnet,
-				mem, cpus, slice, mac, num_macs, disk, disksize)
+				mem, cpus, slice, mac, num_macs, disk, disksize,
+				vlan)
 		
 		#
 		# reconfigure and restart the appropriate rocks services

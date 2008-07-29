@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.4 2008/07/22 00:16:20 bruno Exp $
+# $Id: __init__.py,v 1.5 2008/07/29 16:47:25 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@ 
 #
 # $Log: __init__.py,v $
+# Revision 1.5  2008/07/29 16:47:25  bruno
+# more vlan support for xen VMs
+#
 # Revision 1.4  2008/07/22 00:16:20  bruno
 # support for VLANs
 #
@@ -104,6 +107,9 @@ class Command(rocks.commands.report.host.command):
 		
 
 	def run(self, params, args):
+		self.addText('<file ' +
+			'name="/etc/xen/scripts/rocks-network-bridge" ' +
+			'perms="755">\n')
 		self.addText('#!/bin/bash\n')
 
 		for host in self.getHostnames(args):
@@ -137,4 +143,6 @@ class Command(rocks.commands.report.host.command):
 					vlanid)
 				self.addNetworkBridge(device, vifnum)
 				vifnum += 1
+
+		self.addText('</file>')
 

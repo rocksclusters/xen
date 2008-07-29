@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.19 2008/07/22 00:16:20 bruno Exp $
+# $Id: __init__.py,v 1.20 2008/07/29 16:47:24 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.20  2008/07/29 16:47:24  bruno
+# more vlan support for xen VMs
+#
 # Revision 1.19  2008/07/22 00:16:20  bruno
 # support for VLANs
 #
@@ -371,7 +374,7 @@ class Command(rocks.commands.report.host.command):
 		rows = self.db.execute("""select net.mac, net.subnet, net.vlanid
 			from networks net, nodes n, vm_nodes vn
 			where vn.node = n.id and net.node = n.id and
-			n.name = '%s'""" % host)
+			n.name = '%s' order by net.id""" % host)
 
 		macs = self.db.fetchall()
 		if not macs:
