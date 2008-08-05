@@ -15,11 +15,21 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: vm-container-server.xml,v $
+Revision 1.2  2008/08/05 19:48:45  bruno
+add an 'install vm frontend' pxeaction
+
 Revision 1.1  2008/07/22 00:16:20  bruno
 support for VLANs
 
 </changelog>
 
+<post>
+
+/opt/rocks/bin/rocks add host pxeaction action="install vm frontend" \
+	command="kernel vmlinuz" \
+	args="append initrd=initrd.img ramdisk_size=150000 lang= devfs=nomount pxe kssendmac selinux=0 noipv6 ks=http://<var name="Kickstart PublicHostname"/>/install/sbin/kickstart.cgi ksdevice=eth1 build"
+
+</post>
 
 </kickstart>
 
