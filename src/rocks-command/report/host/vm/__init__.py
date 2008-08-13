@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.20 2008/07/29 16:47:24 bruno Exp $
+# $Id: __init__.py,v 1.21 2008/08/13 00:06:31 phil Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.21  2008/08/13 00:06:31  phil
+# look for vlan interface names of the form vlan*
+#
 # Revision 1.20  2008/07/29 16:47:24  bruno
 # more vlan support for xen VMs
 #
@@ -213,9 +216,9 @@ class Command(rocks.commands.report.host.command):
 			#
 			rows = self.db.execute("""select net.device from
 				networks net, nodes n where net.node = n.id and
-				n.name = '%s' and net.device = 'vlan%d' and
+				n.name = '%s' and net.device = 'vlan%%' and
 				net.subnet = %d and net.vlanid = %d""" %
-				(host, vlanid, subnetid, vlanid))
+				(host, subnetid, vlanid))
 
 			if rows == 0:
 				self.abort('vlan%d not defined for host %s' %
