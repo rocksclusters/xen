@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.21 2008/08/13 00:06:31 phil Exp $
+# $Id: __init__.py,v 1.22 2008/08/14 19:32:05 phil Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,10 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.22  2008/08/14 19:32:05  phil
+# properly retrieve the device name for mapping a vlan interface to the physical interface on which it is
+# located
+#
 # Revision 1.21  2008/08/13 00:06:31  phil
 # look for vlan interface names of the form vlan*
 #
@@ -212,23 +216,27 @@ class Command(rocks.commands.report.host.command):
 		if vlanid:
 			#
 			# first make sure the vlan is defined for the physical
-			# host
+			# host and get the logical subnet  where the vlan is tied
 			#
-			rows = self.db.execute("""select net.device from
+			rows = self.db.execute("""select net.subnet from
 				networks net, nodes n where net.node = n.id and
-				n.name = '%s' and net.device = 'vlan%%' and
-				net.subnet = %d and net.vlanid = %d""" %
-				(host, subnetid, vlanid))
+				n.name = '%s' and net.device like 'vlan%%' and
+				net.vlanid = %d""" % (host, vlanid))
 
 			if rows == 0:
-				self.abort('vlan%d not defined for host %s' %
+				self.abort('vlan %d not defined for host %s' %
 					(vlanid, host))
+			vlanOnLogical, = self.db.fetchone()
 
-		rows = self.db.execute("""select net.device from networks net,
-			nodes n where net.node = n.id and n.name = '%s' and
-			net.ip is not NULL and net.device not like 'vlan%%' and
-			net.subnet = %d""" % (host, subnetid))
-
+			rows = self.db.execute("""select net.device from networks net,
+				nodes n where net.node = n.id and n.name = '%s' and
+				net.device not like 'vlan%%' and
+				net.subnet = %d""" % (host, vlanOnLogical))
+		else:
+			rows = self.db.execute("""select net.device from networks net,
+				nodes n where net.node = n.id and n.name = '%s' and
+				net.ip is not NULL and net.device not like 'vlan%%' and
+				net.subnet = %d""" % (host, subnetid))
 		if rows:
 			dev, = self.db.fetchone()
 			if vlanid:
