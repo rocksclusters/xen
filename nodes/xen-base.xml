@@ -15,6 +15,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-base.xml,v $
+Revision 1.16  2008/08/14 23:02:19  phil
+Create the rocks-network-bridge when kickstarting
+
 Revision 1.15  2008/08/14 16:17:19  phil
 Control how much memory is reserved for Dom0 via a rocks var
 
@@ -71,8 +74,11 @@ Revision 1.1  2005/12/17 05:27:19  mjk
 
 <post>
 
+<!-- Create the rocks-network-bridge script for xen --> 
+<eval>
 /opt/rocks/bin/rocks report host xen bridge $Node_Hostname | \
-	/opt/rocks/bin/rocks report script | bash
+	/opt/rocks/bin/rocks report script 
+</eval>
 
 </post>
 
