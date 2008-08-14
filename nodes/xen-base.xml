@@ -15,6 +15,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-base.xml,v $
+Revision 1.15  2008/08/14 16:17:19  phil
+Control how much memory is reserved for Dom0 via a rocks var
+
 Revision 1.14  2008/07/29 16:47:24  bruno
 more vlan support for xen VMs
 
@@ -81,7 +84,7 @@ Revision 1.1  2005/12/17 05:27:19  mjk
 (xend-relocation-hosts-allow '^localhost$ ^localhost\\.localdomain$')
 (network-script 'rocks-network-bridge')
 (vif-script vif-bridge) 
-(dom0-min-mem 1024)
+(dom0-min-mem <var name="Xen_Dom0MinMem"/>)
 (dom0-cpus 1)
 (vncpasswd '')
 </file>
