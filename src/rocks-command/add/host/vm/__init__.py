@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.17 2008/07/29 16:47:24 bruno Exp $
+# $Id: __init__.py,v 1.18 2008/08/20 22:52:58 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.18  2008/08/20 22:52:58  bruno
+# install a virtual cluster of any size in 6 simple steps!
+#
 # Revision 1.17  2008/07/29 16:47:24  bruno
 # more vlan support for xen VMs
 #
@@ -522,9 +525,8 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 		# print the name of the new VM
 		#
 		self.beginOutput()
-		self.addOutput('',
-			'added VM on node "%s" slice "%s" with vm_name "%s"'
-			% (host, slice, nodename))
+		self.addOutput('', 'added VM %s on physical node %s' %
+			(nodename, host))
 		self.endOutput()
 
 

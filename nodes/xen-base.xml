@@ -15,6 +15,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-base.xml,v $
+Revision 1.18  2008/08/20 22:52:58  bruno
+install a virtual cluster of any size in 6 simple steps!
+
 Revision 1.17  2008/08/18 17:44:48  bruno
 cleanup
 
@@ -95,6 +98,15 @@ Revision 1.1  2005/12/17 05:27:19  mjk
 (dom0-min-mem <var name="Xen_Dom0MinMem"/>)
 (dom0-cpus 1)
 (vncpasswd '')
+</file>
+
+</post>
+
+<post>
+<!-- increase the max number of virtual interfaces that can be created -->
+
+<file name="/etc/modprobe.conf" mode="append">
+options netloop nloopbacks=32
 </file>
 
 </post>
