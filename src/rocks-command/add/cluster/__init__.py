@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.1 2008/08/20 22:52:58 bruno Exp $
+# $Id: __init__.py,v 1.2 2008/08/22 23:25:56 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.2  2008/08/22 23:25:56  bruno
+# closer
+#
 # Revision 1.1  2008/08/20 22:52:58  bruno
 # install a virtual cluster of any size in 6 simple steps!
 #
@@ -164,21 +167,8 @@ class Command(rocks.commands.add.command):
 			#
 			# reconfigure the network stack on the host
 			#
-			cmd = 'rocks config host interface %s | ' % host
-			cmd += 'rocks report script | '
-			cmd += 'ssh %s bash > /dev/null 2>&1' % host
-			os.system(cmd)
-
-			cmd = 'rocks report host xen bridge %s | ' % host
-			cmd += 'rocks report script | '
-			cmd += 'ssh %s bash > /dev/null 2>&1' % host
-			os.system(cmd)
-
-		#
-		# restart the networking on each host
-		#
-		self.command('run.host', hosts + [ 'service network restart' ])
-		self.command('run.host', hosts + [ 'service xend restart' ])
+			self.command('sync.host.network', [ host ] )
+			self.command('sync.host.network.xen', [ host ] )
 
 
 	def createFrontend(self, vlan, fqdn, ip):
@@ -206,7 +196,7 @@ class Command(rocks.commands.add.command):
 			'eth1', fqdn ] )
 
 		#
-		# set the VM frontend to install
+		# set the VM frontend pxeboot action to install
 		#
 		self.command('set.host.pxeboot', [ self.frontendname,
 			"action=install vm frontend" ] )
@@ -288,12 +278,10 @@ class Command(rocks.commands.add.command):
 		#
 		self.createComputes(vlan, computes)
 
-
 		#
 		# reconfigure and restart the appropriate rocks services
 		#
-		# self.command('sync.config')
+		self.command('sync.config')
 
 		self.endOutput()
-
 

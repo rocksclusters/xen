@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.2 2008/08/22 23:25:56 bruno Exp $
+# $Id: __init__.py,v 1.1 2008/08/22 23:25:56 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,101 +54,130 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
-# Revision 1.2  2008/08/22 23:25:56  bruno
+# Revision 1.1  2008/08/22 23:25:56  bruno
 # closer
 #
-# Revision 1.1  2008/08/21 21:41:36  bruno
-# list physical and virtual clusters
 #
 
 import rocks.vm
 import rocks.commands
 
 class Command(rocks.commands.HostArgumentProcessor,
-	rocks.commands.list.command):
+	rocks.commands.remove.command):
 
 	"""
-	Lists a cluster, that is, for each frontend, all nodes that are
-	associated with that frontend are listed.
+	Remove a virtual cluster.
 	
 	<arg optional='1' type='string' name='cluster' repeat='1'>
-	Zero, one or more frontend names. If no frontend names are supplied,
-	information for all clusters will be listed.
+	One or more virtual frontend names.
 	</arg>
 
-	<example cmd='list cluster frontend-0-0'>
-	List the cluster associated with the frontend named 'frontend-0-0'.
-	</example>
-
-	<example cmd='list cluster'>
-	List all clusters.
+	<example cmd='rmeove cluster frontend-0-0-0'>
+	Remove the cluster associated with the frontend named 'frontend-0-0'.
 	</example>
 	"""
 
 	def run(self, params, args):
-		frontends = self.getHostnames( [ 'frontend' ])
-
-		if len(args) > 0:
-			hosts = self.getHostnames(args)
-			for host in hosts:
-				if host not in frontends:
-					self.abort('host %s is not a frontend'
-						% host)
-		else:
-			hosts = frontends
+		if len(args) == 0:
+			self.abort('must supply at least one frontend name')
 
 		vm = rocks.vm.VM(self.db)
-		self.beginOutput()
+		frontends = self.getHostnames( [ 'frontend' ])
+		hosts = self.getHostnames(args)
+		for host in hosts:
+			if host not in frontends:
+				self.abort('host %s is not a frontend' % host)
+			if not vm.isVM(host):
+				self.abort('host %s is not a virtual frontend'
+					% host)
 
 		for frontend in hosts:
-			if vm.isVM(frontend):
-				self.addOutput(frontend, ('', 'VM'))
+			#
+			# find all the client nodes related to this frontend.
+			#
+			# all client nodes of this VM frontend have
+			# the same vlan ids as this frontend
+			#
+			rows = self.db.execute("""select net.vlanid, net.subnet
+				from networks net, nodes n where n.name = '%s'
+				and net.node = n.id and net.vlanid > 1""" %
+				frontend)
+
+			vlans = []
+			for vlanid, subnet in self.db.fetchall():
+				vlans.append((vlanid, subnet))
+
+			if not vlans:
+				self.abort('could not find VLAN Id ' +
+					'for frontend %s' % frontend)
+
+			phys_nodes = []
+			vm_nodes = []
+			for vlanid, subnet in vlans:
+				self.db.execute("""select n.name from
+					networks net, nodes n where
+					net.vlanid = %s and net.node = n.id""" %
+					vlanid)
+
+				for node, in self.db.fetchall():
+					if vm.isVM(node):
+						vm_nodes.append(
+							(node, vlanid, subnet))
+					else:
+						phys_nodes.append(
+							(node, vlanid, subnet))
+
+			#
+			# remove the VLAN configuration from the physical nodes
+			#
+			for node, vlanid, subnet in phys_nodes:
+				rows = self.db.execute("""select net.device from
+					nodes n, networks net where
+					n.name = '%s' and n.id = net.node and
+					net.vlanid = %s""" % (node, vlanid))
+
+				if rows != 1:
+					self.abort('could not find VLAN ' +
+						'%s for node %s' %
+						(vlanid, node))
+
+				iface, = self.db.fetchone()
+
+				self.command('remove.host.interface',
+					[ node, iface ] )
 
 				#
-				# all client nodes of this VM frontend have
-				# the same vlan id as this frontend
+				# remove the ifcfg file from the physical host
 				#
-				rows = self.db.execute("""select
-					net.vlanid from
-					networks net, nodes n, subnets s where
-					n.name = '%s' and net.node = n.id and
-					s.name = 'private' and
-					s.id = net.subnet""" % frontend)
+				rows = self.db.execute("""select net.device from
+					nodes n, networks net where
+					n.name = '%s' and n.id = net.node and
+					net.subnet = %s and net.device not like
+					'vlan%%' """ % (node, subnet))
 
-				if rows > 0:
-					vlanid, = self.db.fetchone()
-				else:
-					self.abort('could not find Vlan Id ' +
-						'for frontend %s' % frontend)
+				if rows != 1:
+					self.abort('could not find VLAN ' +
+						'%s for node %s' %
+						(vlanid, node))
 
-				rows = self.db.execute("""select n.name from
-					networks net, nodes n, subnets s where
-					net.vlanid = %s and net.node = n.id and 
-					s.name = 'private' and
-					s.id = net.subnet""" % vlanid)
+				device, = self.db.fetchone()
+				cmd = '"rm -f /etc/sysconfig/network-scripts/'
+				cmd += 'ifcfg-%s.%s"' % (device, vlanid)
 
-				for client, in self.db.fetchall():
-					if client != frontend and \
-						vm.isVM(client):
-
-						self.addOutput('',
-							(client, 'VM'))
-			else:
-				self.addOutput(frontend, ('', 'physical'))
+				self.command('run.host', [ node, cmd ] )
 
 				#
-				# a physical frontend. go get all the physical
-				# client nodes
+				# reconfigure and restart the network on the
+				# physical host
 				#
-				clients = self.getHostnames()
+				self.command('sync.host.network', [ node ] )
 
-				for client in clients:
-					if client not in frontends and \
-						not vm.isVM(client):
+			#
+			# remove all the VMs associated with the cluster
+			#
+			for node, vlanid, subnet in vm_nodes:
+				self.command('remove.host', [ node ] )
 
-						self.addOutput('',
-							(client, 'physical'))
 
-		self.endOutput(header = [ 'frontend', 'client nodes', 'type'],
-			trimOwner = 0)
-			
+		self.command('sync.config')
+

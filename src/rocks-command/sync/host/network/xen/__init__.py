@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.2 2008/08/22 23:25:56 bruno Exp $
+# $Id: __init__.py,v 1.1 2008/08/22 23:25:56 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,101 +54,42 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
-# Revision 1.2  2008/08/22 23:25:56  bruno
+# Revision 1.1  2008/08/22 23:25:56  bruno
 # closer
 #
-# Revision 1.1  2008/08/21 21:41:36  bruno
-# list physical and virtual clusters
+#
 #
 
+import os
 import rocks.vm
 import rocks.commands
 
-class Command(rocks.commands.HostArgumentProcessor,
-	rocks.commands.list.command):
-
+class Command(rocks.commands.sync.host.command):
 	"""
-	Lists a cluster, that is, for each frontend, all nodes that are
-	associated with that frontend are listed.
-	
-	<arg optional='1' type='string' name='cluster' repeat='1'>
-	Zero, one or more frontend names. If no frontend names are supplied,
-	information for all clusters will be listed.
-	</arg>
+	Reconfigure and restart the network for the named hosts.
 
-	<example cmd='list cluster frontend-0-0'>
-	List the cluster associated with the frontend named 'frontend-0-0'.
-	</example>
-
-	<example cmd='list cluster'>
-	List all clusters.
+	<example cmd='sync host network compute-0-0'>
+	Reconfigure and restart the network on compute-0-0.
 	</example>
 	"""
 
 	def run(self, params, args):
-		frontends = self.getHostnames( [ 'frontend' ])
+		hosts = self.getHostnames(args)
+		for host in hosts:
+			#
+			# make sure the host is a physical host
+			#
+			vm = rocks.vm.VM(self.db)
+			if vm.isVM(host):
+				continue
 
-		if len(args) > 0:
-			hosts = self.getHostnames(args)
-			for host in hosts:
-				if host not in frontends:
-					self.abort('host %s is not a frontend'
-						% host)
-		else:
-			hosts = frontends
+			cmd = '/opt/rocks/bin/rocks report host xen bridge '
+			cmd += '%s | ' % host
+			cmd += '/opt/rocks/bin/rocks report script | '
+			cmd += 'ssh %s bash > /dev/null 2>&1' % host
+			os.system(cmd)
 
-		vm = rocks.vm.VM(self.db)
-		self.beginOutput()
+			cmd = 'ssh -f %s "service xend restart" ' % host
+			cmd += '> /dev/null 2>&1'
+			os.system(cmd)
 
-		for frontend in hosts:
-			if vm.isVM(frontend):
-				self.addOutput(frontend, ('', 'VM'))
-
-				#
-				# all client nodes of this VM frontend have
-				# the same vlan id as this frontend
-				#
-				rows = self.db.execute("""select
-					net.vlanid from
-					networks net, nodes n, subnets s where
-					n.name = '%s' and net.node = n.id and
-					s.name = 'private' and
-					s.id = net.subnet""" % frontend)
-
-				if rows > 0:
-					vlanid, = self.db.fetchone()
-				else:
-					self.abort('could not find Vlan Id ' +
-						'for frontend %s' % frontend)
-
-				rows = self.db.execute("""select n.name from
-					networks net, nodes n, subnets s where
-					net.vlanid = %s and net.node = n.id and 
-					s.name = 'private' and
-					s.id = net.subnet""" % vlanid)
-
-				for client, in self.db.fetchall():
-					if client != frontend and \
-						vm.isVM(client):
-
-						self.addOutput('',
-							(client, 'VM'))
-			else:
-				self.addOutput(frontend, ('', 'physical'))
-
-				#
-				# a physical frontend. go get all the physical
-				# client nodes
-				#
-				clients = self.getHostnames()
-
-				for client in clients:
-					if client not in frontends and \
-						not vm.isVM(client):
-
-						self.addOutput('',
-							(client, 'physical'))
-
-		self.endOutput(header = [ 'frontend', 'client nodes', 'type'],
-			trimOwner = 0)
-			
