@@ -16,6 +16,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-server.xml,v $
+Revision 1.11  2008/08/27 22:22:02  bruno
+add a 'Hosted VM' appliance
+
 Revision 1.10  2008/08/14 16:17:19  phil
 Control how much memory is reserved for Dom0 via a rocks var
 
@@ -65,6 +68,10 @@ Revision 1.1  2005/12/17 05:27:19  mjk
 	membership='VM Container' short-name='vc' \
 	node='vm-container-client' graph='default' \
 	compute='no' public='yes'
+
+/opt/rocks/bin/rocks add appliance hosted-vm \
+	membership='Hosted VM' short-name='hv' \
+	compute='no' public='no'
 
 /opt/rocks/bin/rocks add var service=Xen Component=Dom0MinMem value=768
 /opt/rocks/bin/rocks set host bootflags flags="dom0_mem=1024M"

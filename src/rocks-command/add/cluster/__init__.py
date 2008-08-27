@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.2 2008/08/22 23:25:56 bruno Exp $
+# $Id: __init__.py,v 1.3 2008/08/27 22:22:02 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.3  2008/08/27 22:22:02  bruno
+# add a 'Hosted VM' appliance
+#
 # Revision 1.2  2008/08/22 23:25:56  bruno
 # closer
 #
@@ -92,6 +95,29 @@ class Command(rocks.commands.add.command):
 
 	<param type='string' name='num-computes'>
 	Can be used in place of the num-computes argument.
+	</param>
+
+	<param type='string' name='cpus-per-compute'>
+	The number of CPUs to allocate to each VM compute node. The default
+	is 1.
+	</param>
+
+	<param type='string' name='disk-per-compute'>
+	The size of the disk (in gigabytes) to allocate to each VM compute
+	node. The default is 36.
+	</param>
+
+	<param type='string' name='mem-per-compute'>
+	The amount of memory (in megabytes) to allocate to each VM compute
+	node. The default is 1024.
+	</param>
+
+	<param type='string' name='container-hosts'>
+	A list of VM container hosts that will be used to hold the VM
+	compute nodes. This must be a space-separated list (e.g.,
+	container-hosts="vm-container-0-0 vm-container-0-1").
+	The default is to allocate the compute nodes in a round robin fashion
+	across all the VM containers.
 	</param>
 
 	<example cmd='add cluster vm.cluster.org 1.2.3.4 2'>
@@ -205,15 +231,19 @@ class Command(rocks.commands.add.command):
 			self.frontendname)
 
 
-	def createComputes(self, vlan, num_computes):
-		self.computenames = []
-		containers = self.getVMContainers()
+	def createComputes(self, vlan, computes, containers,
+		cpus_per_compute, mem_per_compute, disk_per_compute):
 
-		for i in range(0, num_computes):
+		self.computenames = []
+
+		for i in range(0, computes):
 			host = containers[i % len(containers)]
 
 			output = self.command('add.host.vm', [ host,
-				'membership=Compute', 'num-macs=1',
+				'membership=Hosted VM', 'num-macs=1',
+				'cpus=%s' % cpus_per_compute,
+				'mem=%s' % mem_per_compute,
+				'disksize=%s' % disk_per_compute,
 				'vlan=%d' % vlan ] )
 
 			line = output.split()
@@ -248,11 +278,13 @@ class Command(rocks.commands.add.command):
 		#
 		# fillParams with the above default values
 		#
-		(cpus_per_compute, mem_per_compute, disk_per_compute, vlan) = \
+		(cpus_per_compute, mem_per_compute, disk_per_compute,
+			container_hosts, vlan) = \
 			self.fillParams(
 				[('cpus-per-compute', 1),
 				('mem-per-compute', 1024),
 				('disk-per-compute', 36),
+				('container-hosts', None),
 				('vlan', None)
 				])
 
@@ -261,6 +293,11 @@ class Command(rocks.commands.add.command):
 
 			if not vlan:
 				self.abort('could not find a free Vlan ID')
+
+		if container_hosts:
+			containers = container_hosts.split()
+		else:
+			containers = self.getVMContainers()
 
 		#
 		# configure the vlan on each physical node that can hold
@@ -276,7 +313,8 @@ class Command(rocks.commands.add.command):
 		#
 		# create the compute nodes
 		#
-		self.createComputes(vlan, computes)
+		self.createComputes(vlan, computes, containers,
+			cpus_per_compute, mem_per_compute, disk_per_compute)
 
 		#
 		# reconfigure and restart the appropriate rocks services
