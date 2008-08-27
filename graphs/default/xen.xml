@@ -15,6 +15,9 @@
 
 	<changelog>
 	$Log: xen.xml,v $
+	Revision 1.9  2008/08/27 22:25:20  bruno
+	added vm-server XML node
+	
 	Revision 1.8  2008/07/18 20:49:07  bruno
 	now have ability to build any appliance from rocks 'boot:' prompt. just
 	type 'bulid appliance=xml-node-name', for example:
@@ -61,6 +64,10 @@
 		<to>client</to>
 		<to>xen-base</to>
 		<to>vm-container</to>
+	</edge>
+
+	<edge from="vm-server">
+		<to>vm-container-server</to>
 	</edge>
 
 	<edge from="vm-container-server">
