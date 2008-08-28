@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.22 2008/08/14 19:32:05 phil Exp $
+# $Id: __init__.py,v 1.23 2008/08/28 02:37:25 phil Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.23  2008/08/28 02:37:25  phil
+# Use pygrub for extracting the kernel from the image
+#
 # Revision 1.22  2008/08/14 19:32:05  phil
 # properly retrieve the device name for mapping a vlan interface to the physical interface on which it is
 # located
@@ -155,26 +158,7 @@ runheader = """
 #
 # python code to extract the kernel from the disk image
 #
-kernelsdir = os.path.join(dirprefix, 'xen/kernels')
-
-cmd = 'mkdir -p /mnt/disk'
-os.system(cmd)
-cmd = 'mkdir -p %s' % kernelsdir
-os.system(cmd)
-
-cmd = 'lomount -diskimage %s -partition 1 /mnt/disk' % bootdisk
-os.system(cmd)
-
-kernel = os.path.join(kernelsdir, 'vmlinuz-%s' % (name))
-ramdisk = os.path.join(kernelsdir, 'initrd-%s' % (name))
-
-cmd = 'cp /mnt/disk/boot/vmlinuz* %s' % kernel
-os.system(cmd)
-
-cmd = 'cp /mnt/disk/boot/initrd* %s' % ramdisk
-os.system(cmd)
-
-os.system('umount /mnt/disk')
+bootloader = '/usr/bin/pygrub'
 """
 
 diskcreate = """
