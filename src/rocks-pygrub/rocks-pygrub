@@ -1,0 +1,233 @@
+#!/opt/rocks/bin/python
+#
+# This is wrapper around pygrub, which is distributed with Xen.
+# It's purpose is to allow us to write a single xen config file, but make
+# reboots of a VM sensible (that is closer to real hardware functionality)
+#
+# if a diskimage,<disktype> exists, then the config file
+# diskimage.cfg determines how rocks-pygrub operates.
+#
+# The key directive is in the diskimage.cfg file is:
+#           forceInstall=True
+#
+# This will cause the diskimage to enter install mode on the next reboot.
+# Rocks-pygrub will remove this line from the cfg file, so it effectively
+# functions as a one-shot and is similar in spirit to hitting F12 on a keyboard
+# to force a PXE boot
+#
+# Other Supported directives in the cfg file are
+#             bootKernel =
+#             bootRamdisk =
+#             bootArgs =
+#             installKernel =
+#             installRamdisk =
+#             installBootArgs =
+#             disksize =  
+# Logic is as follows:
+#      if cfg file is empty/non-existent -- boot using pygrub
+#      if diskfile is non-existent -- create it, and force installation
+#      if forceInstall=False
+#             if bootKernel = '' -- use pygrub
+# @Copyright@
+# 
+# 				Rocks(r)
+# 		         www.rocksclusters.org
+# 		            version 5.0 (V)
+# 
+# Copyright (c) 2000 - 2008 The Regents of the University of California.
+# All rights reserved.	
+# 
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+# 
+# 1. Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+# 
+# 2. Redistributions in binary form must reproduce the above copyright
+# notice unmodified and in its entirety, this list of conditions and the
+# following disclaimer in the documentation and/or other materials provided 
+# with the distribution.
+# 
+# 3. All advertising and press materials, printed or electronic, mentioning
+# features or use of this software must display the following acknowledgement: 
+# 
+# 	"This product includes software developed by the Rocks(r)
+# 	Cluster Group at the San Diego Supercomputer Center at the
+# 	University of California, San Diego and its contributors."
+# 
+# 4. Except as permitted for the purposes of acknowledgment in paragraph 3,
+# neither the name or logo of this software nor the names of its
+# authors may be used to endorse or promote products derived from this
+# software without specific prior written permission.  The name of the
+# software includes the following terms, and any derivatives thereof:
+# "Rocks", "Rocks Clusters", and "Avalanche Installer".  For licensing of 
+# the associated name, interested parties should contact Technology 
+# Transfer & Intellectual Property Services, University of California, 
+# San Diego, 9500 Gilman Drive, Mail Code 0910, La Jolla, CA 92093-0910, 
+# Ph: (858) 534-5815, FAX: (858) 534-7345, E-MAIL:invent@ucsd.edu
+# 
+# THIS SOFTWARE IS PROVIDED BY THE REGENTS AND CONTRIBUTORS ``AS IS''
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+# THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE REGENTS OR CONTRIBUTORS
+# BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+# BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+# WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+# OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN
+# IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+# 
+# @Copyright@
+#
+# $Log: rocks-pygrub,v $
+# Revision 1.1  2008/08/29 18:57:03  phil
+# First round of rocks-pygrub
+#
+# Revision 1.19  2008/03/06 23:41:33  mjk
+import os
+import os.path
+import sys
+import string
+import tempfile
+import urllib
+import getopt
+
+## process arguments -- this is a wrapper for pygrub, interpret only
+## a few of the pygrub options
+try:
+        opts, args = getopt.gnu_getopt(sys.argv[1:], 'q',
+                                   ["quiet", "output="])
+except getopt.GetoptError:
+        sys.exit(1)
+if len(args) < 1:
+        sys.exit(1)
+
+## Get the diskfile and parse a couple of arguments
+diskfile = args[0]
+outfile = None
+interactive=True
+for o, a in opts:
+	if o in ("-q", "--quiet"):
+       		interactive = False
+        elif o in ("--output",):
+            outfile = a
+	
+## Defaults for booting a Xen image
+vmParameters = {'forceInstall': False,
+		'bootKernel': '',
+		'bootRamdisk':'',	
+		'bootArgs': '',
+		'installKernel':'file:///boot/kickstart/xen/vmlinuz',
+		'installRamdisk' : 'file:///boot/kickstart/xen/initrd-xen.iso.gz',
+		'installBootArgs' : 'ramdisk_size=1500000 kssendmac ks initrd=initrd.img pxe selinux=0 noipv6 lang= devfs=nomount', 
+		'disksize': 36000000000 }
+
+
+## 
+(basename, ext) = os.path.splitext(diskfile)
+vmKernelConfig = '%s.cfg' % basename
+
+## Read vmKernelConfig file. Don't fail out if it's not there -- already have defaults.
+try: 
+	file = open(vmKernelConfig,'r')
+	output = []
+	for line in file.readlines():
+		if line.find('=') >= 0 :
+			(token, val) = line.split('=')
+		else:
+			(token,val) = (line, '')
+		token=token.strip()
+		val=val.strip()
+		if vmParameters.has_key(token) :
+			vmParameters[token] = val
+		if token.lower() != 'forceInstall'.lower() :
+			output.append(line) 
+		else:
+			vmParameters['forceInstall']=True
+	file.close()
+	file = open(vmKernelConfig,'w')
+	file.writelines(output)
+	file.close()
+except:
+	pass		
+
+## Create the disk file, if it doesn't exist, force Install if creating
+if not os.path.exists(diskfile):
+        if not os.path.exists(os.path.dirname(diskfile)):
+                os.makedirs(os.path.dirname(diskfile), 0700)
+
+        cmd = 'dd if=/dev/zero of=%s bs=1 count=1 seek=%d > /dev/null 2>&1' % (diskfile, vmParameters['disksize'] - 1)
+	# os.system(cmd)
+	vmParameters['forceInstall'] = True
+
+## Choose the right kernel, initrd
+if  vmParameters['forceInstall'] :
+	bootargs = 'installBootArgs'
+	bootkernel = 'installKernel'
+	bootramdisk = 'installRamdisk'
+else:
+	bootargs = 'bootArgs'
+	bootkernel = 'bootKernel'
+	bootramdisk = 'bootRamdisk'
+
+### Make a temporary directory and then wget the kernel and the initial ramdisk
+## now try to wget the kernel and ramdisk that we just chose
+tmpdir = tempfile.mkdtemp(dir='/tmp')
+
+## try to retrieve the kernel and ramdisk via url
+kernel=os.path.basename(vmParameters[bootkernel])
+ramdisk=os.path.basename(vmParameters[bootramdisk])
+pygrubKernel=''
+pygrubRamdisk=''
+if kernel:
+	pygrubKernel = os.path.join(tmpdir, kernel)
+	try:
+		urllib.urlretrieve(vmParameters[bootkernel], pygrubKernel)
+	except:
+		pygrubKernel=''
+if ramdisk:
+	pygrubRamdisk = os.path.join(tmpdir, ramdisk)
+	try:
+		urllib.urlretrieve(vmParameters[bootramdisk], pygrubRamdisk)
+	except:
+		pygrubRamdisk=''
+
+## if we have a pygrubKernel, then construct output, else call pygrub
+if pygrubKernel:
+	rval = "linux (kernel %s)" % pygrubKernel 
+	if pygrubRamdisk:
+		rval += "(ramdisk %s)" % pygrubRamdisk 
+	if vmParameters[bootargs]:
+		rval += "(args \"%s\")" % vmParameters[bootargs] 
+else:
+## Construct the pygrub command line
+	pygrubCmd='/usr/bin/pygrub -q '
+	if vmParameters[bootargs]:
+		pygrubCmd += '--args \"%s\" ' % vmParameters[bootargs]
+
+	pygrubCmd += diskfile	 
+
+	## now call pygrub
+	rval=''
+	try:
+		output = os.popen(pygrubCmd)
+		for line in output.readlines():
+			rval += line 
+	except: 
+		pass 
+# print out the returned value (either calling pygrub or our construction)
+if outfile is None or output == "-":
+	print rval
+else:
+	file = open(outfile,'w')
+	file.write(rval)
+	file.close()
+
+## Clean up empty tmpdir directory
+try:
+	os.path.rmdir(tmpdir)
+except:
+	pass
+
