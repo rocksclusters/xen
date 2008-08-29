@@ -82,6 +82,9 @@
 # @Copyright@
 #
 # $Log: rocks-pygrub,v $
+# Revision 1.2  2008/08/29 21:17:38  phil
+# fix some parsing
+#
 # Revision 1.1  2008/08/29 18:57:03  phil
 # First round of rocks-pygrub
 #
@@ -134,12 +137,16 @@ try:
 	file = open(vmKernelConfig,'r')
 	output = []
 	for line in file.readlines():
-		if line.find('=') >= 0 :
-			(token, val) = line.split('=')
+		if not line or len(line) <= 1:
+			token=''
+			val=''
+		elif: if line.find('=') >= 0 :
+			(token, val) = line.split('=',1)
 		else:
 			(token,val) = (line, '')
 		token=token.strip()
 		val=val.strip()
+
 		if vmParameters.has_key(token) :
 			vmParameters[token] = val
 		if token.lower() != 'forceInstall'.lower() :
