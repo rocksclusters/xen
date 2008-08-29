@@ -82,6 +82,9 @@
 # @Copyright@
 #
 # $Log: rocks-pygrub,v $
+# Revision 1.4  2008/08/29 21:21:45  phil
+# Phil still can't type
+#
 # Revision 1.3  2008/08/29 21:20:02  phil
 # Phil can't type
 #
@@ -143,7 +146,7 @@ try:
 		if not line or len(line) <= 1:
 			token=''
 			val=''
-		elif if line.find('=') >= 0 :
+		elif line.find('=') >= 0 :
 			(token, val) = line.split('=',1)
 		else:
 			(token,val) = (line, '')
