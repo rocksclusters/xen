@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.24 2008/08/29 19:00:12 phil Exp $
+# $Id: __init__.py,v 1.25 2008/08/29 21:16:54 phil Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.25  2008/08/29 21:16:54  phil
+# Fix some parsing
+#
 # Revision 1.24  2008/08/29 19:00:12  phil
 # use rocks-pygrub wrapper
 #
@@ -149,32 +152,41 @@ import rocks.vm
 header = """
 import os
 import os.path
+import sys
 """
 
-installheader = """
-kernel = "/boot/kickstart/xen/vmlinuz"
-ramdisk = "/boot/kickstart/xen/initrd-xen.iso.gz"
-extra = "%s"
+installConfig = """
+installKernel = file:///boot/kickstart/xen/vmlinuz
+installRamdisk = file:///boot/kickstart/xen/initrd-xen.iso.gz
+installBootArgs = %s
 """
+
+diskConfig =  """
+disksize = % s
+"""
+
+forceConfig = """
+forceInstall = True
+"""
+
+writeConfigFile = """
+cfgfile = "%s"
+contents = %s
+if not os.path.exists(cfgfile):
+        if not os.path.exists(os.path.dirname(cfgfile)):
+                os.makedirs(os.path.dirname(cfgfile), 0700)
+cf = open(cfgfile,"w")
+for line in contents:
+     cf.write(line)
+cf.close()
+"""
+
 
 runheader = """
 #
 # python code to extract the kernel from the disk image
 #
 bootloader = '/opt/rocks/bin/rocks-pygrub'
-"""
-
-diskcreate = """
-#
-# create a sparse file for a local disk image
-#
-diskfile = '%s'
-if not os.path.exists(diskfile):
-	if not os.path.exists(os.path.dirname(diskfile)):
-		os.makedirs(os.path.dirname(diskfile), 0700)
-
-	cmd = 'dd if=/dev/zero of=%s bs=1 count=1 seek=%d > /dev/null 2>&1'
-	os.system(cmd)
 """
 
 trailer = """
@@ -245,6 +257,8 @@ class Command(rocks.commands.report.host.command):
 		# installation mode.
 		#
 		#
+		self.configContents = []
+
 		action = None
 		rows = self.db.execute("""select p.action from pxeboot p,
 			nodes n where n.name = '%s' and n.id = p.node""" % host)
@@ -301,10 +315,7 @@ class Command(rocks.commands.report.host.command):
 				# new output file
 				#
 				skip = int(size) * 1000 * 1000 * 1000
-				skip -= 1
-
-				self.addOutput(host, diskcreate % (file, file,
-					skip))
+				self.configContents.append(diskConfig % skip)
 
 			if not bootdisk:
 				bootdisk = file
@@ -318,6 +329,8 @@ class Command(rocks.commands.report.host.command):
 		#
 		if len(vmdisks) > 0:
 			self.addOutput(host, "bootdisk = '%s'" % bootdisk)
+			(basename,ext)= os.path.splitext(bootdisk)
+			configFile = "%s.cfg" % basename
 		else:
 			self.abort('no disks specified')
 
@@ -332,35 +345,41 @@ class Command(rocks.commands.report.host.command):
 		if dirprefix:
 			self.addOutput(host, "dirprefix = '%s'" % dirprefix)
 
-		if not action:
-			action = 'install'
-
-		if action == 'os':
-			self.addOutput(host, runheader)
+		if not action or action == "os":
+			installAction="install"
 		else:
+			installAction=action
+		
+		#
+		# default kernel parameters
+		#
+		extra = "client kssendmac ks ksdevice=eth0 " + \
+			"selinux=0 ramdisk_size=150000 noipv6 ekv"
+
+		rows = self.db.execute("""select p.args from
+			pxeaction p, nodes n where n.name = "%s" and
+			n.id = p.node and p.action = "%s" """ %
+			(host, installAction))
+
+		if rows < 1:
 			#
-			# default kernel parameters
+			# get the global specification
 			#
-			extra = "client kssendmac ks ksdevice=eth0 " + \
-				"selinux=0 ramdisk_size=150000 noipv6 ekv"
+			rows = self.db.execute("""select args from
+				pxeaction where node = 0 and
+				action = "%s" """ % installAction)
 
-			rows = self.db.execute("""select p.args from
-				pxeaction p, nodes n where n.name = "%s" and
-				n.id = p.node and p.action = "%s" """ %
-				(host, action))
+		if rows > 0:
+			extra, = self.db.fetchone()
 
-			if rows < 1:
-				#
-				# get the global specification
-				#
-				rows = self.db.execute("""select args from
-					pxeaction where node = 0 and
-					action = "%s" """ % action)
+		self.configContents.append(installConfig % extra)
 
-			if rows > 0:
-				extra, = self.db.fetchone()
+		if action is not None and action != "os":
+			self.configContents.append(forceConfig)
 
-			self.addOutput(host, installheader % extra)
+		self.addOutput(host, writeConfigFile % (configFile, self.configContents))
+
+		self.addOutput(host, runheader)
 
 		self.addOutput(host, '#')
 		self.addOutput(host, '# common config')
@@ -395,10 +414,7 @@ class Command(rocks.commands.report.host.command):
 
 		self.addOutput(host, trailer % bootdevice)
 
-		if action == 'os':
-			self.addOutput(host, "on_reboot = 'restart'\n")
-		else:
-			self.addOutput(host, "on_reboot = 'destroy'\n")
+		self.addOutput(host, "on_reboot = 'restart'\n")
 
 				
 	def run(self, params, args):
