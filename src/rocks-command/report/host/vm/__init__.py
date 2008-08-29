@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.23 2008/08/28 02:37:25 phil Exp $
+# $Id: __init__.py,v 1.24 2008/08/29 19:00:12 phil Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.24  2008/08/29 19:00:12  phil
+# use rocks-pygrub wrapper
+#
 # Revision 1.23  2008/08/28 02:37:25  phil
 # Use pygrub for extracting the kernel from the image
 #
@@ -158,7 +161,7 @@ runheader = """
 #
 # python code to extract the kernel from the disk image
 #
-bootloader = '/usr/bin/pygrub'
+bootloader = '/opt/rocks/bin/rocks-pygrub'
 """
 
 diskcreate = """
