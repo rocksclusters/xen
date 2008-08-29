@@ -15,6 +15,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-base.xml,v $
+Revision 1.19  2008/08/29 18:58:51  phil
+add rocks-pygrub package
+
 Revision 1.18  2008/08/20 22:52:58  bruno
 install a virtual cluster of any size in 6 simple steps!
 
@@ -76,6 +79,7 @@ Revision 1.1  2005/12/17 05:27:19  mjk
 <package>kernel-xen-devel</package>
 <package>virt-manager</package>
 <package>rocks-boot-xen</package>
+<package>rocks-pygrub</package>
 
 
 <post>
