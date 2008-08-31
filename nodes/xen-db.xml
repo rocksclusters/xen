@@ -16,6 +16,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-db.xml,v $
+Revision 1.5  2008/08/31 06:04:49  phil
+New table for booting profiles. Extend VM_nodes table
+
 Revision 1.4  2008/04/21 16:37:35  bruno
 nuked the vm_macs table -- now using the networks table to store/retrieve
 mac addresses for VMs
@@ -45,6 +48,8 @@ CREATE TABLE vm_nodes (
 	Mem		int(11) NOT NULL default '1024',
 	Slice		int(11) NOT NULL default '0',
 	Virt_Type	varchar(64) default NULL,
+	RunProfile	varchar(64) default NULL,
+	InstallProfile	varchar(64) NOT NULL default 'install',
 	PRIMARY KEY (ID)
 ) TYPE=MyISAM;
 
@@ -58,6 +63,18 @@ CREATE TABLE vm_disks (
 	Device		varchar(512) default NULL,
 	Mode		varchar(64) default NULL,
 	Size		int(11) NOT NULL default '0',
+	PRIMARY KEY (ID)
+) TYPE=MyISAM;
+
+
+DROP TABLE IF EXISTS vm_profiles;
+CREATE TABLE vm_profiles(
+	ID		int(11) NOT NULL auto_increment,
+	Vm_Node		int(11) NOT NULL default '0',
+	Profile		varchar(512) default NULL,
+	Kernel		varchar(512) default NULL,
+	Ramdisk		varchar(512) default NULL,
+	Args		varchar(2048) default NULL,
 	PRIMARY KEY (ID)
 ) TYPE=MyISAM;
 
