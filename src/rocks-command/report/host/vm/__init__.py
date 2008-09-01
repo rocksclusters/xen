@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.27 2008/09/01 18:28:33 phil Exp $
+# $Id: __init__.py,v 1.28 2008/09/01 18:50:04 phil Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.28  2008/09/01 18:50:04  phil
+# Correctly write the host configuration file
+#
 # Revision 1.27  2008/09/01 18:28:33  phil
 # Xen requires the disk to exist before calling bootloader. Put logic back into
 # xen config to create, if it doesn't exist.  Remove this logic from rocks-pygrub
@@ -355,7 +358,7 @@ class Command(rocks.commands.report.host.command):
 
 		# install profile
 		kern, ramdsk, bootargs = self.getBootProfile(host, instProf)
-		self.configContents.append(bootConfig % (kern, ramdsk,bootargs))
+		self.configContents.append(installConfig % (kern, ramdsk,bootargs))
 		
 		# Force Install?
 		# look up the pxeboot action
