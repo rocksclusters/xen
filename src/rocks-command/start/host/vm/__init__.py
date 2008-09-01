@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.7 2008/07/01 22:57:09 bruno Exp $
+# $Id: __init__.py,v 1.8 2008/09/01 15:58:57 phil Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,10 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.8  2008/09/01 15:58:57  phil
+# Support start host vm install=y to force the node to boot its install profile.
+# Requires rocks-pygrub to be the bootloader.
+#
 # Revision 1.7  2008/07/01 22:57:09  bruno
 # fixes to the xen reports which generate xen configuration files
 #
@@ -89,9 +93,30 @@ class Command(rocks.commands.start.host.command):
 	A list of one or more VM host names.
 	</arg>
 
+        <param name='install' type='bool' optional='1'>
+        If install='y' is set, then the VM will be first boot from
+        its install bootprofile. Default is 'n'
+
+        VMs use different mechanisms to control booting as compared to
+        PXE-booted hosts. However, If the pxeaction for a VM host is
+        defined explicitly as "install*' for this VM, then
+        this flag will be internally set to 'y'.
+
+        </param>
+
 	<example cmd='start host vm compute-0-0-0'>
 	Start VM host compute-0-0-0.
 	</example>
+
+	<example cmd='start host vm install=y compute-0-0-0'>
+	Start VM host compute-0-0-0 in installation mode.
+	</example>
+
+	<related> set host vm boot </related>
+	<related> list host vm bootprofile </related>
+	<related> add host vm bootprofile </related>
+	<related> remove host vm bootprofile </related>
+	<related> set host vm bootprofile </related>
 	"""
 
 	def run(self, params, args):
@@ -99,6 +124,8 @@ class Command(rocks.commands.start.host.command):
 		
 		if len(hosts) < 1:
 			self.abort('must supply at least one host')
+
+                (forceInstall, ) = self.fillParams([('install','n')])
 
 		for host in hosts:
 			#
@@ -127,7 +154,8 @@ class Command(rocks.commands.start.host.command):
 			#
 			temp = tempfile.mktemp()
 			fout = open(temp, 'w')
-			fout.write(self.command('report.host.vm', [host]))
+			fout.write(self.command('report.host.vm', [host,
+				'install=%s' % forceInstall ]))
 			fout.close()
 			os.system('scp -q %s %s:/etc/xen/rocks/%s' % 
 				(temp, physhost, host))
