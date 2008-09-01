@@ -16,6 +16,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-server.xml,v $
+Revision 1.14  2008/09/01 18:59:09  phil
+Get the right path to the xen initrd image
+
 Revision 1.13  2008/09/01 18:50:49  phil
 One missing 0 in a ramdisk can ruin your whole day
 
@@ -84,7 +87,7 @@ Revision 1.1  2005/12/17 05:27:19  mjk
 
 /opt/rocks/bin/rocks add host vm bootprofile profile=install  \
 	kernel=file:///boot/kickstart/xen/vmlinuz 
-	ramdisk=file:///boot/kickstart/xen/xen-initrd.iso.gz \
+	ramdisk=file:///boot/kickstart/xen/initrd-xen.iso.gz \
 	args="ks initrd=initrd.img ramdisk_size=1500000 lang= devfs=nomount pxe kssendmac selinux=0 noipv6"
 
 
