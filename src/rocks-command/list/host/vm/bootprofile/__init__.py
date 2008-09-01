@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.4 2008/09/01 16:06:36 phil Exp $
+# $Id: __init__.py,v 1.5 2008/09/01 16:50:45 phil Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.5  2008/09/01 16:50:45  phil
+# Properly Check for specific profile listing
+#
 # Revision 1.4  2008/09/01 16:06:36  phil
 # Allow user to define exactly which profile they want to see
 #
@@ -140,7 +143,7 @@ class Command(rocks.commands.list.host.command):
 		self.beginOutput()
 
 		(doGlobal, reqProfile ) = self.fillParams([('global',''),
-			('profile','')])
+			('profile',)])
          	doGlobal = self.str2bool(doGlobal)
 
 		globalQuery = """select profile, kernel,
@@ -157,19 +160,19 @@ class Command(rocks.commands.list.host.command):
 				p.vm_node=v.id and n.id=v.node and
 				n.name='%s'""" % host)
 			for profile, kern, ram, bootargs in self.db.fetchall(): 
-				if reqProfile and reqProfile == profile:
+				if reqProfile is None or reqProfile == profile:
 					self.addOutput(host, (profile,kern,ram,bootargs))
 				exclNodeProfiles += ' and profile != "%s" ' % profile	
 			# now get the globals that we didn't pick up above
 			self.db.execute(globalQuery % exclNodeProfiles)
 			for profile, kern, ram, bootargs in self.db.fetchall(): 
-				if reqProfile and reqProfile == profile:
+				if reqProfile is None or reqProfile == profile:
 					self.addOutput(host, (profile,kern,ram,bootargs))
 		if doGlobal:
 			# get the global actions 
 			self.db.execute(globalQuery % '')
 			for profile, kern, ram, bootargs in self.db.fetchall(): 
-				if reqProfile and reqProfile == profile:
+				if reqProfile is None or reqProfile == profile:
 					self.addOutput('', (profile,kern,ram,bootargs))
 
 		self.endOutput(header=['host', 'profile', 'kernel', 'ramdisk', 'args'])
