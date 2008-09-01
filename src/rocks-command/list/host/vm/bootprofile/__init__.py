@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.1 2008/09/01 03:41:13 phil Exp $
+# $Id: __init__.py,v 1.2 2008/09/01 04:07:34 phil Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.2  2008/09/01 04:07:34  phil
+# Profile a global flag to list only the global profiles.
+#
 # Revision 1.1  2008/09/01 03:41:13  phil
 # Change from profile to bootprofile
 #
@@ -83,6 +86,11 @@ class Command(rocks.commands.list.host.command):
 	all the known hosts is listed.
 	</arg>
 
+	<param optional='1' type='bool' name='global'>
+ 	If true, ignore the list of hosts and only return information about 
+	global bootprofiles. Default is 'n'	
+	</param>
+	
 	<example cmd='list host vm bootprofile compute-0-0-0'>
 	List the profiles available to compute-0-0-0.
 	</example>
@@ -90,11 +98,19 @@ class Command(rocks.commands.list.host.command):
 	<example cmd='list host vm bootprofile'>
 	List the profiles available for all known VM hosts.
 	</example>
+
+	<example cmd='list host vm bootprofile global=yes'>
+	List only the globally-defined profiles without generating a list
+	of hosts.
+	</example>
 	"""
 
-	def  getVMHostnames(self, args):
+	def  getVMHostnames(self, args, doGlobal):
 		hosts=self.getHostnames(args)
 		vmHosts = []
+		if doGlobal:
+			return vmHosts
+
 		for host in hosts:
 			self.db.execute("""select name from nodes, vm_nodes
 				where vm_nodes.node=nodes.id 
@@ -107,11 +123,15 @@ class Command(rocks.commands.list.host.command):
 
 		self.beginOutput()
 
+		(doGlobal, ) = self.fillParams([('global','')])
+         	doGlobal = self.str2bool(doGlobal)
+
 		globalQuery = """select profile, kernel,
 				ramdisk, args from 
 				vm_profiles  where 
 				vm_node=0 %s"""
-		for host in self.getVMHostnames(args):
+
+		for host in self.getVMHostnames(args,doGlobal):
 			# get profiles defined just for the node
 			exclNodeProfiles = ''
 			self.db.execute("""select p.profile, p.kernel,
@@ -126,5 +146,11 @@ class Command(rocks.commands.list.host.command):
 			self.db.execute(globalQuery % exclNodeProfiles)
 			for profile, kern, ram, bootargs in self.db.fetchall(): 
 				self.addOutput(host, (profile,kern,ram,bootargs))
+		if doGlobal:
+			# get the global actions 
+			self.db.execute(globalQuery % '')
+			for profile, kern, ram, bootargs in self.db.fetchall(): 
+				self.addOutput('', (profile,kern,ram,bootargs))
+
 		self.endOutput(header=['host', 'profile', 'kernel', 'ramdisk', 'args'])
 
