@@ -16,6 +16,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-server.xml,v $
+Revision 1.12  2008/09/01 05:30:23  phil
+add the install bootprofile.  Need to take details out rocks report host vm
+
 Revision 1.11  2008/08/27 22:22:02  bruno
 add a 'Hosted VM' appliance
 
@@ -75,6 +78,12 @@ Revision 1.1  2005/12/17 05:27:19  mjk
 
 /opt/rocks/bin/rocks add var service=Xen Component=Dom0MinMem value=768
 /opt/rocks/bin/rocks set host bootflags flags="dom0_mem=1024M"
+
+/opt/rocks/bin/rocks add host vm bootprofile profile=install  \
+	kernel=file:///boot/kickstart/xen/vmlinuz 
+	ramdisk=file:///boot/kickstart/xen/xen-initrd.iso.gz \
+	args="ks initrd=initrd.img ramdisk_size=150000 lang= devfs=nomount pxe kssendmac selinux=0 noipv6"
+
 
 </post>
 
