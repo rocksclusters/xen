@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.25 2008/08/29 21:16:54 phil Exp $
+# $Id: __init__.py,v 1.26 2008/09/01 15:45:28 phil Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.26  2008/09/01 15:45:28  phil
+# Use bootprofiles to determine how to boot this VM
+#
 # Revision 1.25  2008/08/29 21:16:54  phil
 # Fix some parsing
 #
@@ -155,10 +158,16 @@ import os.path
 import sys
 """
 
+#### Strings that will be placed in .cfg file that drives rocks-pygrub
 installConfig = """
-installKernel = file:///boot/kickstart/xen/vmlinuz
-installRamdisk = file:///boot/kickstart/xen/initrd-xen.iso.gz
+installKernel = %s
+installRamdisk = %s
 installBootArgs = %s
+"""
+bootConfig = """
+bootKernel = %s
+bootRamdisk = %s
+bootArgs = %s
 """
 
 diskConfig =  """
@@ -168,7 +177,10 @@ disksize = % s
 forceConfig = """
 forceInstall = True
 """
-
+######
+### Python Snippet that creates the cfgfile on the local 
+### node. This drives rocks-pygrub so that it can switch 
+### install vs. run state
 writeConfigFile = """
 cfgfile = "%s"
 contents = %s
@@ -204,9 +216,32 @@ class Command(rocks.commands.report.host.command):
 	One VM host name (e.g., compute-0-0-0).
 	</arg>
 
+	<param name='install' type='bool' optional='1'>
+	If install='y' is set, then the VM will be first boot from
+	its install bootprofile. Default is 'n'
+
+	VMs use different mechanisms to control booting as compared to
+	PXE-booted hosts. However, If the pxeaction for a VM host is
+	defined explicitly as "install*' for this VM, then
+	this flag will be internally set to 'y'. 
+	</param>
+
 	<example cmd='report host vm compute-0-0-0'>
-	Outputs a configuration file for the VM host compute-0-0-0.
+	Create the VM configuration file for host compute-0-0-0
 	</example>
+
+	<example cmd='report host vm compute-0-0-0 install=y'>
+	Create the VM configuration file for host compute-0-0-0, and
+	tell it to run its installprofile when it boots.
+	</example>
+
+
+	<related> set host vm boot </related>
+	<related> set host pxeboot </related>
+	<related> list host vm bootprofile </related>
+	<related> add host vm bootprofile </related>
+	<related> remove host vm bootprofile </related>
+	<related> set host vm bootprofile </related>
 	"""
 
 	def getBridgeName(self, host, subnetid, vlanid):
@@ -246,26 +281,84 @@ class Command(rocks.commands.report.host.command):
 		return bridge
 
 
-	def outputVMConfig(self, host):
+	def getBootProfile(self, host, profile):
+		"""Return what's defined by the named profile, Return
+			string versions, empty strings if DB has Null entries"""
+
+		kernel = '' 
+		ramdisk =  ''
+		bootargs = '' 
+		if not profile:
+			return kernel, ramdisk, bootargs
+
+		# Read the global profile, if it exists
+		rows = self.db.execute("""select p.kernel, p.ramdisk, p.args
+			from vm_profiles p where
+			p.profile='%s' and p.vm_node=0 """ % profile)
+		if rows > 0:
+			kernel, ramdisk, bootargs, = self.db.fetchone()
+
+		# Read the 
+		rows = self.db.execute("""select p.kernel, p.ramdisk, p.args
+			from nodes n, vm_nodes v, vm_profiles p where
+			p.profile='%s' and p.vm_node=v.id and v.node=n.id
+			and n.name='%s' """ % (profile, host) )
+		if rows > 0:
+			kernel, ramdisk, bootargs, = self.db.fetchone()
+
+		if not kernel:
+			kernel=''
+		if not ramdisk:
+			ramdisk=''
+		if not bootargs:
+			bootargs=''
+
+		return kernel, ramdisk, bootargs
+
+
+	def outputVMConfig(self, host, forceFlag):
 		#
-		# lookup the pxeboot action for this VM host. if the action is
-		# 'os', then output a configuration file that puts the VM host
-		# into 'normal boot' mode.
-		#
-		# otherwise, assume it is an installation and output a
-		# configuration file that will put the  VM host into
-		# installation mode.
-		#
-		#
+		# lookup the boot and run profiles for this VM host. 
+		# Also look up the  pxeaction for this VM host.
+		#      if the pxeaction is like 'install%' force install
+		#          on next boot
+		
+		# keep Track of what is going into the rocks-pygrub compatible
+		# .cfg file 
 		self.configContents = []
 
-		action = None
-		rows = self.db.execute("""select p.action from pxeboot p,
-			nodes n where n.name = '%s' and n.id = p.node""" % host)
-
+		# look up the names of the install and run profiles
+		runProf = None
+		instProf = None
+		rows = self.db.execute("""select v.runprofile, v.installprofile
+			from nodes n, vm_nodes v where n.name = '%s' and 
+			n.id = v.node """ % host)
 		if rows > 0:
-			action, = self.db.fetchone()
+			runProf, instProf, = self.db.fetchone()
+		
+		
+		# boot profile
+		kern, ramdsk, bootargs = self.getBootProfile(host, runProf)
+		self.configContents.append(bootConfig % (kern, ramdsk,bootargs))
 
+		# install profile
+		kern, ramdsk, bootargs = self.getBootProfile(host, instProf)
+		self.configContents.append(bootConfig % (kern, ramdsk,bootargs))
+		
+		# Force Install?
+		# look up the pxeboot action
+		pxeaction = None
+		rows = self.db.execute("""select p.action from pxeboot p,
+			nodes n where n.name = '%s' and n.id = p.node
+			and action like 'install%%' """ % host)
+		if rows > 0:
+			pxeaction, = self.db.fetchone()
+
+		if pxeaction or forceFlag:
+			self.configContents.append(forceConfig)
+	
+
+		### Now get the other configuration file contents
 		self.addOutput(host, header)
 		self.addOutput(host, "name = '%s'" % host)
 
@@ -345,38 +438,7 @@ class Command(rocks.commands.report.host.command):
 		if dirprefix:
 			self.addOutput(host, "dirprefix = '%s'" % dirprefix)
 
-		if not action or action == "os":
-			installAction="install"
-		else:
-			installAction=action
-		
-		#
-		# default kernel parameters
-		#
-		extra = "client kssendmac ks ksdevice=eth0 " + \
-			"selinux=0 ramdisk_size=150000 noipv6 ekv"
-
-		rows = self.db.execute("""select p.args from
-			pxeaction p, nodes n where n.name = "%s" and
-			n.id = p.node and p.action = "%s" """ %
-			(host, installAction))
-
-		if rows < 1:
-			#
-			# get the global specification
-			#
-			rows = self.db.execute("""select args from
-				pxeaction where node = 0 and
-				action = "%s" """ % installAction)
-
-		if rows > 0:
-			extra, = self.db.fetchone()
-
-		self.configContents.append(installConfig % extra)
-
-		if action is not None and action != "os":
-			self.configContents.append(forceConfig)
-
+		# Export Python Snippet that will create the local config file
 		self.addOutput(host, writeConfigFile % (configFile, self.configContents))
 
 		self.addOutput(host, runheader)
@@ -419,14 +481,17 @@ class Command(rocks.commands.report.host.command):
 				
 	def run(self, params, args):
 		hosts = self.getHostnames(args)
-		
+
+                (forceInstall, ) = self.fillParams([('install','n')])
+                forceInstall = self.str2bool(forceInstall)
+
 		if len(hosts) < 1:
 			self.abort('must supply host')
 
 		self.beginOutput()
 		for host in hosts:
 			try:
-				self.outputVMConfig(host)
+				self.outputVMConfig(host, forceInstall)
 			except TypeError:
 				pass
 		self.endOutput(padChar='')
