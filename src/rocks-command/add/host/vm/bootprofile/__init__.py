@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.1 2008/09/01 03:35:35 phil Exp $
+# $Id: __init__.py,v 1.2 2008/09/01 16:09:20 phil Exp $
 # 
 # @Copyright@
 # 
@@ -102,7 +102,7 @@ class Command(rocks.commands.HostArgumentProcessor,
 
 	def addProfile(self, nodeid, host, profile, kernel, ramdisk, bootargs):
 		#
-		# is there already an entry in the pxeaction table
+		# is there already an entry in the vm_profiles table
 		#
 		rows = self.db.execute("""select id from vm_profiles where
 			vm_node=%d and profile='%s'""" % (nodeid, profile))
