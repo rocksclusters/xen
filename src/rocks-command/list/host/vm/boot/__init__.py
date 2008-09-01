@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.3 2008/09/01 14:30:29 phil Exp $
+# $Id: __init__.py,v 1.1 2008/09/01 14:30:29 phil Exp $
 #
 # @Copyright@
 # 
@@ -54,17 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
-# Revision 1.3  2008/09/01 14:30:29  phil
+# Revision 1.1  2008/09/01 14:30:29  phil
 # List the active run and install profile. Add related to docstring
 #
-# Revision 1.2  2008/09/01 04:07:34  phil
-# Profile a global flag to list only the global profiles.
-#
-# Revision 1.1  2008/09/01 03:41:13  phil
-# Change from profile to bootprofile
-#
-# Revision 1.1  2008/08/31 06:03:43  phil
-# Start of defining boot profiles
 #
 
 import sys
@@ -74,14 +66,15 @@ import string
 
 class Command(rocks.commands.list.host.command):
 	"""
-	Lists the current VM Profiles available for hosts. 
-	For each host supplied on the command line print the 
-	hostname and defined profiles available to that host 
+	Lists the names of the install and run bootprofiles for [host(s)] . 
 	
-	The Profile describes the combination of kernel, ramdisk
+	The a named profile describes the combination of kernel, ramdisk
         args that would be used if that profile where referenced for by the 
-	Host as either a RunProfile or an InstallProfile
-	Usually, the RunProfile is empty and the VM node will 
+	The RunProfile references the combination when a VM is booted for
+	running (usually this is None). The InstallProfile references the 
+	combination when the nodes is booted in install mode. 
+	
+	When the RunProfile is None, the VM node will 
 	boot from the kernel defined in its image. 
 
 	<arg optional='1' type='string' name='host' repeat='1'>
@@ -89,77 +82,34 @@ class Command(rocks.commands.list.host.command):
 	all the known hosts is listed.
 	</arg>
 
-	<param optional='1' type='bool' name='global'>
- 	If true, ignore the list of hosts and only return information about 
-	global bootprofiles. Default is 'n'	
-	</param>
-	
-	<example cmd='list host vm bootprofile compute-0-0-0'>
-	List the profiles available to compute-0-0-0.
+	<example cmd='list host vm boot compute-0-0-0'>
+	List the active run and install profiles defined for compute-0-0-0.
 	</example>
 
-	<example cmd='list host vm bootprofile'>
-	List the profiles available for all known VM hosts.
-	</example>
-
-	<example cmd='list host vm bootprofile global=yes'>
-	List only the globally-defined profiles without generating a list
-	of hosts.
+	<example cmd='list host vm boot'>
+	List the active run and install profiles defined all known VM hosts.
 	</example>
 
 	<related> set host vm boot </related>
-	<related> list host vm boot </related>
+	<related> list host vm bootprofile </related>
 	<related> add host vm bootprofile </related>
 	<related> remove host vm bootprofile </related>
 	<related> set host vm bootprofile </related>
 	"""
 
-	def  getVMHostnames(self, args, doGlobal):
-		hosts=self.getHostnames(args)
-		vmHosts = []
-		if doGlobal:
-			return vmHosts
-
-		for host in hosts:
-			self.db.execute("""select name from nodes, vm_nodes
-				where vm_nodes.node=nodes.id 
-				and nodes.name='%s'""" % host)
-			for qhost in self.db.fetchall():
-				vmHosts.append(qhost)
-		return vmHosts
-
 	def run(self, params, args):
 
 		self.beginOutput()
 
-		(doGlobal, ) = self.fillParams([('global','')])
-         	doGlobal = self.str2bool(doGlobal)
-
-		globalQuery = """select profile, kernel,
-				ramdisk, args from 
-				vm_profiles  where 
-				vm_node=0 %s"""
-
-		for host in self.getVMHostnames(args,doGlobal):
+		for host in self.getHostnames(args):
 			# get profiles defined just for the node
-			exclNodeProfiles = ''
-			self.db.execute("""select p.profile, p.kernel,
-				p.ramdisk, p.args from 
-				nodes n, vm_nodes v, vm_profiles p where 
-				p.vm_node=v.id and n.id=v.node and
+			self.db.execute("""select v.runprofile, 
+				v.installprofile
+				from nodes n, vm_nodes v where 
+				n.id=v.node and
 				n.name='%s'""" % host)
-			for profile, kern, ram, bootargs in self.db.fetchall(): 
-				self.addOutput(host, (profile,kern,ram,bootargs))
-				exclNodeProfiles += ' and profile != "%s" ' % profile	
-			# now get the globals that we didn't pick up above
-			self.db.execute(globalQuery % exclNodeProfiles)
-			for profile, kern, ram, bootargs in self.db.fetchall(): 
-				self.addOutput(host, (profile,kern,ram,bootargs))
-		if doGlobal:
-			# get the global actions 
-			self.db.execute(globalQuery % '')
-			for profile, kern, ram, bootargs in self.db.fetchall(): 
-				self.addOutput('', (profile,kern,ram,bootargs))
+			for runProf, instProf in self.db.fetchall(): 
+				self.addOutput(host, (runProf,instProf))
 
-		self.endOutput(header=['host', 'profile', 'kernel', 'ramdisk', 'args'])
+		self.endOutput(header=['host', 'runprofile', 'installprofile'])
 
