@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.3 2008/09/01 14:30:29 phil Exp $
+# $Id: __init__.py,v 1.4 2008/09/01 16:06:36 phil Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.4  2008/09/01 16:06:36  phil
+# Allow user to define exactly which profile they want to see
+#
 # Revision 1.3  2008/09/01 14:30:29  phil
 # List the active run and install profile. Add related to docstring
 #
@@ -92,6 +95,10 @@ class Command(rocks.commands.list.host.command):
 	<param optional='1' type='bool' name='global'>
  	If true, ignore the list of hosts and only return information about 
 	global bootprofiles. Default is 'n'	
+	</param>
+
+	<param optional='1' type='string' name='profile'>
+	List only the profile named 'profile'
 	</param>
 	
 	<example cmd='list host vm bootprofile compute-0-0-0'>
@@ -132,7 +139,8 @@ class Command(rocks.commands.list.host.command):
 
 		self.beginOutput()
 
-		(doGlobal, ) = self.fillParams([('global','')])
+		(doGlobal, reqProfile ) = self.fillParams([('global',''),
+			('profile','')])
          	doGlobal = self.str2bool(doGlobal)
 
 		globalQuery = """select profile, kernel,
@@ -149,17 +157,20 @@ class Command(rocks.commands.list.host.command):
 				p.vm_node=v.id and n.id=v.node and
 				n.name='%s'""" % host)
 			for profile, kern, ram, bootargs in self.db.fetchall(): 
-				self.addOutput(host, (profile,kern,ram,bootargs))
+				if reqProfile and reqProfile == profile:
+					self.addOutput(host, (profile,kern,ram,bootargs))
 				exclNodeProfiles += ' and profile != "%s" ' % profile	
 			# now get the globals that we didn't pick up above
 			self.db.execute(globalQuery % exclNodeProfiles)
 			for profile, kern, ram, bootargs in self.db.fetchall(): 
-				self.addOutput(host, (profile,kern,ram,bootargs))
+				if reqProfile and reqProfile == profile:
+					self.addOutput(host, (profile,kern,ram,bootargs))
 		if doGlobal:
 			# get the global actions 
 			self.db.execute(globalQuery % '')
 			for profile, kern, ram, bootargs in self.db.fetchall(): 
-				self.addOutput('', (profile,kern,ram,bootargs))
+				if reqProfile and reqProfile == profile:
+					self.addOutput('', (profile,kern,ram,bootargs))
 
 		self.endOutput(header=['host', 'profile', 'kernel', 'ramdisk', 'args'])
 
