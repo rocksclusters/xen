@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.26 2008/09/01 15:45:28 phil Exp $
+# $Id: __init__.py,v 1.27 2008/09/01 18:28:33 phil Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,10 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.27  2008/09/01 18:28:33  phil
+# Xen requires the disk to exist before calling bootloader. Put logic back into
+# xen config to create, if it doesn't exist.  Remove this logic from rocks-pygrub
+#
 # Revision 1.26  2008/09/01 15:45:28  phil
 # Use bootprofiles to determine how to boot this VM
 #
@@ -184,6 +188,14 @@ forceInstall = True
 writeConfigFile = """
 cfgfile = "%s"
 contents = %s
+
+if not os.path.exists(bootdisk) or os.path.getsize(bootdisk) == 0:
+        if not os.path.exists(os.path.dirname(bootdisk)):
+                os.makedirs(os.path.dirname(bootdisk), 0700)
+        cmd = 'dd if=/dev/zero of=%s bs=1 count=1 seek=%d > /dev/null 2>&1' 
+        os.system(cmd)
+        contents.append('forceInstall=True')
+
 if not os.path.exists(cfgfile):
         if not os.path.exists(os.path.dirname(cfgfile)):
                 os.makedirs(os.path.dirname(cfgfile), 0700)
@@ -409,6 +421,7 @@ class Command(rocks.commands.report.host.command):
 				#
 				skip = int(size) * 1000 * 1000 * 1000
 				self.configContents.append(diskConfig % skip)
+				disksize = skip
 
 			if not bootdisk:
 				bootdisk = file
@@ -439,7 +452,8 @@ class Command(rocks.commands.report.host.command):
 			self.addOutput(host, "dirprefix = '%s'" % dirprefix)
 
 		# Export Python Snippet that will create the local config file
-		self.addOutput(host, writeConfigFile % (configFile, self.configContents))
+		self.addOutput(host, 
+			writeConfigFile % (configFile, self.configContents, bootdisk, disksize))
 
 		self.addOutput(host, runheader)
 
