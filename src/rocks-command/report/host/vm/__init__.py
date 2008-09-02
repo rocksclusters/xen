@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.28 2008/09/01 18:50:04 phil Exp $
+# $Id: __init__.py,v 1.29 2008/09/02 15:41:51 phil Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.29  2008/09/02 15:41:51  phil
+# Support full disks (The Rocks Way) and a particular partition (Others)
+#
 # Revision 1.28  2008/09/01 18:50:04  phil
 # Correctly write the host configuration file
 #
@@ -217,7 +220,7 @@ bootloader = '/opt/rocks/bin/rocks-pygrub'
 """
 
 trailer = """
-root = "/dev/%s1 ro"
+root = "/dev/%s ro"
 
 vnc=1
 vncpasswd=''
@@ -491,6 +494,10 @@ class Command(rocks.commands.report.host.command):
 		self.addOutput(host, string.join(vmdisks, ',\n'))
 		self.addOutput(host, ']')
 
+		# determine if file spec is raw disk, or a specific partition
+		reg = re.compile('[\w/]+[\d]+')
+		if not reg.match(bootdevice):
+			bootdevice = bootdevice + "1"
 		self.addOutput(host, trailer % bootdevice)
 
 		self.addOutput(host, "on_reboot = 'restart'\n")
