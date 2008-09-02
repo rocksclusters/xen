@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.1 2008/09/01 03:45:41 phil Exp $
+# $Id: __init__.py,v 1.2 2008/09/02 18:02:15 phil Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.2  2008/09/02 18:02:15  phil
+# Improve check for removing global install profile
+#
 # Revision 1.1  2008/09/01 03:45:41  phil
 # Remove a named vm bootprofile
 #
@@ -92,7 +95,7 @@ class Command(rocks.commands.remove.host.command):
 		# Otherwise remove the profile for each host.
 		
 		if not len(args):
-			if (profile.lower() == "install"):
+			if profile.lower() == "install" or profile == "%":
 				self.abort("Refusing to remove global install profile")
 			self.db.execute("""delete from vm_profiles where
 				vm_node=0 and vm_profiles.profile='%s'""" % profile)
