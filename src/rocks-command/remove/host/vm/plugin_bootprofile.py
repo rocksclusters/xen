@@ -1,4 +1,4 @@
-# $Id: plugin_bootprofile.py,v 1.1 2008/09/02 18:03:16 phil Exp $
+# $Id: plugin_bootprofile.py,v 1.2 2008/09/02 18:19:29 phil Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: plugin_bootprofile.py,v $
+# Revision 1.2  2008/09/02 18:19:29  phil
+# Plugin to also remove any host-specific bootprofiles when removing vm host
+#
 # Revision 1.1  2008/09/02 18:03:16  phil
 # support plugin to remove host-specific bootprofile when removing vm host
 #
@@ -79,4 +82,6 @@ class Plugin(rocks.commands.Plugin):
 	def run(self, args):
 		if len(args) > 0:
 			self.owner.command('remove.host.vm.bootprofile', [ args ])
+	
+
 		

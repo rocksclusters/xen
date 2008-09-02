@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.7 2008/09/02 18:03:16 phil Exp $
+# $Id: __init__.py,v 1.8 2008/09/02 18:19:29 phil Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.8  2008/09/02 18:19:29  phil
+# Plugin to also remove any host-specific bootprofiles when removing vm host
+#
 # Revision 1.7  2008/09/02 18:03:16  phil
 # support plugin to remove host-specific bootprofile when removing vm host
 #
@@ -98,9 +101,8 @@ class Command(rocks.commands.remove.host.command):
 		if not len(args):
 			self.abort('must supply at least one host')
 			
-                self.runPlugins(args)
-
 		for host in self.getHostnames(args):
+                	self.runPlugins(host)
 			vmnodeid = None
 			mem = None
 			cpus = None
