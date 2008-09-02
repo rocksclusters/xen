@@ -16,6 +16,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-server.xml,v $
+Revision 1.15  2008/09/02 19:06:32  bruno
+nEeDs tO Be CaSe sEnSiTiVe
+
 Revision 1.14  2008/09/01 18:59:09  phil
 Get the right path to the xen initrd image
 
@@ -82,7 +85,7 @@ Revision 1.1  2005/12/17 05:27:19  mjk
 	membership='Hosted VM' short-name='hv' \
 	compute='no' public='no'
 
-/opt/rocks/bin/rocks add var service=Xen Component=Dom0MinMem value=768
+/opt/rocks/bin/rocks add var service=Xen component=Dom0MinMem value=768
 /opt/rocks/bin/rocks set host bootflags flags="dom0_mem=1024M"
 
 /opt/rocks/bin/rocks add host vm bootprofile profile=install  \
