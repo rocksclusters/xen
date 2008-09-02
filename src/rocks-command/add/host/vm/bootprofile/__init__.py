@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.2 2008/09/01 16:09:20 phil Exp $
+# $Id: __init__.py,v 1.3 2008/09/02 23:34:04 phil Exp $
 # 
 # @Copyright@
 # 
@@ -70,7 +70,7 @@ class Command(rocks.commands.HostArgumentProcessor,
 	then the global definition for 'profile=name' is added.
 	</arg>
 
-	<param type='string' name='action'>
+	<param type='string' name='profile'>
 	Label name for the boot profile. You can see the profile
 	label names by executing: 'rocks list host vm bootprofile [host(s)]'.
 	</param>
@@ -98,6 +98,13 @@ class Command(rocks.commands.HostArgumentProcessor,
 	<example cmd='add host vm bootprofile compute-0-0-0 profile=install kernel="http://10.1.1.1/xenkernels/experimental-vmlinuz"'>
 	Add the 'install' profile for compute-0-0-0
 	</example>
+
+	<related> set host vm boot </related>
+	<related> list host vm boot </related>
+	<related> set host vm bootprofile </related>
+	<related> list host vm bootprofile </related>
+	<related> remove host vm bootprofile </related>
+
 	"""
 
 	def addProfile(self, nodeid, host, profile, kernel, ramdisk, bootargs):
