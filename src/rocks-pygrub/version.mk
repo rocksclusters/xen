@@ -1,3 +1,2 @@
-NAME = rocks-pygrub
-VERSION = 1.0
+NAME	= rocks-pygrub
 RELEASE = 0
