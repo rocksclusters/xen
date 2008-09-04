@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.5 2008/09/04 19:54:37 bruno Exp $
+# $Id: __init__.py,v 1.6 2008/09/04 20:06:06 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.6  2008/09/04 20:06:06  bruno
+# thanks phil!
+#
 # Revision 1.5  2008/09/04 19:54:37  bruno
 # use 'rocks set vm boot' to install VM frontends
 #
@@ -237,7 +240,7 @@ class Command(rocks.commands.add.command):
 		# set the VM frontend pxeboot action to install
 		#
 		self.command('set.host.vm.boot', [ self.frontendname,
-			"action=install vm frontend" ] )
+			"installprofile=install vm frontend" ] )
 
 		self.addOutput('', 'created frontend VM named: %s' % 
 			self.frontendname)
