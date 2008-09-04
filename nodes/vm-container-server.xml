@@ -15,6 +15,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: vm-container-server.xml,v $
+Revision 1.5  2008/09/04 21:26:33  bruno
+use new bootprofile hotness
+
 Revision 1.4  2008/08/20 22:52:58  bruno
 install a virtual cluster of any size in 6 simple steps!
 
@@ -31,9 +34,8 @@ support for VLANs
 
 <post>
 
-/opt/rocks/bin/rocks add host pxeaction action="install vm frontend" \
-	command="kernel vmlinuz" \
-	args="append initrd=initrd.img ramdisk_size=150000 lang= devfs=nomount pxe kssendmac selinux=0 noipv6 ks=http://<var name="Kickstart_PublicHostname"/>/install/sbin/kickstart.cgi ksdevice=eth1 build"
+
+
 
 </post>
 
