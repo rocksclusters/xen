@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.2 2008/08/22 23:25:56 bruno Exp $
+# $Id: __init__.py,v 1.3 2008/09/04 19:55:00 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.3  2008/09/04 19:55:00  bruno
+# list the FQDN for frontends
+#
 # Revision 1.2  2008/08/22 23:25:56  bruno
 # closer
 #
@@ -101,8 +104,22 @@ class Command(rocks.commands.HostArgumentProcessor,
 		self.beginOutput()
 
 		for frontend in hosts:
+			#
+			# get the FQDN of the frontend
+			#
+			rows = self.db.execute("""select net.name from
+				nodes n, networks net, subnets s where 
+				s.name = 'public' and s.id = net.subnet
+				and n.name = '%s' and n.id = net.node"""
+				% (frontend))
+
+			if rows == 1:
+				fqdn, = self.db.fetchone()
+			else:
+				fqdn = ''
+
 			if vm.isVM(frontend):
-				self.addOutput(frontend, ('', 'VM'))
+				self.addOutput(frontend, (fqdn, '', 'VM'))
 
 				#
 				# all client nodes of this VM frontend have
@@ -122,19 +139,18 @@ class Command(rocks.commands.HostArgumentProcessor,
 						'for frontend %s' % frontend)
 
 				rows = self.db.execute("""select n.name from
-					networks net, nodes n, subnets s where
-					net.vlanid = %s and net.node = n.id and 
-					s.name = 'private' and
-					s.id = net.subnet""" % vlanid)
+					networks net, nodes n where
+					net.vlanid = %s and net.node = n.id
+					""" % vlanid)
 
 				for client, in self.db.fetchall():
 					if client != frontend and \
 						vm.isVM(client):
 
 						self.addOutput('',
-							(client, 'VM'))
+							('', client, 'VM'))
 			else:
-				self.addOutput(frontend, ('', 'physical'))
+				self.addOutput(frontend, (fqdn, '', 'physical'))
 
 				#
 				# a physical frontend. go get all the physical
@@ -147,8 +163,8 @@ class Command(rocks.commands.HostArgumentProcessor,
 						not vm.isVM(client):
 
 						self.addOutput('',
-							(client, 'physical'))
+							('',client, 'physical'))
 
-		self.endOutput(header = [ 'frontend', 'client nodes', 'type'],
-			trimOwner = 0)
+		self.endOutput(header = [ 'frontend', 'FQDN', 'client nodes',
+			'type'], trimOwner = 0)
 			
