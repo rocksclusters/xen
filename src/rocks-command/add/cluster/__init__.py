@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.4 2008/09/04 15:54:16 bruno Exp $
+# $Id: __init__.py,v 1.5 2008/09/04 19:54:37 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.5  2008/09/04 19:54:37  bruno
+# use 'rocks set vm boot' to install VM frontends
+#
 # Revision 1.4  2008/09/04 15:54:16  bruno
 # xen tweaks
 #
@@ -205,11 +208,6 @@ class Command(rocks.commands.add.command):
 			except:
 				pass
 
-			try:
-				self.command('sync.host.network.xen', [ host ] )
-			except:
-				pass
-
 
 	def createFrontend(self, vlan, fqdn, ip):
 		output = self.command('add.host.vm', [ self.getFrontend(),
@@ -238,7 +236,7 @@ class Command(rocks.commands.add.command):
 		#
 		# set the VM frontend pxeboot action to install
 		#
-		self.command('set.host.pxeboot', [ self.frontendname,
+		self.command('set.host.vm.boot', [ self.frontendname,
 			"action=install vm frontend" ] )
 
 		self.addOutput('', 'created frontend VM named: %s' % 
