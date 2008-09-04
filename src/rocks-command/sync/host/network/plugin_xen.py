@@ -1,4 +1,4 @@
-# $Id: plugin_xen.py,v 1.1 2008/08/22 23:25:56 bruno Exp $
+# $Id: plugin_xen.py,v 1.2 2008/09/04 15:54:16 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: plugin_xen.py,v $
+# Revision 1.2  2008/09/04 15:54:16  bruno
+# xen tweaks
+#
 # Revision 1.1  2008/08/22 23:25:56  bruno
 # closer
 #
@@ -72,5 +75,9 @@ class Plugin(rocks.commands.Plugin):
 			#
 			# remove all partitions for this host
 			#
-			self.owner.command('sync.host.network.xen', args)
+			try:
+				self.owner.command('sync.host.network.xen',
+					args)
+			except:
+				pass
 

@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.3 2008/08/27 22:22:02 bruno Exp $
+# $Id: __init__.py,v 1.4 2008/09/04 15:54:16 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.4  2008/09/04 15:54:16  bruno
+# xen tweaks
+#
 # Revision 1.3  2008/08/27 22:22:02  bruno
 # add a 'Hosted VM' appliance
 #
@@ -193,8 +196,19 @@ class Command(rocks.commands.add.command):
 			#
 			# reconfigure the network stack on the host
 			#
-			self.command('sync.host.network', [ host ] )
-			self.command('sync.host.network.xen', [ host ] )
+			# need to catch exceptions -- when the network is
+			# reconfigured on a remote host, the connection is
+			# dropped, which results in an I/O error
+			#
+			try:
+				self.command('sync.host.network', [ host ] )
+			except:
+				pass
+
+			try:
+				self.command('sync.host.network.xen', [ host ] )
+			except:
+				pass
 
 
 	def createFrontend(self, vlan, fqdn, ip):

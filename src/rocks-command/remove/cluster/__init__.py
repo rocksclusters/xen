@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.1 2008/08/22 23:25:56 bruno Exp $
+# $Id: __init__.py,v 1.2 2008/09/04 15:54:16 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.2  2008/09/04 15:54:16  bruno
+# xen tweaks
+#
 # Revision 1.1  2008/08/22 23:25:56  bruno
 # closer
 #
@@ -170,7 +173,11 @@ class Command(rocks.commands.HostArgumentProcessor,
 				# reconfigure and restart the network on the
 				# physical host
 				#
-				self.command('sync.host.network', [ node ] )
+				try:
+					self.command('sync.host.network',
+						[ node ] )
+				except:
+					pass
 
 			#
 			# remove all the VMs associated with the cluster

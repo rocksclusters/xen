@@ -15,6 +15,9 @@
 
 	<changelog>
 	$Log: xen.xml,v $
+	Revision 1.11  2008/09/04 15:54:16  bruno
+	xen tweaks
+	
 	Revision 1.10  2008/08/28 04:38:12  phil
 	Detect that we are kickstarting inside of a VM container. Adjust rocks.conf
 	to boot xen installable kernel
@@ -56,11 +59,17 @@
 
 	<order head="database-data">
 		<tail>xen-db</tail>
+		<tail>xen-server</tail>
 	</order> 
 
 	<order head="grub-client">
 		<tail>xen-grub-client</tail>
 	</order> 
+
+	<order head="xen-server">
+		<tail>xen-base</tail>
+	</order>
+
 
 	<edge from="server">
 		<to>xen-server</to>

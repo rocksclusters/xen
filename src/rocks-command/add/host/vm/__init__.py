@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.18 2008/08/20 22:52:58 bruno Exp $
+# $Id: __init__.py,v 1.19 2008/09/04 15:54:16 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.19  2008/09/04 15:54:16  bruno
+# xen tweaks
+#
 # Revision 1.18  2008/08/20 22:52:58  bruno
 # install a virtual cluster of any size in 6 simple steps!
 #
@@ -213,7 +216,8 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 	"""
 
 	def addToDB(self, nodename, membership, ip, subnet, physnodeid, rack,
-		rank, mem, cpus, slice, mac, num_macs, disk, disksize, vlanids):
+		rank, mem, cpus, slice, mac, num_macs, disk, disksize, vlanids,
+		module):
 
 		#
 		# need to add entry in node and networks tables here
@@ -227,14 +231,17 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 			self.abort('could not get membership id for ' + 
 				'membership "%s"' % (membership))
 
-		rows = self.db.execute("""select id from subnets where
-			name = '%s'""" % (subnet))
+		if subnet:
+			rows = self.db.execute("""select id from subnets where
+				name = '%s'""" % (subnet))
 
-		if rows == 1:
-			subnetid, = self.db.fetchone()
+			if rows == 1:
+				subnetid, = self.db.fetchone()
+			else:
+				self.abort('could not get subnet id for ' + 
+					'subnet "%s"' % (subnet))
 		else:
-			self.abort('could not get subnet id for ' + 
-				'subnet "%s"' % (subnet))
+			subnetid = 'NULL'
 
 		#
 		# check if the nodename is already in the nodes table. if
@@ -262,9 +269,9 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 				self.abort('could not get node id for new VM')
 
 		rows = self.db.execute("""insert into networks (node, mac, ip,
-			name, device, subnet, module) values (%s, '%s', '%s',
-			'%s', '%s', %s, '%s')""" % (vmnodeid, mac, ip, nodename,
-			'eth0', subnetid, 'xennet'))
+			name, device, subnet, module) values (%s, '%s', %s,
+			'%s', '%s', %s, %s)""" % (vmnodeid, mac, ip,
+			nodename, 'eth0', subnetid, module))
 
 		vlanindex = 0
 		if rows == 1 and vlanids and len(vlanids) > vlanindex:
@@ -288,8 +295,7 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 
 			rows = self.db.execute("""insert into networks (node,
 				mac, device, module) values (%s, '%s', '%s',
-				'%s')""" % (vmnodeid, mac, 'eth%d' % (m),
-				'xennet'))
+				%s)""" % (vmnodeid, mac, 'eth%d' % (m), module))
 
 			if rows == 1 and vlanids and len(vlanids) > vlanindex:
 				if vlanids[vlanindex] != 'none':
@@ -428,7 +434,7 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 
 
 	def addVMHost(self, host, membership, nodename, ip, subnet, mem, cpus,
-		slice, mac, num_macs, disk, disksize, vlan):
+		slice, mac, num_macs, disk, disksize, vlan, module):
 
 		rows = self.db.execute("""select id, rack, rank from nodes where
 			name = '%s'""" % (host))
@@ -507,19 +513,25 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 			mac = self.getNextMac()
 
 		if not ip:
-			ip = self.getNextIP(subnet)
+			if membership == 'Hosted VM':
+				ip = 'NULL'
+			else:
+				ip = "'%s'" % self.getNextIP(subnet)
 
 		if vlan:
 			vlanids = vlan.split(',')
 		else:
 			vlanids = None
 
+		if not module:
+			module = 'NULL'
+
 		#
 		# we now have all the parameters -- add them to the database
 		#
 		self.addToDB(nodename, membership, ip, subnet, nodeid, rack,
 			rank, mem, cpus, slice, mac, num_macs, disk, disksize,
-			vlanids)
+			vlanids, module)
 
 		#
 		# print the name of the new VM
@@ -577,11 +589,18 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 			num_macs = int(macs)
 		except:
 			self.abort("the num_macs parameter must be an integer")
+
+		if membership == 'Hosted VM':
+			ip = None
+			subnet = None
+			module = None
+		else:
+			module = "'xennet'"
 			
 		for host in hosts:
 			self.addVMHost(host, membership, nodename, ip, subnet,
 				mem, cpus, slice, mac, num_macs, disk, disksize,
-				vlan)
+				vlan, module)
 		
 		#
 		# reconfigure and restart the appropriate rocks services
