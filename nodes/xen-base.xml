@@ -15,6 +15,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-base.xml,v $
+Revision 1.20  2008/09/05 20:46:02  bruno
+another wack at trying to get dom0-min-mem set on the frontend
+
 Revision 1.19  2008/08/29 18:58:51  phil
 add rocks-pygrub package
 
@@ -92,6 +95,13 @@ Revision 1.1  2005/12/17 05:27:19  mjk
 </post>
 
 <post>
+MINMEM=<var name="Xen_Dom0MinMem"/>
+
+<!-- we need this case below for a frontend install -->
+if [ "$MINMEM" == "" ]
+then
+	MINMEM=`/opt/rocks/bin/rocks list var Xen Dom0MinMem output-header=no output-col=value`
+fi
 
 <file name="/etc/xen/xend-config.sxp">
 (xend-unix-server yes)
@@ -99,7 +109,7 @@ Revision 1.1  2005/12/17 05:27:19  mjk
 (xend-relocation-hosts-allow '^localhost$ ^localhost\\.localdomain$')
 (network-script 'rocks-network-bridge')
 (vif-script vif-bridge) 
-(dom0-min-mem <var name="Xen_Dom0MinMem"/>)
+(dom0-min-mem $MINMEM)
 (dom0-cpus 1)
 (vncpasswd '')
 </file>
