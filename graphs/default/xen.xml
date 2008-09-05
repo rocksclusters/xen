@@ -15,6 +15,9 @@
 
 	<changelog>
 	$Log: xen.xml,v $
+	Revision 1.12  2008/09/05 20:45:23  bruno
+	more ordering
+	
 	Revision 1.11  2008/09/04 15:54:16  bruno
 	xen tweaks
 	
@@ -59,16 +62,20 @@
 
 	<order head="database-data">
 		<tail>xen-db</tail>
-		<tail>xen-server</tail>
 	</order> 
+
+	<order head="xen-db">
+		<tail>xen-server</tail>
+	</order>
+
+	<order head="xen-server">
+		<tail>xen-base</tail>
+	</order>
 
 	<order head="grub-client">
 		<tail>xen-grub-client</tail>
 	</order> 
 
-	<order head="xen-server">
-		<tail>xen-base</tail>
-	</order>
 
 
 	<edge from="server">
