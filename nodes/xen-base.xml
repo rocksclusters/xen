@@ -15,6 +15,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-base.xml,v $
+Revision 1.21  2008/09/06 00:37:13  bruno
+another attempt at getting dom0-min-mem set
+
 Revision 1.20  2008/09/05 20:46:02  bruno
 another wack at trying to get dom0-min-mem set on the frontend
 
@@ -109,10 +112,11 @@ fi
 (xend-relocation-hosts-allow '^localhost$ ^localhost\\.localdomain$')
 (network-script 'rocks-network-bridge')
 (vif-script vif-bridge) 
-(dom0-min-mem $MINMEM)
 (dom0-cpus 1)
 (vncpasswd '')
 </file>
+
+echo "(dom0-min-mem $MINMEM)" &gt;&gt; /etc/xen/xend-config.sxp
 
 </post>
 
