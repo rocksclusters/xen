@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.3 2008/09/04 19:55:00 bruno Exp $
+# $Id: __init__.py,v 1.4 2008/09/08 21:51:40 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.4  2008/09/08 21:51:40  bruno
+# added optional status columns to VM listing commands
+#
 # Revision 1.3  2008/09/04 19:55:00  bruno
 # list the FQDN for frontends
 #
@@ -79,6 +82,11 @@ class Command(rocks.commands.HostArgumentProcessor,
 	information for all clusters will be listed.
 	</arg>
 
+	<param type='bool' name='status'>
+	If true, then for each VM-based cluster node, output the VM's status
+	(e.g., 'active', 'paused', etc.).
+        </param>
+
 	<example cmd='list cluster frontend-0-0'>
 	List the cluster associated with the frontend named 'frontend-0-0'.
 	</example>
@@ -88,7 +96,92 @@ class Command(rocks.commands.HostArgumentProcessor,
 	</example>
 	"""
 
+	def getStatus(self, hosts):
+		vm = rocks.vm.VM(self.db)
+		vm_status = {}
+
+		#
+		# get a list of all the physical hosts
+		#
+		physhosts = []
+		for host in self.getHostnames():
+			if not vm.isVM(host):
+				physhosts.append(host)
+
+		#
+		# get the status for all running VMs
+		#
+		hostindex = -6
+		stateindex = -2
+		self.vm_status = {}
+
+		output = self.command('run.host', physhosts +
+			[ '/usr/sbin/xm list' ] )
+
+		for line in output.split('\n'):
+			if len(line) < 1:
+				continue 
+
+			l = line.split()
+
+			if len(l) > 5:
+				h = None
+
+				#
+				# we need this loop because when a VM is
+				# migrating or saved, it changes the
+				# name of the VM to 'migrating-<hostname>'.
+				# this loop finds the hostname for the VM (if
+				# it running).
+				#
+				for host in hosts:
+					if l[hostindex] in host:
+						h = host
+						break
+
+				if not h:
+					continue
+
+				state = []
+				#
+				# a 'blocked' VM can be one that is waiting
+				# for I/O or has gone to sleep. let's call it
+				# 'active', because the VM is running, it just
+				# isn't active.
+				#
+				if 'r' in l[stateindex] or 'b' in l[stateindex]:
+					state.append('active')
+				if 'p' in l[stateindex]:
+					state.append('paused')
+				if 's' in l[stateindex]:
+					state.append('shutdown')
+				if 'c' in l[stateindex]:
+					state.append('crashed')
+				if 'd' in l[stateindex]:
+					state.append('dying')
+
+				comma = ','
+				vm_status[h] = comma.join(state)
+
+		return vm_status
+
+
+	def getClientInfo(self, host, showstatus):
+		info = ('', host, 'VM')
+
+		if showstatus:
+			status = None
+			if self.vm_status.has_key(host):
+				status = self.vm_status[host]
+				info += (status,)
+		
+		return info
+
+
 	def run(self, params, args):
+		(showstatus, ) = self.fillParams( [ ('status', 'n') ])
+		showstatus = self.str2bool(showstatus)
+
 		frontends = self.getHostnames( [ 'frontend' ])
 
 		if len(args) > 0:
@@ -101,6 +194,18 @@ class Command(rocks.commands.HostArgumentProcessor,
 			hosts = frontends
 
 		vm = rocks.vm.VM(self.db)
+
+		if showstatus:
+			#
+			# get a list of all the VMs
+			#
+			vmhosts = []
+			for host in self.getHostnames():
+				if vm.isVM(host):
+					vmhosts.append(host)
+
+			self.vm_status = self.getStatus(vmhosts)
+
 		self.beginOutput()
 
 		for frontend in hosts:
@@ -119,7 +224,14 @@ class Command(rocks.commands.HostArgumentProcessor,
 				fqdn = ''
 
 			if vm.isVM(frontend):
-				self.addOutput(frontend, (fqdn, '', 'VM'))
+				info = (fqdn, '', 'VM')
+				if showstatus:
+					status = None
+					if self.vm_status.has_key(frontend):
+						status = self.vm_status[frontend]
+					info += (status,)
+		
+				self.addOutput(frontend, info)
 
 				#
 				# all client nodes of this VM frontend have
@@ -147,10 +259,16 @@ class Command(rocks.commands.HostArgumentProcessor,
 					if client != frontend and \
 						vm.isVM(client):
 
-						self.addOutput('',
-							('', client, 'VM'))
+						info = self.getClientInfo(
+							client, showstatus)
+		
+						self.addOutput('', info)
 			else:
-				self.addOutput(frontend, (fqdn, '', 'physical'))
+				info = (fqdn, '', 'physical')
+				if showstatus:
+					info += (None,)
+		
+				self.addOutput(frontend, info)
 
 				#
 				# a physical frontend. go get all the physical
@@ -161,10 +279,16 @@ class Command(rocks.commands.HostArgumentProcessor,
 				for client in clients:
 					if client not in frontends and \
 						not vm.isVM(client):
+		
+						info = ('',client, 'physical')
+						if showstatus:
+							info += (None,)
 
-						self.addOutput('',
-							('',client, 'physical'))
+						self.addOutput('', info)
 
-		self.endOutput(header = [ 'frontend', 'FQDN', 'client nodes',
-			'type'], trimOwner = 0)
-			
+		header = [ 'frontend', 'FQDN', 'client nodes', 'type' ]
+		if showstatus:
+			header.append('status')
+
+		self.endOutput(header, trimOwner = 0)
+
