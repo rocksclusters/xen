@@ -15,6 +15,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: vm-container-server.xml,v $
+Revision 1.6  2008/09/08 22:37:51  bruno
+nuke runRocksCommand.cgi
+
 Revision 1.5  2008/09/04 21:26:33  bruno
 use new bootprofile hotness
 
@@ -32,12 +35,6 @@ support for VLANs
 
 </changelog>
 
-<post>
-
-
-
-
-</post>
 
 <post>
 /opt/rocks/bin/rocks add var VM HostingAddress <var name="Kickstart_PublicAddress"/>
