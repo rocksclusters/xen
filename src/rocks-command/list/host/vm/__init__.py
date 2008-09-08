@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.7 2008/04/21 16:37:35 bruno Exp $
+# $Id: __init__.py,v 1.8 2008/09/08 21:27:43 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.8  2008/09/08 21:27:43  bruno
+# add optional status to 'rocks list host vm'
+#
 # Revision 1.7  2008/04/21 16:37:35  bruno
 # nuked the vm_macs table -- now using the networks table to store/retrieve
 # mac addresses for VMs
@@ -80,6 +83,7 @@
 
 import os.path
 import rocks.commands
+import rocks.vm
 
 class Command(rocks.commands.list.host.command):
 	"""
@@ -94,6 +98,10 @@ class Command(rocks.commands.list.host.command):
 	If true, then output VM disk configuration. The default is 'false'.
         </param>
 
+	<param type='bool' name='status'>
+	If true, then output each VM's status (e.g., 'active', 'paused', etc.).
+        </param>
+
 	<example cmd='list host vm compute-0-0'>
 	List the VM configuration for compute-0-0.
 	</example>
@@ -103,11 +111,16 @@ class Command(rocks.commands.list.host.command):
 	</example>
 	"""
 
-	def run(self, params, args):
-		(showdisks, ) = self.fillParams([('showdisks', 'n')])
-		showdisks = self.str2bool(showdisks)
+	def getStatus(self, args, hosts):
+		vm = rocks.vm.VM(self.db)
 
-		hosts = self.getHostnames(args)
+		#
+		# get a list of all the physical hosts
+		#
+		physhosts = []
+		for host in self.getHostnames():
+			if not vm.isVM(host):
+				physhosts.append(host)
 
 		#
 		# get the status for all running VMs
@@ -115,7 +128,10 @@ class Command(rocks.commands.list.host.command):
 		hostindex = -6
 		stateindex = -2
 		vm_status = {}
-		output = self.command('run.host', ['/usr/sbin/xm list'])
+
+		output = self.command('run.host', physhosts +
+			[ '/usr/sbin/xm list' ] )
+
 		for line in output.split('\n'):
 			if len(line) < 1:
 				continue 
@@ -127,10 +143,10 @@ class Command(rocks.commands.list.host.command):
 
 				#
 				# we need this loop because when a VM is
-				# migrating or saved, it changes the name
-				# of the VM to 'migrating-<hostname>'. this
-				# loop finds the hostname for the VM (if it
-				# running).
+				# migrating or saved, it changes the
+				# name of the VM to 'migrating-<hostname>'.
+				# this loop finds the hostname for the VM (if
+				# it running).
 				#
 				for host in hosts:
 					if l[hostindex] in host:
@@ -143,9 +159,9 @@ class Command(rocks.commands.list.host.command):
 				state = []
 				#
 				# a 'blocked' VM can be one that is waiting
-				# for I/O or has gone to sleep. let's call
-				# it 'active', because the VM is running, it
-				# just isn't active.
+				# for I/O or has gone to sleep. let's call it
+				# 'active', because the VM is running, it just
+				# isn't active.
 				#
 				if 'r' in l[stateindex] or 'b' in l[stateindex]:
 					state.append('active')
@@ -161,6 +177,23 @@ class Command(rocks.commands.list.host.command):
 				comma = ','
 				vm_status[h] = comma.join(state)
 
+		return vm_status
+
+
+	def run(self, params, args):
+		(showdisks, showstatus) = self.fillParams( [
+			('showdisks', 'n'), 
+			('status', 'n')
+			])
+
+		showdisks = self.str2bool(showdisks)
+		showstatus = self.str2bool(showstatus)
+
+		hosts = self.getHostnames(args)
+
+		if showstatus:
+			vm_status = self.getStatus(args, hosts)
+		
 		self.beginOutput()
 
 		for host in hosts:
@@ -171,10 +204,11 @@ class Command(rocks.commands.list.host.command):
 			macs = None
 			disks = None
 			physhost = None
-			status = None
 
-			if vm_status.has_key(host):
-				status = vm_status[host]
+			if showstatus:
+				status = None
+				if vm_status.has_key(host):
+					status = vm_status[host]
 
 			#
 			# get the physical node that houses this VM
@@ -245,13 +279,13 @@ class Command(rocks.commands.list.host.command):
 				if len(disks) > 0:
 					(disk, disksize) = disks[0]
 
+				info = (slice, mem, cpus, mac, physhost)
+				if showstatus:
+					info += (status,)
 				if showdisks:
-					self.addOutput(host, (slice, mem,
-						cpus, mac, physhost, status,
-						disk, disksize))
-				else:
-					self.addOutput(host, (slice, mem,
-						cpus, mac, physhost, status))
+					info += (disk, disksize)
+
+				self.addOutput(host, info)
 
 				index = 1
 				while len(macs) > index or len(disks) > index:
@@ -266,22 +300,21 @@ class Command(rocks.commands.list.host.command):
 						disk = ''
 						disksize = ''
 
+					info = (None, None, None, mac, None)
+					if showstatus:
+						info += (None,)
 					if showdisks:
-						self.addOutput(host, (None,
-							None, None, mac, None,
-							None, disk, disksize))
-					elif mac != '':
-						self.addOutput(host, (None,
-							None, None, mac, None,
-							None))
+						info += (disk, disksize)
+
+					self.addOutput(host, info)
 
 					index += 1
 
+		header = [ 'vm-host', 'slice', 'mem', 'cpus', 'mac', 'host' ]
+		if showstatus:
+			header.append('status')
 		if showdisks:
-			self.endOutput(header=['vm-host', 'slice', 'mem',
-				'cpus', 'mac', 'host', 'status', 'disk',
-				'disksize'])
-		else:
-			self.endOutput(header=['vm-host', 'slice', 'mem',
-				'cpus', 'mac', 'host', 'status'])
+			header += [ 'disk', 'disksize' ]
+
+		self.endOutput(header)
 
