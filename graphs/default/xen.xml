@@ -15,6 +15,10 @@
 
 	<changelog>
 	$Log: xen.xml,v $
+	Revision 1.13  2008/09/08 19:13:23  bruno
+	move xen detection and xen grub.conf configuration from the xen roll to
+	the base roll
+	
 	Revision 1.12  2008/09/05 20:45:23  bruno
 	more ordering
 	
@@ -72,11 +76,6 @@
 		<tail>xen-base</tail>
 	</order>
 
-	<order head="grub-client">
-		<tail>xen-grub-client</tail>
-	</order> 
-
-
 
 	<edge from="server">
 		<to>xen-server</to>
@@ -97,10 +96,6 @@
 		<to>server</to>
 		<to>xen-base</to>
 		<to>vm-container</to>
-	</edge>
-
-	<edge from="grub-client">
-		<to>xen-grub-client</to>
 	</edge>
 
 </graph>
