@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.4 2008/09/08 21:51:40 bruno Exp $
+# $Id: __init__.py,v 1.5 2008/09/09 19:37:52 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.5  2008/09/09 19:37:52  bruno
+# make 'list cluster' simplier
+#
 # Revision 1.4  2008/09/08 21:51:40  bruno
 # added optional status columns to VM listing commands
 #
@@ -167,7 +170,7 @@ class Command(rocks.commands.HostArgumentProcessor,
 
 
 	def getClientInfo(self, host, showstatus):
-		info = ('', host, 'VM')
+		info = (host, 'VM')
 
 		if showstatus:
 			status = None
@@ -221,17 +224,17 @@ class Command(rocks.commands.HostArgumentProcessor,
 			if rows == 1:
 				fqdn, = self.db.fetchone()
 			else:
-				fqdn = ''
+				fqdn = frontend
 
 			if vm.isVM(frontend):
-				info = (fqdn, '', 'VM')
+				info = ('', 'VM')
 				if showstatus:
 					status = None
 					if self.vm_status.has_key(frontend):
 						status = self.vm_status[frontend]
 					info += (status,)
 		
-				self.addOutput(frontend, info)
+				self.addOutput(fqdn, info)
 
 				#
 				# all client nodes of this VM frontend have
@@ -264,11 +267,11 @@ class Command(rocks.commands.HostArgumentProcessor,
 		
 						self.addOutput('', info)
 			else:
-				info = (fqdn, '', 'physical')
+				info = ('', 'physical')
 				if showstatus:
 					info += (None,)
 		
-				self.addOutput(frontend, info)
+				self.addOutput(fqdn, info)
 
 				#
 				# a physical frontend. go get all the physical
@@ -280,13 +283,13 @@ class Command(rocks.commands.HostArgumentProcessor,
 					if client not in frontends and \
 						not vm.isVM(client):
 		
-						info = ('',client, 'physical')
+						info = (client, 'physical')
 						if showstatus:
 							info += (None,)
 
 						self.addOutput('', info)
 
-		header = [ 'frontend', 'FQDN', 'client nodes', 'type' ]
+		header = [ 'frontend', 'client nodes', 'type' ]
 		if showstatus:
 			header.append('status')
 
