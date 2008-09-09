@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.5 2008/07/29 16:47:25 bruno Exp $
+# $Id: __init__.py,v 1.6 2008/09/09 19:38:26 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@ 
 #
 # $Log: __init__.py,v $
+# Revision 1.6  2008/09/09 19:38:26  bruno
+# don't build a bridge if there are no vlans specified
+#
 # Revision 1.5  2008/07/29 16:47:25  bruno
 # more vlan support for xen VMs
 #
@@ -124,9 +127,10 @@ class Command(rocks.commands.report.host.command):
 				n.name = "%s" and net.ip is not NULL and
 				net.vlanid is NULL order by net.id""" % (host))
 
-			for device, in self.db.fetchall():
-				self.addNetworkBridge(device, vifnum)
-				vifnum += 1
+			if rows > 0:
+				for device, in self.db.fetchall():
+					self.addNetworkBridge(device, vifnum)
+					vifnum += 1
 
 			#
 			# create bridges for all VLANs
@@ -138,11 +142,12 @@ class Command(rocks.commands.report.host.command):
 				net.device like 'vlan%%' order by net.id"""
 				% (host))
 
-			for subnetid, vlanid in self.db.fetchall():
-				device = self.getVlanDevice(host, subnetid,
-					vlanid)
-				self.addNetworkBridge(device, vifnum)
-				vifnum += 1
+			if rows > 0:
+				for subnetid, vlanid in self.db.fetchall():
+					device = self.getVlanDevice(host,
+						subnetid, vlanid)
+					self.addNetworkBridge(device, vifnum)
+					vifnum += 1
 
 		self.addText('</file>')
 
