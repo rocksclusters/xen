@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.1 2008/08/22 23:25:56 bruno Exp $
+# $Id: __init__.py,v 1.2 2008/09/16 23:48:45 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.2  2008/09/16 23:48:45  bruno
+# wait for the xend service to restart
+#
 # Revision 1.1  2008/08/22 23:25:56  bruno
 # closer
 #
@@ -89,7 +92,7 @@ class Command(rocks.commands.sync.host.command):
 			cmd += 'ssh %s bash > /dev/null 2>&1' % host
 			os.system(cmd)
 
-			cmd = 'ssh -f %s "service xend restart" ' % host
+			cmd = 'ssh %s "service xend restart" ' % host
 			cmd += '> /dev/null 2>&1'
 			os.system(cmd)
 
