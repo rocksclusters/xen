@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.6 2008/09/09 19:38:26 bruno Exp $
+# $Id: __init__.py,v 1.7 2008/09/16 23:48:25 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,10 @@
 # @Copyright@ 
 #
 # $Log: __init__.py,v $
+# Revision 1.7  2008/09/16 23:48:25  bruno
+# make the rocks-network-bridge script dynamically determine the next
+# free virtual interface
+#
 # Revision 1.6  2008/09/09 19:38:26  bruno
 # don't build a bridge if there are no vlans specified
 #
@@ -79,6 +83,33 @@
 
 import rocks.commands
 
+script = """<file name="/etc/xen/scripts/rocks-network-bridge" perms="755">
+#!/bin/bash
+
+next_free_vifnum () {
+	VIFNUM=`ifconfig -a | awk '/^veth/ {print $1}' | head -1 | sed -e 's/^veth//'`
+}
+
+xenbrup () {
+	ip link show $2 > /dev/null 2>&amp;1
+	if [ $? != 0 ]
+	then
+		next_free_vifnum
+		/etc/xen/scripts/network-bridge start netdev=$1 \\
+			bridge=$2 vifnum=$VIFNUM
+	fi
+}
+
+case $1 in
+start)
+%s
+	;;
+
+esac
+</file>
+"""
+
+
 class Command(rocks.commands.report.host.command):
 	"""
 	Generates the Xen networking bridge configuration script for a
@@ -103,21 +134,9 @@ class Command(rocks.commands.report.host.command):
 		return device
 			
 
-	def addNetworkBridge(self, device, vifnum):
-		self.addText('/etc/xen/scripts/network-bridge ' +
-			'"$@" netdev=%s bridge=xenbr.%s vifnum=%d\n' 
-			% (device, device, vifnum))
-		
-
 	def run(self, params, args):
-		self.addText('<file ' +
-			'name="/etc/xen/scripts/rocks-network-bridge" ' +
-			'perms="755">\n')
-		self.addText('#!/bin/bash\n')
-
+		bridges = ''
 		for host in self.getHostnames(args):
-			vifnum = 0
-
 			#
 			# create bridges for all physical interfaces that
 			# are configured with an IP address
@@ -129,8 +148,8 @@ class Command(rocks.commands.report.host.command):
 
 			if rows > 0:
 				for device, in self.db.fetchall():
-					self.addNetworkBridge(device, vifnum)
-					vifnum += 1
+					bridges += '\txenbrup %s xenbr.%s\n' \
+						% (device, device)
 
 			#
 			# create bridges for all VLANs
@@ -146,8 +165,10 @@ class Command(rocks.commands.report.host.command):
 				for subnetid, vlanid in self.db.fetchall():
 					device = self.getVlanDevice(host,
 						subnetid, vlanid)
-					self.addNetworkBridge(device, vifnum)
-					vifnum += 1
 
-		self.addText('</file>')
+					bridges += '\txenbrup %s xenbr.%s\n' \
+						% (device, device)
+
+		s = script % (bridges)
+		self.addText(s)
 
