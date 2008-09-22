@@ -15,6 +15,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-base.xml,v $
+Revision 1.22  2008/09/22 18:12:35  bruno
+added script to create vlans with xen bridges
+
 Revision 1.21  2008/09/06 00:37:13  bruno
 another attempt at getting dom0-min-mem set
 
@@ -86,6 +89,7 @@ Revision 1.1  2005/12/17 05:27:19  mjk
 <package>virt-manager</package>
 <package>rocks-boot-xen</package>
 <package>rocks-pygrub</package>
+<package>rocks-create-vlan</package>
 
 
 <post>
