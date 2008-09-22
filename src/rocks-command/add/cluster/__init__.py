@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.6 2008/09/04 20:06:06 bruno Exp $
+# $Id: __init__.py,v 1.7 2008/09/22 20:21:28 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.7  2008/09/22 20:21:28  bruno
+# add 'vlan' to the list of parameters
+#
 # Revision 1.6  2008/09/04 20:06:06  bruno
 # thanks phil!
 #
@@ -119,6 +122,13 @@ class Command(rocks.commands.add.command):
 	<param type='string' name='mem-per-compute'>
 	The amount of memory (in megabytes) to allocate to each VM compute
 	node. The default is 1024.
+	</param>
+
+	<param type='string' name='vlan'>
+	The VLAN ID to assign to this cluster. All network communication
+	between the nodes of the virtual cluster will be encapulated within
+	this VLAN.
+	The default is the next free VLAN ID.
 	</param>
 
 	<param type='string' name='container-hosts'>
@@ -303,10 +313,16 @@ class Command(rocks.commands.add.command):
 				('vlan', None)
 				])
 
-		if not vlan:
-			vlan = self.getFreeVlan()
+		if vlan:
+			try:
+				vlanid = int(vlan)
+			except:
+				self.abort('Vlan ID (%s) must be an integer'
+					% vlan)
+		else:
+			vlanid = self.getFreeVlan()
 
-			if not vlan:
+			if not vlanid:
 				self.abort('could not find a free Vlan ID')
 
 		if container_hosts:
@@ -318,17 +334,17 @@ class Command(rocks.commands.add.command):
 		# configure the vlan on each physical node that can hold
 		# a VM
 		#
-		self.configVlan(vlan)
+		self.configVlan(vlanid)
 
 		#
 		# create the frontend VM
 		#
-		self.createFrontend(vlan, fqdn, ip)
+		self.createFrontend(vlanid, fqdn, ip)
 
 		#
 		# create the compute nodes
 		#
-		self.createComputes(vlan, computes, containers,
+		self.createComputes(vlanid, computes, containers,
 			cpus_per_compute, mem_per_compute, disk_per_compute)
 
 		#
