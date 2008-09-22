@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.7 2008/09/16 23:48:25 bruno Exp $
+# $Id: __init__.py,v 1.8 2008/09/22 18:14:57 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@ 
 #
 # $Log: __init__.py,v $
+# Revision 1.8  2008/09/22 18:14:57  bruno
+# create the vlan, if needed
+#
 # Revision 1.7  2008/09/16 23:48:25  bruno
 # make the rocks-network-bridge script dynamically determine the next
 # free virtual interface
@@ -94,6 +97,15 @@ xenbrup () {
 	ip link show $2 > /dev/null 2>&amp;1
 	if [ $? != 0 ]
 	then
+		#
+		# check if the vlan is configured, if not, then configure it
+		#
+		ip link show $1 > /dev/null 2>&amp;1
+		if [ $? != 0 ]
+		then
+			/opt/rocks/bin/rocks-create-vlan $1
+		fi
+		
 		next_free_vifnum
 		/etc/xen/scripts/network-bridge start netdev=$1 \\
 			bridge=$2 vifnum=$VIFNUM
