@@ -1,0 +1,211 @@
+<section id="using-virtual-clusters" xreflabel="Installing Virtual Clusters">
+	<title>Installing Virtual Clusters</title>
+
+<section id="using-virtual-clusters-frontend"
+	xreflabel="Installing VM Frontend">
+	<title>Installing VM Frontend</title>
+
+<para>
+After you install a VM Server and at least one VM Container, you are ready
+to install a virtual cluster.
+</para>
+
+<para>
+We'll use the following illustration as a guide to help keep track of the
+names of the physical machines and the virtual machines.
+</para>
+
+<para>
+<mediaobject>
+	<imageobject>
+		<imagedata fileref="images/virtual-cluster.png" scale=50>
+	</imageobject>
+</mediaobject>
+</para>
+
+<para>
+In the above picture, "espresso.rocksclusters.org" is a physical machine.
+Also, "vm-container-0-0" and "vm-container-0-1" are physical machines that
+were kickstarted by "espresso".
+The machine "frontend-0-0-0" is a virtual machine that is hosted by
+"espresso".
+The machines "hosted-vm-0-0-0" and "hosted-vm-0-1-0" are VMs that are
+associated with "frontend-0-0-0" (they are all in the same VLAN).
+The names "frontend-0-0-0", "hosted-vm-0-0-0" and "hosted-vm-0-1-0" are
+names used by physical machine to control the VMs (e.g., to start and
+stop them).
+</para>
+
+<para>
+The names in the virtual cluster looks like the names in a traditional
+cluster -- the frontend is named "vi-1.rocksclusters.org" and its compute
+nodes are named "compute-0-0" and "compute-0-1".
+If you login to "vi-1.rocksclusters.org", you would be hard pressed to tell
+the difference between this virtual cluster and a physical cluster.
+</para>
+
+<para>
+First, we'll add a virtual cluster to the VM Server's database.
+In this example, we'll add a frontend with the FQDN of
+"vi-1.rocksclusters.org", IP of "137.110.119.118" and we'll associate
+2 compute nodes with it:
+</para>
+
+<screen>
+# rocks add cluster fqdn="vi-1.rocksclusters.org" ip="137.110.119.118" num-computes=2
+</screen>
+
+<para>
+The above command will take some time and then output something similar to:
+</para>
+
+<screen>
+created frontend VM named: frontend-0-0-0 
+	created compute VM named: hosted-vm-0-0-0
+	created compute VM named: hosted-vm-0-1-0
+</screen>
+
+<para>
+The command adds entries to the database for the above nodes and establishes
+a VLAN that will be used for the private network (eth0 inside the VM).
+</para>
+
+<para>
+Info about all the defined clusters on the VM Server (including the
+physical cluster) can be obtained with the command:
+<computeroutput>rocks list cluster</computeroutput>.
+For example:
+</para>
+
+<screen>
+# rocks list cluster
+FRONTEND                    CLIENT NODES     TYPE    
+espresso.rocksclusters.org: ---------------- physical
+:                           vm-container-0-0 physical
+:                           vm-container-0-1 physical
+vi-1.rocksclusters.org:     ---------------- VM      
+:                           hosted-vm-0-0-0  VM      
+:                           hosted-vm-0-1-0  VM
+</screen>
+
+<para>
+Now we need to install the VM frontend.
+This is done by "starting" the VM:
+</para>
+
+<screen>
+# rocks start host vm vi-1.rocksclusters.org
+</screen>
+
+<para>
+To interact with the VM frontend's console, you need to start "virt-manager"
+</para>
+
+<screen>
+# virt-manager
+</screen>
+
+<para>
+This will display a screen similar to:
+</para>
+
+<para>
+<mediaobject>
+	<imageobject>
+		<imagedata fileref="images/virt-manager-1.png" scale=50>
+	</imageobject>
+</mediaobject>
+</para>
+
+<para>
+Double click on the "localhost" entry and then you'll see:
+</para>
+
+<para>
+<mediaobject>
+	<imageobject>
+		<imagedata fileref="images/virt-manager-2.png" scale=50>
+	</imageobject>
+</mediaobject>
+</para>
+
+<para>
+To bring the up the console for the VM frontend, double click on
+"frontend-0-0-0".
+Now you should see the familiar frontend installation screen:
+</para>
+
+<para>
+<mediaobject>
+	<imageobject>
+		<imagedata fileref="images/virt-manager-4.png" scale=50>
+	</imageobject>
+</mediaobject>
+</para>
+
+<para>
+In the "Hostname of Roll Server" field, insert the FQDN of your VM Server
+(the name of the physical machine that is hosting the VM frontend).
+Then click "Download".
+</para>
+
+<para>
+From here, you want to follow the
+<ulink url="/roll-documentation/base/&document_version;/install-frontend.html">standard procedure for bringing up a frontend</ulink> starting at Step 8.
+</para>
+
+<para>
+After the VM frontend installs, it will reboot.
+After it reboots, login and then we'll begin installing VM compute nodes.
+</para>
+
+</section>
+
+
+<section id="using-virtual-clusters-compute"
+	xreflabel="Installing VM Compute Nodes">
+	<title>Installing VM Compute Nodes</title>
+
+<para>
+After you login to the VM frontend, execute:
+</para>
+
+<screen>
+# insert-ethers
+</screen>
+
+<para>
+Select "Compute" as the appliance type.
+</para>
+
+<para>
+Back on the VM Server, we'll need to start the first VM that hosts the
+VM compute node.
+In this example, the name is "hosted-vm-0-0-0".
+</para>
+
+<screen>
+# rocks start host vm hosted-vm-0-0-0 install=yes
+</screen>
+
+<para>
+Back in the VM frontend, you should see insert-ethers discover the VM compute
+node.
+</para>
+
+<para>
+Screen Shot
+</para>
+
+<para>
+Repeat for each VM compute node.
+</para>
+
+<para>
+You now have a virtual cluster up and running within your physical cluster.
+</para>
+
+</section>
+
+</section>
+
