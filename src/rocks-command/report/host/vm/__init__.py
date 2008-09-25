@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.30 2008/09/25 17:39:55 bruno Exp $
+# $Id: __init__.py,v 1.31 2008/09/25 17:56:54 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,10 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.31  2008/09/25 17:56:54  bruno
+# can't have spaces after the 'related' tag. otherwise, the xen usersguide
+# will not build
+#
 # Revision 1.30  2008/09/25 17:39:55  bruno
 # phil's command tweaks
 #
@@ -257,12 +261,11 @@ class Command(rocks.commands.report.host.command):
 	</example>
 
 
-	<related> set host vm boot </related>
-	<related> set host pxeboot </related>
-	<related> list host vm bootprofile </related>
-	<related> add host vm bootprofile </related>
-	<related> remove host vm bootprofile </related>
-	<related> set host vm bootprofile </related>
+	<related>set host vm boot</related>
+	<related>list host vm bootprofile</related>
+	<related>add host vm bootprofile</related>
+	<related>remove host vm bootprofile</related>
+	<related>set host vm bootprofile</related>
 	"""
 
 	def getBridgeName(self, host, subnetid, vlanid):

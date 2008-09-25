@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.3 2008/09/02 23:34:04 phil Exp $
+# $Id: __init__.py,v 1.4 2008/09/25 17:56:54 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -99,11 +99,11 @@ class Command(rocks.commands.HostArgumentProcessor,
 	Add the 'install' profile for compute-0-0-0
 	</example>
 
-	<related> set host vm boot </related>
-	<related> list host vm boot </related>
-	<related> set host vm bootprofile </related>
-	<related> list host vm bootprofile </related>
-	<related> remove host vm bootprofile </related>
+	<related>set host vm boot</related>
+	<related>list host vm boot</related>
+	<related>set host vm bootprofile</related>
+	<related>list host vm bootprofile</related>
+	<related>remove host vm bootprofile</related>
 
 	"""
 

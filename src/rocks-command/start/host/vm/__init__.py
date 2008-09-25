@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.8 2008/09/01 15:58:57 phil Exp $
+# $Id: __init__.py,v 1.9 2008/09/25 17:56:54 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,10 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.9  2008/09/25 17:56:54  bruno
+# can't have spaces after the 'related' tag. otherwise, the xen usersguide
+# will not build
+#
 # Revision 1.8  2008/09/01 15:58:57  phil
 # Support start host vm install=y to force the node to boot its install profile.
 # Requires rocks-pygrub to be the bootloader.
@@ -112,11 +116,11 @@ class Command(rocks.commands.start.host.command):
 	Start VM host compute-0-0-0 in installation mode.
 	</example>
 
-	<related> set host vm boot </related>
-	<related> list host vm bootprofile </related>
-	<related> add host vm bootprofile </related>
-	<related> remove host vm bootprofile </related>
-	<related> set host vm bootprofile </related>
+	<related>set host vm boot</related>
+	<related>list host vm bootprofile</related>
+	<related>add host vm bootprofile</related>
+	<related>remove host vm bootprofile</related>
+	<related>set host vm bootprofile</related>
 	"""
 
 	def run(self, params, args):

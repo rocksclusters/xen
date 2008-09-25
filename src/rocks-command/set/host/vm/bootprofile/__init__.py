@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.1 2008/09/02 23:30:43 phil Exp $
+# $Id: __init__.py,v 1.2 2008/09/25 17:56:54 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,10 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.2  2008/09/25 17:56:54  bruno
+# can't have spaces after the 'related' tag. otherwise, the xen usersguide
+# will not build
+#
 # Revision 1.1  2008/09/02 23:30:43  phil
 # Add set method for modifying bootprofiles
 #
@@ -97,11 +101,11 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.set.host.comm
 	Change the kernel to vmlinuz-experimental for the global install profile 
 	</example>
 
-	<related> set host vm boot </related>
-	<related> list host vm bootprofile </related>
-	<related> list host vm boot </related>
-	<related> add host vm bootprofile </related>
-	<related> remove host vm bootprofile </related>
+	<related>set host vm boot</related>
+	<related>list host vm boot</related>
+	<related>list host vm bootprofile</related>
+	<related>add host vm bootprofile</related>
+	<related>remove host vm bootprofile</related>
 	"""
 
 	def run(self, params, args):

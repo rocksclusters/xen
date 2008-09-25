@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.5 2008/09/01 16:50:45 phil Exp $
+# $Id: __init__.py,v 1.6 2008/09/25 17:56:54 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,10 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.6  2008/09/25 17:56:54  bruno
+# can't have spaces after the 'related' tag. otherwise, the xen usersguide
+# will not build
+#
 # Revision 1.5  2008/09/01 16:50:45  phil
 # Properly Check for specific profile listing
 #
@@ -117,11 +121,11 @@ class Command(rocks.commands.list.host.command):
 	of hosts.
 	</example>
 
-	<related> set host vm boot </related>
-	<related> list host vm boot </related>
-	<related> add host vm bootprofile </related>
-	<related> remove host vm bootprofile </related>
-	<related> set host vm bootprofile </related>
+	<related>set host vm boot</related>
+	<related>list host vm boot</related>
+	<related>add host vm bootprofile</related>
+	<related>remove host vm bootprofile</related>
+	<related>set host vm bootprofile</related>
 	"""
 
 	def  getVMHostnames(self, args, doGlobal):
