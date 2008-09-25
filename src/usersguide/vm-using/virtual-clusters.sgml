@@ -37,11 +37,11 @@ stop them).
 </para>
 
 <para>
-The names in the virtual cluster looks like the names in a traditional
+The names in the virtual cluster look like the names in a traditional
 cluster -- the frontend is named "vi-1.rocksclusters.org" and its compute
 nodes are named "compute-0-0" and "compute-0-1".
 If you login to "vi-1.rocksclusters.org", you would be hard pressed to tell
-the difference between this virtual cluster and a physical cluster.
+the difference between this virtual cluster and a traditional physical cluster.
 </para>
 
 <para>
@@ -190,11 +190,15 @@ In this example, the name is "hosted-vm-0-0-0".
 
 <para>
 Back in the VM frontend, you should see insert-ethers discover the VM compute
-node.
+node:
 </para>
 
 <para>
-Screen Shot
+<mediaobject>
+	<imageobject>
+		<imagedata fileref="images/discovered.png" scale=50>
+	</imageobject>
+</mediaobject>
 </para>
 
 <para>

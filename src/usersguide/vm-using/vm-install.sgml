@@ -1,3 +1,11 @@
+<section id="using-vm-physical-frontend"
+	xreflabel="Physical Frontend with Virtual Compute Nodes">
+	<title> Physical Frontend with Virtual Compute Nodes </title>
+
+<para>
+</para>
+
+
 <section id="using-vm" xreflabel="Adding, Installing and Booting VMs">
 	<title> Adding, Installing and Booting VMs </title>
 
@@ -23,7 +31,7 @@ The above command will output a message similar to:
 </para>
 
 <screen>
-added VM on node "vm-container-0-0" slice "0" with vm_name "compute-0-0-0"
+added VM compute-0-0-0 on physical node vm-container-0-0
 </screen>
 
 <para>
@@ -36,12 +44,13 @@ The next step is to install the VM.
 </para>
 
 <para>
-VMs are installed with the <computeroutput>create</computeroutput> command.
+VMs are installed with the <computeroutput>start</computeroutput> command
+with the <computeroutput>install=yes</computeroutput> flag.
 Here's how to install the VM that was added above:
 </para>
 
 <screen>
-# rocks create host vm compute-0-0-0
+# rocks start host vm compute-0-0-0 install=yes
 </screen>
 
 <para>
@@ -57,18 +66,12 @@ by executing:
 </screen>
 
 <para>
-After the installation completes, you can boot the VM by executing:
-</para>
-
-<screen>
-# rocks start host vm compute-0-0-0
-</screen>
-
-<para>
+After the installation completes, the VM will reboot.
 After the VM boots, you can interact with the VM just like any other physical
 machine.
 </para>
 
 </section>
 
+</section>
 
