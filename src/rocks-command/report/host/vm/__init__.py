@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.29 2008/09/02 15:41:51 phil Exp $
+# $Id: __init__.py,v 1.30 2008/09/25 17:39:55 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.30  2008/09/25 17:39:55  bruno
+# phil's command tweaks
+#
 # Revision 1.29  2008/09/02 15:41:51  phil
 # Support full disks (The Rocks Way) and a particular partition (Others)
 #
@@ -268,33 +271,37 @@ class Command(rocks.commands.report.host.command):
 		if vlanid:
 			#
 			# first make sure the vlan is defined for the physical
-			# host and get the logical subnet  where the vlan is tied
+			# host and get the logical subnet where the vlan is tied
 			#
 			rows = self.db.execute("""select net.subnet from
 				networks net, nodes n where net.node = n.id and
-				n.name = '%s' and net.device like 'vlan%%' and
-				net.vlanid = %d""" % (host, vlanid))
+				n.name = '%s' and (net.device like 'vlan%%' or
+				net.device like '%%.%d') and
+				net.vlanid = %d""" % (host, vlanid, vlanid))
 
 			if rows == 0:
 				self.abort('vlan %d not defined for host %s' %
 					(vlanid, host))
 			vlanOnLogical, = self.db.fetchone()
 
-			rows = self.db.execute("""select net.device from networks net,
-				nodes n where net.node = n.id and n.name = '%s' and
+			rows = self.db.execute("""select net.device from
+				networks net, nodes n where net.node = n.id
+				and n.name = '%s' and
 				net.device not like 'vlan%%' and
 				net.subnet = %d""" % (host, vlanOnLogical))
 		else:
-			rows = self.db.execute("""select net.device from networks net,
-				nodes n where net.node = n.id and n.name = '%s' and
-				net.ip is not NULL and net.device not like 'vlan%%' and
+			rows = self.db.execute("""select net.device from
+				networks net, nodes n where net.node = n.id and
+				n.name = '%s' and net.ip is not NULL and
+				net.device not like 'vlan%%' and
 				net.subnet = %d""" % (host, subnetid))
 		if rows:
 			dev, = self.db.fetchone()
+			bridge = 'xenbr.%s' % (dev)
 			if vlanid:
-				bridge = 'xenbr.%s.%d' % (dev, vlanid)
-			else:
-				bridge = 'xenbr.%s' % (dev)
+				reg = re.compile('.*\.%d' % vlanid)
+				if not reg.match(dev):
+					bridge = 'xenbr.%s.%d' % (dev, vlanid)
 
 		return bridge
 
@@ -361,7 +368,8 @@ class Command(rocks.commands.report.host.command):
 
 		# install profile
 		kern, ramdsk, bootargs = self.getBootProfile(host, instProf)
-		self.configContents.append(installConfig % (kern, ramdsk,bootargs))
+		self.configContents.append(installConfig % (kern,
+			ramdsk,bootargs))
 		
 		# Force Install?
 		# look up the pxeboot action
@@ -459,7 +467,8 @@ class Command(rocks.commands.report.host.command):
 
 		# Export Python Snippet that will create the local config file
 		self.addOutput(host, 
-			writeConfigFile % (configFile, self.configContents, bootdisk, disksize))
+			writeConfigFile % (configFile, self.configContents,
+			bootdisk, disksize))
 
 		self.addOutput(host, runheader)
 

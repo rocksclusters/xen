@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.8 2008/09/22 18:14:57 bruno Exp $
+# $Id: __init__.py,v 1.9 2008/09/25 17:39:55 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@ 
 #
 # $Log: __init__.py,v $
+# Revision 1.9  2008/09/25 17:39:55  bruno
+# phil's command tweaks
+#
 # Revision 1.8  2008/09/22 18:14:57  bruno
 # create the vlan, if needed
 #
@@ -156,7 +159,9 @@ class Command(rocks.commands.report.host.command):
 			rows = self.db.execute("""select net.device from
 				networks net, nodes n where net.node = n.id and
 				n.name = "%s" and net.ip is not NULL and
-				net.vlanid is NULL order by net.id""" % (host))
+				(net.vlanid is NULL or (net.vlanid is not NULL
+				and net.device not like 'vlan%%'))
+				order by net.id""" % (host))
 
 			if rows > 0:
 				for device, in self.db.fetchall():
