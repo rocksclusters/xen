@@ -3,11 +3,35 @@
 	<title> Physical Frontend with Virtual Compute Nodes </title>
 
 <para>
+In this scenario, the frontend is a physical machine (not a VM) and the
+compute nodes are virtual machines.
 </para>
 
+<para>
+<mediaobject>
+	<imageobject>
+		<imagedata fileref="images/phys-frontend-with-vms.png" scale=50>
+	</imageobject>
+</mediaobject>
+</para>
 
-<section id="using-vm" xreflabel="Adding, Installing and Booting VMs">
-	<title> Adding, Installing and Booting VMs </title>
+<para>
+In the above picture, "frontend-0-0" is a physical machine (with the public
+name of "espresso.rocksclusters.org".
+The physical machine "frontend-0-0" controls two VM compute nodes
+named "compute-0-0-0" and "compute-0-1-0".
+This means that "compute-0-0-0" and "compute-0-1-0" are configured by 
+"frontend-0-0".
+This is opposed to the "virtual cluster scenario"
+(<xref linkend="using-virtual-clusters">), where the virtual frontend
+("frontend-0-0-0") configured the VM compute nodes, and the physical
+machine that housed "frontend-0-0-0" only started and stopped the 
+virtual compute nodes.
+</para>
+
+<section id="using-vm"
+xreflabel="Adding, Installing and Booting VMs with a Physical Frontend">
+<title> Adding, Installing and Booting VMs with a Physical Frontend </title>
 
 <para>
 In the common case, you will execute three Rocks commands over the
