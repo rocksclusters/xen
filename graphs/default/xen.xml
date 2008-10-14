@@ -13,55 +13,59 @@
 	All rights reserved. Rocks(r) v5.0 www.rocksclusters.org
 	</copyright>
 
-	<changelog>
-	$Log: xen.xml,v $
-	Revision 1.13  2008/09/08 19:13:23  bruno
-	move xen detection and xen grub.conf configuration from the xen roll to
-	the base roll
-	
-	Revision 1.12  2008/09/05 20:45:23  bruno
-	more ordering
-	
-	Revision 1.11  2008/09/04 15:54:16  bruno
-	xen tweaks
-	
-	Revision 1.10  2008/08/28 04:38:12  phil
-	Detect that we are kickstarting inside of a VM container. Adjust rocks.conf
-	to boot xen installable kernel
-	
-	Revision 1.9  2008/08/27 22:25:20  bruno
-	added vm-server XML node
-	
-	Revision 1.8  2008/07/18 20:49:07  bruno
-	now have ability to build any appliance from rocks 'boot:' prompt. just
-	type 'bulid appliance=xml-node-name', for example:
-	'build appliance=vm-container-sever'
-	
-	change 'boot:' directive of 'frontend' to 'build'
-	
-	Revision 1.7  2008/03/06 23:42:03  mjk
-	copyright storm on
-	
-	Revision 1.6  2007/12/03 19:48:51  bruno
-	xen for V
-	
-	Revision 1.5  2007/06/23 04:04:07  mjk
-	mars hill copyright
-	
-	Revision 1.4  2006/09/11 22:50:48  mjk
-	monkey face copyright
-	
-	Revision 1.3  2006/08/10 00:12:24  mjk
-	4.2 copyright
-	
-	Revision 1.2  2005/12/17 05:14:14  mjk
-	- nuke FC stuff, switch to xen source binaries
-	- create initrd in XML not spec file
-	
-	Revision 1.1  2005/12/08 19:06:52  mjk
-	start of xen roll
-	
-	</changelog>
+<changelog>
+$Log: xen.xml,v $
+Revision 1.14  2008/10/14 22:27:50  bruno
+if a user selects the xen roll, then the frontend is a VM container that
+can house VM frontends.
+
+Revision 1.13  2008/09/08 19:13:23  bruno
+move xen detection and xen grub.conf configuration from the xen roll to
+the base roll
+
+Revision 1.12  2008/09/05 20:45:23  bruno
+more ordering
+
+Revision 1.11  2008/09/04 15:54:16  bruno
+xen tweaks
+
+Revision 1.10  2008/08/28 04:38:12  phil
+Detect that we are kickstarting inside of a VM container. Adjust rocks.conf
+to boot xen installable kernel
+
+Revision 1.9  2008/08/27 22:25:20  bruno
+added vm-server XML node
+
+Revision 1.8  2008/07/18 20:49:07  bruno
+now have ability to build any appliance from rocks 'boot:' prompt. just
+type 'bulid appliance=xml-node-name', for example:
+'build appliance=vm-container-sever'
+
+change 'boot:' directive of 'frontend' to 'build'
+
+Revision 1.7  2008/03/06 23:42:03  mjk
+copyright storm on
+
+Revision 1.6  2007/12/03 19:48:51  bruno
+xen for V
+
+Revision 1.5  2007/06/23 04:04:07  mjk
+mars hill copyright
+
+Revision 1.4  2006/09/11 22:50:48  mjk
+monkey face copyright
+
+Revision 1.3  2006/08/10 00:12:24  mjk
+4.2 copyright
+
+Revision 1.2  2005/12/17 05:14:14  mjk
+- nuke FC stuff, switch to xen source binaries
+- create initrd in XML not spec file
+
+Revision 1.1  2005/12/08 19:06:52  mjk
+start of xen roll
+
+</changelog>
 
 
 	<order head="database-data">
@@ -80,20 +84,12 @@
 	<edge from="server">
 		<to>xen-server</to>
 		<to>xen-db</to>
-	</edge>
-
-	<edge from="vm-container-client">
-		<to>client</to>
 		<to>xen-base</to>
 		<to>vm-container</to>
 	</edge>
 
-	<edge from="vm-server">
-		<to>vm-container-server</to>
-	</edge>
-
-	<edge from="vm-container-server">
-		<to>server</to>
+	<edge from="vm-container-client">
+		<to>client</to>
 		<to>xen-base</to>
 		<to>vm-container</to>
 	</edge>

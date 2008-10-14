@@ -16,6 +16,10 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-server.xml,v $
+Revision 1.18  2008/10/14 22:27:50  bruno
+if a user selects the xen roll, then the frontend is a VM container that
+can house VM frontends.
+
 Revision 1.17  2008/09/04 21:26:33  bruno
 use new bootprofile hotness
 
@@ -79,6 +83,10 @@ Revision 1.1  2005/12/17 05:27:19  mjk
 <package>roll-xen-usersguide</package>
 <package>rocks-command-xen</package>
 
+
+<post>
+/opt/rocks/bin/rocks add var VM HostingAddress <var name="Kickstart_PublicAddress"/>
+</post>
 
 <post>
 
