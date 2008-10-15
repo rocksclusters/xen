@@ -1,3 +1,4 @@
+ROLLNAME = xen
 RELEASE = 0
 COLOR   = OliveDrab
 
