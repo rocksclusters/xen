@@ -2,8 +2,8 @@
 	<title>Installing Virtual Clusters</title>
 
 <section id="using-virtual-clusters-frontend"
-	xreflabel="Installing VM Frontend">
-	<title>Installing VM Frontend</title>
+	xreflabel="Installing a VM Frontend">
+	<title>Installing a VM Frontend</title>
 
 <para>
 After you install a VM Server and at least one VM Container, you are ready
@@ -43,6 +43,18 @@ nodes are named "compute-0-0" and "compute-0-1".
 If you login to "vi-1.rocksclusters.org", you would be hard pressed to tell
 the difference between this virtual cluster and a traditional physical cluster.
 </para>
+
+<warning>
+<para>
+You must select your own FQDN and IP address for your virtual frontend.
+The FQDN "vi-1.rocksclusters.org" and the IP address "137.110.119.118" are
+managed by UCSD and should not be used by you.
+</para>
+
+<para>
+They are only used here to show you a concrete example.
+</para>
+</warning>
 
 <para>
 First, we'll add a virtual cluster to the VM Server's database.

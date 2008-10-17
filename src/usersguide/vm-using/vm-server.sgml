@@ -7,26 +7,12 @@ It is required to build a VM Server if you wish to build virtual clusters.
 </para>
 
 <para>
-A VM Server takes the place of a traditional physical frontend, that is,
-the first machine you'll build in your cluster is a VM Server rather than
-a frontend.
-</para>
-
-<para>
-To build a VM Server, boot the machine with the Kernel/Boot CD and at
-the <computeroutput>boot:</computeroutput> prompt type:
-</para>
-
-<screen>
-build appliance=vm-server
-</screen>
-
-<para>
-The remainder of installation is the same as building a traditional physical
-frontend.
+Building a VM Server is just like building a traditional frontend, except
+that you <emphasis>must supply the Xen Roll during the frontend
+installation</emphasis>.
 Follow the procedure
 <ulink url="/roll-documentation/base/&document_version;/install-frontend.html">
-Install and Configure Your Frontend</ulink> starting at Step 3.
+Install and Configure Your Frontend</ulink> and be sure to supply the Xen Roll.
 </para>
 
 <para>

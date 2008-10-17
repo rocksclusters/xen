@@ -1,5 +1,5 @@
 # 
-# $Id: Makefile,v 1.7 2008/04/23 18:57:02 bruno Exp $
+# $Id: Makefile,v 1.8 2008/10/17 19:39:26 bruno Exp $
 #
 # @Copyright@
 # 
@@ -55,6 +55,9 @@
 # @Copyright@
 #
 # $Log: Makefile,v $
+# Revision 1.8  2008/10/17 19:39:26  bruno
+# xen doc touch ups
+#
 # Revision 1.7  2008/04/23 18:57:02  bruno
 # basic structure in place
 #
@@ -113,10 +116,10 @@ include Rules.mk
 
 default: $(NAME).spec ../$(NAME)-$(VERSION).tar.gz
 
-html: predoc
+html:
 	jw --backend html --dsl $(PWD)/rocks.dsl#html index.sgml 
 
-pdf: predoc
+pdf:
 	jw --backend pdf --dsl $(PWD)/rocks.dsl#print index.sgml
 
 build: html pdf
