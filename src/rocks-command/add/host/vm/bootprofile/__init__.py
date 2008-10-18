@@ -1,10 +1,10 @@
-# $Id: __init__.py,v 1.4 2008/09/25 17:56:54 bruno Exp $
+# $Id: __init__.py,v 1.5 2008/10/18 00:56:22 mjk Exp $
 # 
 # @Copyright@
 # 
 # 				Rocks(r)
 # 		         www.rocksclusters.org
-# 		            version 5.0 (V)
+# 		           version 5.1  (VI)
 # 
 # Copyright (c) 2000 - 2008 The Regents of the University of California.
 # All rights reserved.	

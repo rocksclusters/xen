@@ -1,10 +1,10 @@
-# $Id: __init__.py,v 1.8 2008/09/02 18:19:29 phil Exp $
+# $Id: __init__.py,v 1.9 2008/10/18 00:56:23 mjk Exp $
 #
 # @Copyright@
 # 
 # 				Rocks(r)
 # 		         www.rocksclusters.org
-# 		            version 5.0 (V)
+# 		           version 5.1  (VI)
 # 
 # Copyright (c) 2000 - 2008 The Regents of the University of California.
 # All rights reserved.	
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.9  2008/10/18 00:56:23  mjk
+# copyright 5.1
+#
 # Revision 1.8  2008/09/02 18:19:29  phil
 # Plugin to also remove any host-specific bootprofiles when removing vm host
 #
