@@ -2,7 +2,7 @@
 	<title>Installing VM Containers </title>
 
 <para>
-First, you will need to install a physical machine that will act as the
+You will need to install a physical machine that will act as the
 "container" for your VMs.
 This method is very similar to the method for installing compute nodes.
 </para>

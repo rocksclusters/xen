@@ -85,8 +85,7 @@ a VLAN that will be used for the private network (eth0 inside the VM).
 <para>
 Info about all the defined clusters on the VM Server (including the
 physical cluster) can be obtained with the command:
-<computeroutput>rocks list cluster</computeroutput>.
-For example:
+<computeroutput>rocks list cluster</computeroutput>:
 </para>
 
 <screen>
@@ -179,7 +178,8 @@ After it reboots, login and then we'll begin installing VM compute nodes.
 	<title>Installing VM Compute Nodes</title>
 
 <para>
-After you login to the VM frontend, execute:
+Login to the VM frontend (the virtual machine named "vi-1.rocksclusters.org"
+in the example picture at the top of this page), and execute:
 </para>
 
 <screen>
@@ -219,6 +219,97 @@ Repeat for each VM compute node.
 
 <para>
 You now have a virtual cluster up and running within your physical cluster.
+</para>
+
+<para>
+You can connect to a virtual compute node's console in a manner similar to
+connecting to the virtual frontend's console.
+Again, bring up "virt-manager":
+</para>
+
+<screen>
+# virt-manager
+</screen>
+
+<para>
+In this example, we'll connect to the console for the virtual compute node
+"compute-0-0".
+The VM "compute-0-0" is hosted on the physical machine named
+"vm-container-0-0" so we'll need to tell "virt-manager" to open a connection
+to "vm-container-0-0".
+</para>
+
+<para>
+Inside "virt-manager", click on "File" then "Open connection...".
+This brings up a window that looks like:
+</para>
+
+<para>
+<mediaobject>
+	<imageobject>
+		<imagedata fileref="images/virt-manager-10.png" scale=50>
+	</imageobject>
+</mediaobject>
+</para>
+
+<para>
+Now change the "Connection:" field to "Remote tunnel over SSH" and enter
+"vm-container-0-0" for the "Hostname:" field:
+</para>
+
+<para>
+<mediaobject>
+	<imageobject>
+		<imagedata fileref="images/virt-manager-11.png" scale=50>
+	</imageobject>
+</mediaobject>
+</para>
+
+<para>
+Then click "Connect".
+</para>
+
+<para>
+Back in the "virt-manager" window, you should see something similar to:
+</para>
+
+<para>
+<mediaobject>
+	<imageobject>
+		<imagedata fileref="images/virt-manager-12.png" scale=50>
+	</imageobject>
+</mediaobject>
+</para>
+
+<para>
+Double click on "vm-container-0-0" and then you'll see:
+</para>
+
+<para>
+<mediaobject>
+	<imageobject>
+		<imagedata fileref="images/virt-manager-13.png" scale=50>
+	</imageobject>
+</mediaobject>
+</para>
+
+<para>
+Now to connect to the compute node's console, double click on "hosted-vm-0-0-0".
+Recall that from the perspective of the physical frontend (the VM Server),
+"hosted-vm-0-0-0" is the name for the VM "compute-0-0" (again, see the
+figure at the top of this page).
+</para>
+
+<para>
+You should see the console for compute-0-0:
+</para>
+
+<para>
+<mediaobject>
+	<imageobject>
+		<imagedata fileref="images/virt-manager-14.png" scale=50>
+	</imageobject>
+</mediaobject>
 </para>
 
 </section>
