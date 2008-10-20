@@ -221,6 +221,12 @@ Repeat for each VM compute node.
 You now have a virtual cluster up and running within your physical cluster.
 </para>
 
+</section>
+
+<section id="virt-manager-compute"
+	xreflabel="Connecting to a VM Compute Node's Console">
+	<title>Connecting to a VM Compute Node's Console</title>
+
 <para>
 You can connect to a virtual compute node's console in a manner similar to
 connecting to the virtual frontend's console.
@@ -232,8 +238,8 @@ Again, bring up "virt-manager":
 </screen>
 
 <para>
-In this example, we'll connect to the console for the virtual compute node
-"compute-0-0".
+We'll connect to the console for the virtual compute node "compute-0-0".
+In the example configuration described at the top of this page,
 The VM "compute-0-0" is hosted on the physical machine named
 "vm-container-0-0" so we'll need to tell "virt-manager" to open a connection
 to "vm-container-0-0".
@@ -270,7 +276,7 @@ Then click "Connect".
 </para>
 
 <para>
-Back in the "virt-manager" window, you should see something similar to:
+In the "virt-manager" window, you should see something similar to:
 </para>
 
 <para>
@@ -301,7 +307,7 @@ figure at the top of this page).
 </para>
 
 <para>
-You should see the console for compute-0-0:
+You should now see the console for compute-0-0:
 </para>
 
 <para>
