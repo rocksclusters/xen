@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.32 2008/10/18 00:56:23 mjk Exp $
+# $Id: __init__.py,v 1.33 2008/10/27 21:14:51 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.33  2008/10/27 21:14:51  bruno
+# get the disk creation size correct
+#
 # Revision 1.32  2008/10/18 00:56:23  mjk
 # copyright 5.1
 #
@@ -474,7 +477,7 @@ class Command(rocks.commands.report.host.command):
 		# Export Python Snippet that will create the local config file
 		self.addOutput(host, 
 			writeConfigFile % (configFile, self.configContents,
-			bootdisk, disksize))
+			bootdisk, (disksize - 1)))
 
 		self.addOutput(host, runheader)
 
