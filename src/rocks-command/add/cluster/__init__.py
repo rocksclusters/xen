@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.8 2008/10/18 00:56:22 mjk Exp $
+# $Id: __init__.py,v 1.9 2008/10/27 19:25:01 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.9  2008/10/27 19:25:01  bruno
+# folded 'rocks * host vm boot' commands into 'rocks * host vm'
+#
 # Revision 1.8  2008/10/18 00:56:22  mjk
 # copyright 5.1
 #
@@ -228,6 +231,7 @@ class Command(rocks.commands.add.command):
 	def createFrontend(self, vlan, fqdn, ip):
 		output = self.command('add.host.vm', [ self.getFrontend(),
 			'membership=Frontend', 'num-macs=2',
+			'installprofile="install vm frontend"',
 			'vlan=%d,0' % vlan ] )
 
 		self.frontendname = None
@@ -248,12 +252,6 @@ class Command(rocks.commands.add.command):
 			'eth1', ip ] )
 		self.command('set.host.interface.name', [ self.frontendname,
 			'eth1', fqdn ] )
-
-		#
-		# set the VM frontend pxeboot action to install
-		#
-		self.command('set.host.vm.boot', [ self.frontendname,
-			"installprofile=install vm frontend" ] )
 
 		self.addOutput('', 'created frontend VM named: %s' % 
 			self.frontendname)

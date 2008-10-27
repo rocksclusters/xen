@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.9 2008/10/18 00:56:23 mjk Exp $
+# $Id: __init__.py,v 1.10 2008/10/27 19:25:01 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.10  2008/10/27 19:25:01  bruno
+# folded 'rocks * host vm boot' commands into 'rocks * host vm'
+#
 # Revision 1.9  2008/10/18 00:56:23  mjk
 # copyright 5.1
 #
@@ -207,6 +210,8 @@ class Command(rocks.commands.list.host.command):
 			macs = None
 			disks = None
 			physhost = None
+			runprofile = None
+			installprofile = None
 
 			if showstatus:
 				status = None
@@ -237,14 +242,17 @@ class Command(rocks.commands.list.host.command):
 			# get the VM configuration parameters
 			#
 			rows = self.db.execute("""select vn.id, vn.mem,
-				n.cpus, vn.slice from nodes n, vm_nodes vn
+				n.cpus, vn.slice, vn.runprofile,
+				vn.installprofile from nodes n, vm_nodes vn
 				where vn.node = n.id and n.name = '%s'""" %
 				host)
 
 			if rows < 1:
 				continue
 
-			for vmnodeid, mem, cpus, slice in self.db.fetchall():
+			for vmnodeid, mem, cpus, slice, runprofile, \
+				installprofile in self.db.fetchall():
+
 				if not vmnodeid:
 					continue
 
@@ -282,7 +290,8 @@ class Command(rocks.commands.list.host.command):
 				if len(disks) > 0:
 					(disk, disksize) = disks[0]
 
-				info = (slice, mem, cpus, mac, physhost)
+				info = (slice, mem, cpus, mac, physhost,
+					runprofile, installprofile)
 				if showstatus:
 					info += (status,)
 				if showdisks:
@@ -303,7 +312,8 @@ class Command(rocks.commands.list.host.command):
 						disk = ''
 						disksize = ''
 
-					info = (None, None, None, mac, None)
+					info = (None, None, None, mac, None,
+						None, None)
 					if showstatus:
 						info += (None,)
 					if showdisks:
@@ -313,7 +323,8 @@ class Command(rocks.commands.list.host.command):
 
 					index += 1
 
-		header = [ 'vm-host', 'slice', 'mem', 'cpus', 'mac', 'host' ]
+		header = [ 'vm-host', 'slice', 'mem', 'cpus', 'mac', 'host',
+			'runprofile', 'installprofile' ]
 		if showstatus:
 			header.append('status')
 		if showdisks:
