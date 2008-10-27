@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.5 2008/10/18 00:56:22 mjk Exp $
+# $Id: __init__.py,v 1.6 2008/10/27 20:14:27 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -166,7 +166,7 @@ class Command(rocks.commands.HostArgumentProcessor,
 			('args', )])
 			
 		if not profile:
-			self.abort('must supply an profile name')
+			self.abort('must supply a profile name')
 
 		if not hosts:
 			#
