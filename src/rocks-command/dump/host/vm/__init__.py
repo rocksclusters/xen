@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.3 2008/10/18 00:56:23 mjk Exp $
+# $Id: __init__.py,v 1.4 2008/10/27 20:14:51 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.4  2008/10/27 20:14:51  bruno
+# add installprofile and runprofile to dump command
+#
 # Revision 1.3  2008/10/18 00:56:23  mjk
 # copyright 5.1
 #
@@ -205,7 +208,8 @@ class Command(rocks.commands.dump.host.command):
 		# get the VM configuration parameters
 		#
 		rows = self.db.execute("""select vn.id, vn.mem,
-			vn.slice, vn.virt_type from nodes n, vm_nodes vn
+			vn.slice, vn.virt_type, vn.runprofile,
+			vn.installprofile from nodes n, vm_nodes vn
 			where vn.node = n.id and n.name = '%s'""" %
 			host)
 
@@ -213,7 +217,8 @@ class Command(rocks.commands.dump.host.command):
 			self.abort('cannot find a configuration data ' +
 				'for VM "%s"' % host)
 
-		vmnodeid, mem, slice, virt_type = self.db.fetchone()
+		vmnodeid, mem, slice, virt_type, runprofile, installprofile = \
+			self.db.fetchone()
 
 		disks = []
 		disksizes = []
@@ -238,6 +243,9 @@ class Command(rocks.commands.dump.host.command):
 			(' '.join(disks), ' '.join(disksizes))
 		str += "mem='%d' slice='%d' virt-type='%s'" % \
 			(mem, slice, virt_type)
+		if runprofile:
+			str += " runprofile='%s'" % (runprofile)
+		str += " installprofile='%s'" % (installprofile)
 
 		self.dump(str)
 
