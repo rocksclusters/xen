@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.20 2008/10/18 00:56:22 mjk Exp $
+# $Id: __init__.py,v 1.21 2008/10/31 19:56:55 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.21  2008/10/31 19:56:55  bruno
+# one more fix
+#
 # Revision 1.20  2008/10/18 00:56:22  mjk
 # copyright 5.1
 #
@@ -208,6 +211,21 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 	vlan="2,none,4".
 	The default is to not assign a vlan ID.
 	</param>
+
+	<param type='string' name='runprofile'>
+	The label name for the bootprofile to use when a node is running
+	normally. Usually this is empty, and the kernel defined inside of 
+	the VM will be used for booting. For a list of bootprofiles,
+	execute: 'rocks list host vm bootprofile &lt;hostname&gt;'.
+	Set this string to 'None' to clear the run profile.
+	</param>
+
+	<param type='string' name='installprofile'>
+	The label name for the bootprofile to use when installing a node. 
+	For a list of available bootprofiles, execute:
+	'rocks list host vm bootprofile &lt;hostname&gt;'.
+	It is an error to set the install profile to None.
+	</param>
 	
 	<example cmd='add host vm'>
 	Create a default VM.
@@ -220,7 +238,7 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 
 	def addToDB(self, nodename, membership, ip, subnet, physnodeid, rack,
 		rank, mem, cpus, slice, mac, num_macs, disk, disksize, vlanids,
-		module):
+		module, runprofile, installprofile):
 
 		#
 		# need to add entry in node and networks tables here
@@ -330,6 +348,16 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 			#
 			self.abort('could not update the vm_nodes table')
 
+		if runprofile:
+			self.db.execute("""update vm_nodes set
+				runprofile = "%s" where id = %s""" %
+				(runprofile, vmnodeid))
+
+		if installprofile:
+			self.db.execute("""update vm_nodes set
+				installprofile = "%s" where id = %s""" %
+				(installprofile, vmnodeid))
+
 		#
 		# parse the disk specification
 		#
@@ -437,7 +465,8 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 
 
 	def addVMHost(self, host, membership, nodename, ip, subnet, mem, cpus,
-		slice, mac, num_macs, disk, disksize, vlan, module):
+		slice, mac, num_macs, disk, disksize, vlan, module, runprofile,
+		installprofile):
 
 		rows = self.db.execute("""select id, rack, rank from nodes where
 			name = '%s'""" % (host))
@@ -534,7 +563,7 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 		#
 		self.addToDB(nodename, membership, ip, subnet, nodeid, rack,
 			rank, mem, cpus, slice, mac, num_macs, disk, disksize,
-			vlanids, module)
+			vlanids, module, runprofile, installprofile)
 
 		#
 		# print the name of the new VM
@@ -558,7 +587,8 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 		# fillParams with the above default values
 		#
 		(nodename, ip, subnet, mem, cpus, slice, mac, macs, disk,
-			disksize, vlan) = self.fillParams(
+			disksize, vlan, runprofile, installprofile) = \
+			self.fillParams(
 				[('name', None),
 				('ip', None),
 				('subnet', 'private'),
@@ -569,7 +599,9 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 				('num-macs', '1'),
 				('disk', None),
 				('disksize', 36),
-				('vlan', None)
+				('vlan', None),
+				('runprofile', None),
+				('installprofile', None)
 				])
 
 		hosts = self.getHostnames(args)
@@ -588,6 +620,11 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 				self.abort("can't supply the 'mac' " +
 					"parameter with more than one host")
 
+		if runprofile and runprofile.lower() == "none":
+			runprofile = None
+		if installprofile and installprofile.lower() == "none":
+			self.abort('"installprofile" cannot be "none"')
+
 		try:
 			num_macs = int(macs)
 		except:
@@ -603,7 +640,7 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 		for host in hosts:
 			self.addVMHost(host, membership, nodename, ip, subnet,
 				mem, cpus, slice, mac, num_macs, disk, disksize,
-				vlan, module)
+				vlan, module, runprofile, installprofile)
 		
 		#
 		# reconfigure and restart the appropriate rocks services
