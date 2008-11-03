@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.33 2008/10/27 21:14:51 bruno Exp $
+# $Id: __init__.py,v 1.34 2008/11/03 23:08:26 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.34  2008/11/03 23:08:26  bruno
+# phil's opensolaris xen fix
+#
 # Revision 1.33  2008/10/27 21:14:51  bruno
 # get the disk creation size correct
 #
@@ -232,9 +235,11 @@ runheader = """
 bootloader = '/opt/rocks/bin/rocks-pygrub'
 """
 
-trailer = """
+linuxroot = """
 root = "/dev/%s ro"
+"""
 
+trailer= """
 vnc=1
 vncpasswd=''
 """
@@ -516,7 +521,13 @@ class Command(rocks.commands.report.host.command):
 		reg = re.compile('[\w/]+[\d]+')
 		if not reg.match(bootdevice):
 			bootdevice = bootdevice + "1"
-		self.addOutput(host, trailer % bootdevice)
+
+		# if boot device is not a numerical device then
+		reg = re.compile('^[\d]+')
+		if not reg.match(bootdevice):
+			self.addOutput(host, linuxroot % bootdevice)
+
+		self.addOutput(host, trailer)
 
 		self.addOutput(host, "on_reboot = 'restart'\n")
 
