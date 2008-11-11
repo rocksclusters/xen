@@ -105,7 +105,7 @@ This is done by "starting" the VM:
 </para>
 
 <screen>
-# rocks start host vm vi-1.rocksclusters.org
+# rocks start host vm vi-1.rocksclusters.org install=yes
 </screen>
 
 <para>
