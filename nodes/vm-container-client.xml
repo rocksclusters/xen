@@ -15,10 +15,26 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: vm-container-client.xml,v $
+Revision 1.2  2008/11/21 18:37:29  bruno
+make sure 'rocks report host xen bridge' is called when a frontend is
+installing.
+
+this properly sets up the xen bridge on the frontend that uses a restore roll.
+
 Revision 1.1  2008/07/22 00:16:20  bruno
 support for VLANs
 
 </changelog>
+
+
+<post>
+
+<!-- Create the rocks-network-bridge script for xen --> 
+<eval mode="xml">
+/opt/rocks/bin/rocks report host xen bridge $Node_Hostname
+</eval>
+
+</post>
 
 
 </kickstart>

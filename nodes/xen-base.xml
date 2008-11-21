@@ -15,6 +15,12 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-base.xml,v $
+Revision 1.23  2008/11/21 18:37:29  bruno
+make sure 'rocks report host xen bridge' is called when a frontend is
+installing.
+
+this properly sets up the xen bridge on the frontend that uses a restore roll.
+
 Revision 1.22  2008/09/22 18:12:35  bruno
 added script to create vlans with xen bridges
 
@@ -91,15 +97,6 @@ Revision 1.1  2005/12/17 05:27:19  mjk
 <package>rocks-pygrub</package>
 <package>rocks-create-vlan</package>
 
-
-<post>
-
-<!-- Create the rocks-network-bridge script for xen --> 
-<eval mode="xml">
-/opt/rocks/bin/rocks report host xen bridge $Node_Hostname
-</eval>
-
-</post>
 
 <post>
 MINMEM=<var name="Xen_Dom0MinMem"/>

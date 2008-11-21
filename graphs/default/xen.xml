@@ -15,6 +15,12 @@
 
 <changelog>
 $Log: xen.xml,v $
+Revision 1.16  2008/11/21 18:37:29  bruno
+make sure 'rocks report host xen bridge' is called when a frontend is
+installing.
+
+this properly sets up the xen bridge on the frontend that uses a restore roll.
+
 Revision 1.15  2008/10/18 00:56:22  mjk
 copyright 5.1
 
@@ -71,7 +77,7 @@ start of xen roll
 </changelog>
 
 
-	<order head="database-data">
+	<order head="networking-server">
 		<tail>xen-db</tail>
 	</order> 
 

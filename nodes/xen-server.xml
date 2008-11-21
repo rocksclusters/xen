@@ -16,6 +16,12 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-server.xml,v $
+Revision 1.19  2008/11/21 18:37:29  bruno
+make sure 'rocks report host xen bridge' is called when a frontend is
+installing.
+
+this properly sets up the xen bridge on the frontend that uses a restore roll.
+
 Revision 1.18  2008/10/14 22:27:50  bruno
 if a user selects the xen roll, then the frontend is a VM container that
 can house VM frontends.
@@ -114,5 +120,17 @@ Revision 1.1  2005/12/17 05:27:19  mjk
 
 </post>
 
+<post>
+
+<!-- Create the rocks-network-bridge script for xen --> 
+/opt/rocks/bin/rocks report host xen bridge $Node_Hostname | \
+        /opt/rocks/bin/rocks report script > /tmp/do-xen-bridge.sh
+
+chmod a+x /tmp/do-xen-bridge.sh
+/tmp/do-xen-bridge.sh
+
+</post>
+
 
 </kickstart>
+
