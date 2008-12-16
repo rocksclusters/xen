@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.10 2008/10/18 00:56:24 mjk Exp $
+# $Id: __init__.py,v 1.11 2008/12/16 00:45:11 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.11  2008/12/16 00:45:11  bruno
+# merge vm_profiles and pxeaction tables into bootaction table
+#
 # Revision 1.10  2008/10/18 00:56:24  mjk
 # copyright 5.1
 #
@@ -120,10 +123,6 @@ class Command(rocks.commands.start.host.command):
 	</example>
 
 	<related>set host vm boot</related>
-	<related>list host vm bootprofile</related>
-	<related>add host vm bootprofile</related>
-	<related>remove host vm bootprofile</related>
-	<related>set host vm bootprofile</related>
 	"""
 
 	def run(self, params, args):

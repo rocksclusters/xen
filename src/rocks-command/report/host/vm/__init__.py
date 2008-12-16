@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.34 2008/11/03 23:08:26 bruno Exp $
+# $Id: __init__.py,v 1.35 2008/12/16 00:45:11 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.35  2008/12/16 00:45:11  bruno
+# merge vm_profiles and pxeaction tables into bootaction table
+#
 # Revision 1.34  2008/11/03 23:08:26  bruno
 # phil's opensolaris xen fix
 #
@@ -273,10 +276,6 @@ class Command(rocks.commands.report.host.command):
 
 
 	<related>set host vm boot</related>
-	<related>list host vm bootprofile</related>
-	<related>add host vm bootprofile</related>
-	<related>remove host vm bootprofile</related>
-	<related>set host vm bootprofile</related>
 	"""
 
 	def getBridgeName(self, host, subnetid, vlanid):
@@ -330,27 +329,28 @@ class Command(rocks.commands.report.host.command):
 		if not profile:
 			return kernel, ramdisk, bootargs
 
-		# Read the global profile, if it exists
-		rows = self.db.execute("""select p.kernel, p.ramdisk, p.args
-			from vm_profiles p where
-			p.profile='%s' and p.vm_node=0 """ % profile)
+		# Read the global profile
+		rows = self.db.execute("""select kernel, ramdisk, args
+			from bootaction where action = '%s' and node = 0 """
+			% profile)
 		if rows > 0:
-			kernel, ramdisk, bootargs, = self.db.fetchone()
+			kernel, ramdisk, bootargs = self.db.fetchone()
 
-		# Read the 
-		rows = self.db.execute("""select p.kernel, p.ramdisk, p.args
-			from nodes n, vm_nodes v, vm_profiles p where
-			p.profile='%s' and p.vm_node=v.id and v.node=n.id
-			and n.name='%s' """ % (profile, host) )
+		# Read the local profile
+		rows = self.db.execute("""select b.kernel, b.ramdisk, b.args
+			from nodes n, bootaction b where
+			b.action = '%s' and b.node = n.id and n.name = '%s'
+			""" % (profile, host))
+
 		if rows > 0:
-			kernel, ramdisk, bootargs, = self.db.fetchone()
+			kernel, ramdisk, bootargs = self.db.fetchone()
 
 		if not kernel:
-			kernel=''
+			kernel = ''
 		if not ramdisk:
-			ramdisk=''
+			ramdisk = ''
 		if not bootargs:
-			bootargs=''
+			bootargs = ''
 
 		return kernel, ramdisk, bootargs
 
@@ -358,7 +358,7 @@ class Command(rocks.commands.report.host.command):
 	def outputVMConfig(self, host, forceFlag):
 		#
 		# lookup the boot and run profiles for this VM host. 
-		# Also look up the  pxeaction for this VM host.
+		# Also look up the pxeaction for this VM host.
 		#      if the pxeaction is like 'install%' force install
 		#          on next boot
 		
@@ -374,7 +374,6 @@ class Command(rocks.commands.report.host.command):
 			n.id = v.node """ % host)
 		if rows > 0:
 			runProf, instProf, = self.db.fetchone()
-		
 		
 		# boot profile
 		kern, ramdsk, bootargs = self.getBootProfile(host, runProf)

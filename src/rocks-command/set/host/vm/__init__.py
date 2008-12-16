@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.4 2008/10/27 19:25:01 bruno Exp $
+# $Id: __init__.py,v 1.5 2008/12/16 00:45:11 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.5  2008/12/16 00:45:11  bruno
+# merge vm_profiles and pxeaction tables into bootaction table
+#
 # Revision 1.4  2008/10/27 19:25:01  bruno
 # folded 'rocks * host vm boot' commands into 'rocks * host vm'
 #
@@ -112,14 +115,14 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.set.command):
 	The label name for the bootprofile to use when a node is running
 	normally. Usually this is empty, and the kernel defined inside of 
 	the VM will be used for booting. For a list of bootprofiles,
-	execute: 'rocks list host vm bootprofile &lt;hostname&gt;'.
+	execute: 'rocks list host bootaction &lt;hostname&gt;'.
 	Set this string to 'None' to clear the run profile.
 	</param>
 
 	<param type='string' name='installprofile'>
 	The label name for the bootprofile to use when installing a node. 
 	For a list of available bootprofiles, execute:
-	'rocks list host vm bootprofile &lt;hostname&gt;'.
+	'rocks list host bootaction &lt;hostname&gt;'.
 	It is an error to set the install profile to None.
 	</param>
 
@@ -273,9 +276,9 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.set.command):
 				(virt_type, vmnodeid))
 
 		if runprofile:
-			query = """select profile from vm_profiles where
-				(vm_node = %s or Vm_Node = 0) 
-				and profile = "%s" """ % (vmnodeid, runprofile)
+			query = """select action from bootaction where
+				(node = 0 or node = %s)
+				and action = "%s" """ % (vmnodeid, runprofile)
 
 			rows = self.db.execute(query)
 
@@ -293,9 +296,9 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.set.command):
 				(vmnodeid))
 
 		if installprofile:
-			query = """select profile from vm_profiles where
-				(vm_node = %s or Vm_Node = 0) and
-				profile = "%s" """ % (vmnodeid, installprofile)
+			query = """select action from bootaction where
+				(node = %s or node = 0) and action = "%s"
+				""" % (vmnodeid, installprofile)
 
 			rows = self.db.execute(query)
 

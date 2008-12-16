@@ -1,4 +1,4 @@
-# $Id: plugin_host_vm.py,v 1.3 2008/10/27 20:18:28 bruno Exp $
+# $Id: plugin_host_vm.py,v 1.4 2008/12/16 00:45:05 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: plugin_host_vm.py,v $
+# Revision 1.4  2008/12/16 00:45:05  bruno
+# merge vm_profiles and pxeaction tables into bootaction table
+#
 # Revision 1.3  2008/10/27 20:18:28  bruno
 # call the bootprofile dump commands when 'rocks dump' is called
 #
@@ -79,7 +82,5 @@ class Plugin(rocks.commands.Plugin):
 		return [ 'interface' ]
 		
 	def run(self, args):
-		self.owner.addText(self.owner.command(
-			'dump.host.vm.bootprofile', []))
 		self.owner.addText(self.owner.command('dump.host.vm', []))
 		

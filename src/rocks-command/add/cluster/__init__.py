@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.10 2008/10/31 19:56:55 bruno Exp $
+# $Id: __init__.py,v 1.11 2008/12/16 00:45:04 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.11  2008/12/16 00:45:04  bruno
+# merge vm_profiles and pxeaction tables into bootaction table
+#
 # Revision 1.10  2008/10/31 19:56:55  bruno
 # one more fix
 #
@@ -273,6 +276,7 @@ class Command(rocks.commands.add.command):
 				'cpus=%s' % cpus_per_compute,
 				'mem=%s' % mem_per_compute,
 				'disksize=%s' % disk_per_compute,
+				'installprofile=install vm', 
 				'vlan=%d' % vlan ] )
 
 			line = output.split()

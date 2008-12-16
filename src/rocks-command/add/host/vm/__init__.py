@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.21 2008/10/31 19:56:55 bruno Exp $
+# $Id: __init__.py,v 1.22 2008/12/16 00:45:05 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.22  2008/12/16 00:45:05  bruno
+# merge vm_profiles and pxeaction tables into bootaction table
+#
 # Revision 1.21  2008/10/31 19:56:55  bruno
 # one more fix
 #
@@ -216,14 +219,14 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 	The label name for the bootprofile to use when a node is running
 	normally. Usually this is empty, and the kernel defined inside of 
 	the VM will be used for booting. For a list of bootprofiles,
-	execute: 'rocks list host vm bootprofile &lt;hostname&gt;'.
+	execute: 'rocks list host bootaction &lt;hostname&gt;'.
 	Set this string to 'None' to clear the run profile.
 	</param>
 
 	<param type='string' name='installprofile'>
 	The label name for the bootprofile to use when installing a node. 
 	For a list of available bootprofiles, execute:
-	'rocks list host vm bootprofile &lt;hostname&gt;'.
+	'rocks list host bootaction &lt;hostname&gt;'.
 	It is an error to set the install profile to None.
 	</param>
 	
