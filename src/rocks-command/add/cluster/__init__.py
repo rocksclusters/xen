@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.11 2008/12/16 00:45:04 bruno Exp $
+# $Id: __init__.py,v 1.12 2009/01/07 18:55:41 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,12 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.12  2009/01/07 18:55:41  bruno
+# change first free VLAN id from 2 to 3.
+#
+# it seems that there are often problems with VLAN 2 going up and down while
+# VLAN 3 is solid.
+#
 # Revision 1.11  2008/12/16 00:45:04  bruno
 # merge vm_profiles and pxeaction tables into bootaction table
 #
@@ -138,7 +144,7 @@ class Command(rocks.commands.add.command):
 
 	<param type='string' name='vlan'>
 	The VLAN ID to assign to this cluster. All network communication
-	between the nodes of the virtual cluster will be encapulated within
+	between the nodes of the virtual cluster will be encapsulated within
 	this VLAN.
 	The default is the next free VLAN ID.
 	</param>
@@ -172,7 +178,7 @@ class Command(rocks.commands.add.command):
 		#
 		# find a free vlanid
 		#
-		for i in range(2, 4096):
+		for i in range(3, 4096):
 			if i not in vlanids:
 				return i
 
