@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.35 2008/12/16 00:45:11 bruno Exp $
+# $Id: __init__.py,v 1.36 2009/01/09 20:42:51 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.36  2009/01/09 20:42:51  bruno
+# change pxeaction/pxeboot to bootaction/boot.
+#
 # Revision 1.35  2008/12/16 00:45:11  bruno
 # merge vm_profiles and pxeaction tables into bootaction table
 #
@@ -260,7 +263,7 @@ class Command(rocks.commands.report.host.command):
 	its install bootprofile. Default is 'n'
 
 	VMs use different mechanisms to control booting as compared to
-	PXE-booted hosts. However, If the pxeaction for a VM host is
+	PXE-booted hosts. However, If the bootaction for a VM host is
 	defined explicitly as "install*' for this VM, then
 	this flag will be internally set to 'y'. 
 	</param>
@@ -358,8 +361,8 @@ class Command(rocks.commands.report.host.command):
 	def outputVMConfig(self, host, forceFlag):
 		#
 		# lookup the boot and run profiles for this VM host. 
-		# Also look up the pxeaction for this VM host.
-		#      if the pxeaction is like 'install%' force install
+		# Also look up the bootaction for this VM host.
+		#      if the bootaction is like 'install%' force install
 		#          on next boot
 		
 		# keep Track of what is going into the rocks-pygrub compatible
@@ -385,15 +388,15 @@ class Command(rocks.commands.report.host.command):
 			ramdsk,bootargs))
 		
 		# Force Install?
-		# look up the pxeboot action
-		pxeaction = None
-		rows = self.db.execute("""select p.action from pxeboot p,
-			nodes n where n.name = '%s' and n.id = p.node
+		# look up the boot action
+		bootaction = None
+		rows = self.db.execute("""select b.action from boot b,
+			nodes n where n.name = '%s' and n.id = b.node
 			and action like 'install%%' """ % host)
 		if rows > 0:
-			pxeaction, = self.db.fetchone()
+			bootaction, = self.db.fetchone()
 
-		if pxeaction or forceFlag:
+		if bootaction or forceFlag:
 			self.configContents.append(forceConfig)
 	
 
