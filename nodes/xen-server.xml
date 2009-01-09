@@ -16,6 +16,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-server.xml,v $
+Revision 1.21  2009/01/09 22:07:22  bruno
+added version and arch to xen initrd.img and vmlinuz
+
 Revision 1.20  2008/12/16 00:45:04  bruno
 merge vm_profiles and pxeaction tables into bootaction table
 
@@ -112,13 +115,13 @@ Revision 1.1  2005/12/17 05:27:19  mjk
 /opt/rocks/bin/rocks set host bootflags flags="dom0_mem=1024M"
 
 /opt/rocks/bin/rocks add host bootaction action="install vm" \
-	kernel="file:///boot/kickstart/xen/vmlinuz" \
-	ramdisk="file:///boot/kickstart/xen/initrd-xen.iso.gz" \
+	kernel="file:///boot/kickstart/xen/vmlinuz-&rocks_version;-&arch;" \
+	ramdisk="file:///boot/kickstart/xen/initrd-xen.iso.gz-&rocks_version;-&arch;" \
 	args="ks ramdisk_size=1500000 lang= devfs=nomount kssendmac selinux=0 noipv6"
 
 /opt/rocks/bin/rocks add host bootaction action="install vm frontend" \
-	kernel="file:///boot/kickstart/xen/vmlinuz" \
-	ramdisk="file:///boot/kickstart/xen/initrd-xen.iso.gz" \
+	kernel="file:///boot/kickstart/xen/vmlinuz-&rocks_version;-&arch;" \
+	ramdisk="file:///boot/kickstart/xen/initrd-xen.iso.gz-&rocks_version;-&arch;" \
 	args="ramdisk_size=150000 lang= devfs=nomount pxe kssendmac selinux=0 noipv6 ks=http://<var name="Kickstart_PublicHostname"/>/install/sbin/kickstart.cgi ksdevice=eth1 build"
 
 </post>
