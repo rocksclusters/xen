@@ -82,6 +82,9 @@
 # @Copyright@
 #
 # $Log: rocks-pygrub,v $
+# Revision 1.6  2009/01/09 22:07:58  bruno
+# get the installation vmlinuz and initrd.img from the database
+#
 # Revision 1.5  2008/10/18 00:56:24  mjk
 # copyright 5.1
 #
@@ -131,9 +134,9 @@ vmParameters = {'forceInstall': False,
 		'bootKernel': '',
 		'bootRamdisk':'',	
 		'bootArgs': '',
-		'installKernel':'file:///boot/kickstart/xen/vmlinuz',
-		'installRamdisk' : 'file:///boot/kickstart/xen/initrd-xen.iso.gz',
-		'installBootArgs' : 'ramdisk_size=1500000 kssendmac ks initrd=initrd.img pxe selinux=0 noipv6 lang= devfs=nomount', 
+		'installKernel': '',
+		'installRamdisk' : '',
+		'installBootArgs' : '',
 		'disksize': 36000000000 }
 
 
