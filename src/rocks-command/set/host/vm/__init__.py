@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.5 2008/12/16 00:45:11 bruno Exp $
+# $Id: __init__.py,v 1.6 2009/01/12 23:53:30 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,10 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.6  2009/01/12 23:53:30  bruno
+# don't reset the install profile to 'install' if the 'installprofile' flag is
+# not supplied
+#
 # Revision 1.5  2008/12/16 00:45:11  bruno
 # merge vm_profiles and pxeaction tables into bootaction table
 #
@@ -162,7 +166,7 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.set.command):
 				('disk', None), ('disksize', None),
 				('mem', None), ('slice', None),
 				('virt-type', None), ('runprofile', None),
-				('installprofile', 'install') ])
+				('installprofile', None) ])
 
 		try:
 			if m:
