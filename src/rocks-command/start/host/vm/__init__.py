@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.12 2009/01/14 00:20:56 bruno Exp $
+# $Id: __init__.py,v 1.13 2009/01/14 01:08:26 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.13  2009/01/14 01:08:26  bruno
+# kill the 'install=y' flag
+#
 # Revision 1.12  2009/01/14 00:20:56  bruno
 # unify the physical node and VM node boot action functionality
 #
@@ -115,23 +118,12 @@ class Command(rocks.commands.start.host.command):
 	A list of one or more VM host names.
 	</arg>
 
-        <param name='install' type='bool' optional='1'>
-        If install='y' is set, then the VM will be first boot from
-        its install action. Default is 'n'
-
-        VMs use different mechanisms to control booting as compared to
-        PXE-booted hosts. However, If the pxeaction for a VM host is
-        defined explicitly as "install*' for this VM, then
-        this flag will be internally set to 'y'.
-
-        </param>
-
 	<example cmd='start host vm compute-0-0-0'>
 	Start VM host compute-0-0-0.
 	</example>
 
-	<example cmd='start host vm install=y compute-0-0-0'>
-	Start VM host compute-0-0-0 in installation mode.
+	<example cmd='start host vm compute-0-0-0'>
+	Start VM host compute-0-0-0.
 	</example>
 
 	<related>set host vm boot</related>
@@ -142,8 +134,6 @@ class Command(rocks.commands.start.host.command):
 		
 		if len(hosts) < 1:
 			self.abort('must supply at least one host')
-
-                (forceInstall, ) = self.fillParams([('install','n')])
 
 		for host in hosts:
 			#
@@ -172,8 +162,7 @@ class Command(rocks.commands.start.host.command):
 			#
 			temp = tempfile.mktemp()
 			fout = open(temp, 'w')
-			fout.write(self.command('report.host.vm', [host,
-				'install=%s' % forceInstall ]))
+			fout.write(self.command('report.host.vm', [ host ]))
 			fout.close()
 			os.system('scp -q %s %s:/etc/xen/rocks/%s' % 
 				(temp, physhost, host))

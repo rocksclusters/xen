@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.37 2009/01/14 00:20:56 bruno Exp $
+# $Id: __init__.py,v 1.38 2009/01/14 01:08:26 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.38  2009/01/14 01:08:26  bruno
+# kill the 'install=y' flag
+#
 # Revision 1.37  2009/01/14 00:20:56  bruno
 # unify the physical node and VM node boot action functionality
 #
@@ -270,23 +273,12 @@ class Command(rocks.commands.report.host.command):
 	One VM host name (e.g., compute-0-0-0).
 	</arg>
 
-	<param name='install' type='bool' optional='1'>
-	If install='y' is set, then the VM will be first boot from
-	its install action. Default is 'n'
-
-	VMs use different mechanisms to control booting as compared to
-	PXE-booted hosts. However, If the bootaction for a VM host is
-	defined explicitly as "install*' for this VM, then
-	this flag will be internally set to 'y'. 
-	</param>
-
 	<example cmd='report host vm compute-0-0-0'>
 	Create the VM configuration file for host compute-0-0-0
 	</example>
 
-	<example cmd='report host vm compute-0-0-0 install=y'>
-	Create the VM configuration file for host compute-0-0-0, and
-	tell it to run its installaction when it boots.
+	<example cmd='report host vm compute-0-0-0'>
+	Create the VM configuration file for host compute-0-0-0.
 	</example>
 
 
@@ -360,7 +352,7 @@ class Command(rocks.commands.report.host.command):
 		return kernel, ramdisk, bootargs
 
 
-	def outputVMConfig(self, host, forceFlag):
+	def outputVMConfig(self, host):
 		#
 		# lookup the boot and run profiles for this VM host. 
 		# Also look up the bootaction for this VM host.
@@ -389,7 +381,7 @@ class Command(rocks.commands.report.host.command):
 		self.configContents.append(installConfig % (kern, ramdsk,
 			bootargs))
 		
-		# Force Install?
+		# Install?
 		# look up the boot action
 		bootaction = None
 		rows = self.db.execute("""select b.action from boot b,
@@ -398,10 +390,9 @@ class Command(rocks.commands.report.host.command):
 		if rows > 0:
 			bootaction, = self.db.fetchone()
 
-		if bootaction or forceFlag:
+		if bootaction:
 			self.configContents.append(forceConfig)
 	
-
 		### Now get the other configuration file contents
 		self.addOutput(host, header)
 		self.addOutput(host, "name = '%s'" % host)
@@ -539,17 +530,15 @@ class Command(rocks.commands.report.host.command):
 	def run(self, params, args):
 		hosts = self.getHostnames(args)
 
-                (forceInstall, ) = self.fillParams([('install','n')])
-                forceInstall = self.str2bool(forceInstall)
-
 		if len(hosts) < 1:
 			self.abort('must supply host')
 
 		self.beginOutput()
 		for host in hosts:
 			try:
-				self.outputVMConfig(host, forceInstall)
+				self.outputVMConfig(host)
 			except TypeError:
 				pass
+
 		self.endOutput(padChar='')
 	
