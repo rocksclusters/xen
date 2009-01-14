@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.12 2009/01/07 18:55:41 bruno Exp $
+# $Id: __init__.py,v 1.13 2009/01/14 00:20:55 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,18 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.13  2009/01/14 00:20:55  bruno
+# unify the physical node and VM node boot action functionality
+#
+# - all bootaction's are global
+#
+# - the node table has a 'runaction' (what bootaction should the node do when
+#   a node normally boots) and an 'installaction (the bootaction for installs).
+#
+# - the 'boot' table has an entry for each node and it dictates what the node
+#   will do on the next boot -- it will look up the runaction in the nodes table
+#   (for a normal boot) or the installaction in the nodes table (for an install).
+#
 # Revision 1.12  2009/01/07 18:55:41  bruno
 # change first free VLAN id from 2 to 3.
 #
@@ -243,7 +255,6 @@ class Command(rocks.commands.add.command):
 	def createFrontend(self, vlan, fqdn, ip):
 		output = self.command('add.host.vm', [ self.getFrontend(),
 			'membership=Frontend', 'num-macs=2',
-			'installprofile=install vm frontend',
 			'vlan=%d,0' % vlan ] )
 
 		self.frontendname = None
@@ -265,6 +276,14 @@ class Command(rocks.commands.add.command):
 		self.command('set.host.interface.name', [ self.frontendname,
 			'eth1', fqdn ] )
 
+		#
+		# set the run and install actions for this VM
+		#
+		self.command('set.host.runaction', [ self.frontendname,
+			'none' ] )
+		self.command('set.host.installaction', [ self.frontendname,
+			'install vm frontend' ] )
+
 		self.addOutput('', 'created frontend VM named: %s' % 
 			self.frontendname)
 
@@ -282,7 +301,6 @@ class Command(rocks.commands.add.command):
 				'cpus=%s' % cpus_per_compute,
 				'mem=%s' % mem_per_compute,
 				'disksize=%s' % disk_per_compute,
-				'installprofile=install vm', 
 				'vlan=%d' % vlan ] )
 
 			line = output.split()
@@ -291,6 +309,15 @@ class Command(rocks.commands.add.command):
 			else:
 				self.abort('failed to create a compute VM ' + 
 					'on host %s' % host)
+
+			
+			#
+			# set the run and install actions for this VM
+			#
+			self.command('set.host.runaction', [ line[2], 
+				'none' ] )
+			self.command('set.host.installaction', [ line[2], 
+				'install vm' ] )
 
 			self.addOutput('', '\tcreated compute VM named: %s' % 
 				line[2])

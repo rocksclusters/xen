@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.36 2009/01/09 20:42:51 bruno Exp $
+# $Id: __init__.py,v 1.37 2009/01/14 00:20:56 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,18 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.37  2009/01/14 00:20:56  bruno
+# unify the physical node and VM node boot action functionality
+#
+# - all bootaction's are global
+#
+# - the node table has a 'runaction' (what bootaction should the node do when
+#   a node normally boots) and an 'installaction (the bootaction for installs).
+#
+# - the 'boot' table has an entry for each node and it dictates what the node
+#   will do on the next boot -- it will look up the runaction in the nodes table
+#   (for a normal boot) or the installaction in the nodes table (for an install).
+#
 # Revision 1.36  2009/01/09 20:42:51  bruno
 # change pxeaction/pxeboot to bootaction/boot.
 #
@@ -260,7 +272,7 @@ class Command(rocks.commands.report.host.command):
 
 	<param name='install' type='bool' optional='1'>
 	If install='y' is set, then the VM will be first boot from
-	its install bootprofile. Default is 'n'
+	its install action. Default is 'n'
 
 	VMs use different mechanisms to control booting as compared to
 	PXE-booted hosts. However, If the bootaction for a VM host is
@@ -274,7 +286,7 @@ class Command(rocks.commands.report.host.command):
 
 	<example cmd='report host vm compute-0-0-0 install=y'>
 	Create the VM configuration file for host compute-0-0-0, and
-	tell it to run its installprofile when it boots.
+	tell it to run its installaction when it boots.
 	</example>
 
 
@@ -332,19 +344,9 @@ class Command(rocks.commands.report.host.command):
 		if not profile:
 			return kernel, ramdisk, bootargs
 
-		# Read the global profile
+		# Read the profile
 		rows = self.db.execute("""select kernel, ramdisk, args
-			from bootaction where action = '%s' and node = 0 """
-			% profile)
-		if rows > 0:
-			kernel, ramdisk, bootargs = self.db.fetchone()
-
-		# Read the local profile
-		rows = self.db.execute("""select b.kernel, b.ramdisk, b.args
-			from nodes n, bootaction b where
-			b.action = '%s' and b.node = n.id and n.name = '%s'
-			""" % (profile, host))
-
+			from bootaction where action = '%s' """ % profile)
 		if rows > 0:
 			kernel, ramdisk, bootargs = self.db.fetchone()
 
@@ -369,23 +371,23 @@ class Command(rocks.commands.report.host.command):
 		# .cfg file 
 		self.configContents = []
 
-		# look up the names of the install and run profiles
-		runProf = None
-		instProf = None
-		rows = self.db.execute("""select v.runprofile, v.installprofile
-			from nodes n, vm_nodes v where n.name = '%s' and 
-			n.id = v.node """ % host)
+		runAction = None
+		installAction = None
+		rows = self.db.execute("""select runaction, installaction
+			from nodes where name = '%s' """ % host)
 		if rows > 0:
-			runProf, instProf, = self.db.fetchone()
+			(runAction, installAction) = self.db.fetchone()
 		
 		# boot profile
-		kern, ramdsk, bootargs = self.getBootProfile(host, runProf)
-		self.configContents.append(bootConfig % (kern, ramdsk,bootargs))
+		kern, ramdsk, bootargs = self.getBootProfile(host, runAction)
+		self.configContents.append(bootConfig % (kern, ramdsk,
+			bootargs))
 
 		# install profile
-		kern, ramdsk, bootargs = self.getBootProfile(host, instProf)
-		self.configContents.append(installConfig % (kern,
-			ramdsk,bootargs))
+		kern, ramdsk, bootargs = self.getBootProfile(host,
+			installAction)
+		self.configContents.append(installConfig % (kern, ramdsk,
+			bootargs))
 		
 		# Force Install?
 		# look up the boot action

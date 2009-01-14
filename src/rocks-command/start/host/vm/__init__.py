@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.11 2008/12/16 00:45:11 bruno Exp $
+# $Id: __init__.py,v 1.12 2009/01/14 00:20:56 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,18 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.12  2009/01/14 00:20:56  bruno
+# unify the physical node and VM node boot action functionality
+#
+# - all bootaction's are global
+#
+# - the node table has a 'runaction' (what bootaction should the node do when
+#   a node normally boots) and an 'installaction (the bootaction for installs).
+#
+# - the 'boot' table has an entry for each node and it dictates what the node
+#   will do on the next boot -- it will look up the runaction in the nodes table
+#   (for a normal boot) or the installaction in the nodes table (for an install).
+#
 # Revision 1.11  2008/12/16 00:45:11  bruno
 # merge vm_profiles and pxeaction tables into bootaction table
 #
@@ -105,7 +117,7 @@ class Command(rocks.commands.start.host.command):
 
         <param name='install' type='bool' optional='1'>
         If install='y' is set, then the VM will be first boot from
-        its install bootprofile. Default is 'n'
+        its install action. Default is 'n'
 
         VMs use different mechanisms to control booting as compared to
         PXE-booted hosts. However, If the pxeaction for a VM host is

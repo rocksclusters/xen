@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.23 2009/01/07 18:55:51 bruno Exp $
+# $Id: __init__.py,v 1.24 2009/01/14 00:20:55 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,18 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.24  2009/01/14 00:20:55  bruno
+# unify the physical node and VM node boot action functionality
+#
+# - all bootaction's are global
+#
+# - the node table has a 'runaction' (what bootaction should the node do when
+#   a node normally boots) and an 'installaction (the bootaction for installs).
+#
+# - the 'boot' table has an entry for each node and it dictates what the node
+#   will do on the next boot -- it will look up the runaction in the nodes table
+#   (for a normal boot) or the installaction in the nodes table (for an install).
+#
 # Revision 1.23  2009/01/07 18:55:51  bruno
 # doc touchup
 #
@@ -218,21 +230,6 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 	The default is to not assign a vlan ID.
 	</param>
 
-	<param type='string' name='runprofile'>
-	The label name for the bootprofile to use when a node is running
-	normally. Usually this is empty, and the kernel defined inside of 
-	the VM will be used for booting. For a list of bootprofiles,
-	execute: 'rocks list host bootaction &lt;hostname&gt;'.
-	Set this string to 'None' to clear the run profile.
-	</param>
-
-	<param type='string' name='installprofile'>
-	The label name for the bootprofile to use when installing a node. 
-	For a list of available bootprofiles, execute:
-	'rocks list host bootaction &lt;hostname&gt;'.
-	It is an error to set the install profile to None.
-	</param>
-	
 	<example cmd='add host vm'>
 	Create a default VM.
 	</example>
@@ -244,7 +241,7 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 
 	def addToDB(self, nodename, membership, ip, subnet, physnodeid, rack,
 		rank, mem, cpus, slice, mac, num_macs, disk, disksize, vlanids,
-		module, runprofile, installprofile):
+		module):
 
 		#
 		# need to add entry in node and networks tables here
@@ -354,16 +351,6 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 			#
 			self.abort('could not update the vm_nodes table')
 
-		if runprofile:
-			self.db.execute("""update vm_nodes set
-				runprofile = "%s" where id = %s""" %
-				(runprofile, vmnodeid))
-
-		if installprofile:
-			self.db.execute("""update vm_nodes set
-				installprofile = "%s" where id = %s""" %
-				(installprofile, vmnodeid))
-
 		#
 		# parse the disk specification
 		#
@@ -471,8 +458,7 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 
 
 	def addVMHost(self, host, membership, nodename, ip, subnet, mem, cpus,
-		slice, mac, num_macs, disk, disksize, vlan, module, runprofile,
-		installprofile):
+		slice, mac, num_macs, disk, disksize, vlan, module):
 
 		rows = self.db.execute("""select id, rack, rank from nodes where
 			name = '%s'""" % (host))
@@ -569,7 +555,7 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 		#
 		self.addToDB(nodename, membership, ip, subnet, nodeid, rack,
 			rank, mem, cpus, slice, mac, num_macs, disk, disksize,
-			vlanids, module, runprofile, installprofile)
+			vlanids, module)
 
 		#
 		# print the name of the new VM
@@ -593,8 +579,7 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 		# fillParams with the above default values
 		#
 		(nodename, ip, subnet, mem, cpus, slice, mac, macs, disk,
-			disksize, vlan, runprofile, installprofile) = \
-			self.fillParams(
+			disksize, vlan) = self.fillParams(
 				[('name', None),
 				('ip', None),
 				('subnet', 'private'),
@@ -605,9 +590,7 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 				('num-macs', '1'),
 				('disk', None),
 				('disksize', 36),
-				('vlan', None),
-				('runprofile', None),
-				('installprofile', None)
+				('vlan', None)
 				])
 
 		hosts = self.getHostnames(args)
@@ -626,11 +609,6 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 				self.abort("can't supply the 'mac' " +
 					"parameter with more than one host")
 
-		if runprofile and runprofile.lower() == "none":
-			runprofile = None
-		if installprofile and installprofile.lower() == "none":
-			self.abort('"installprofile" cannot be "none"')
-
 		try:
 			num_macs = int(macs)
 		except:
@@ -646,7 +624,7 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 		for host in hosts:
 			self.addVMHost(host, membership, nodename, ip, subnet,
 				mem, cpus, slice, mac, num_macs, disk, disksize,
-				vlan, module, runprofile, installprofile)
+				vlan, module)
 		
 		#
 		# reconfigure and restart the appropriate rocks services

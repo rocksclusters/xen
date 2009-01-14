@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.10 2008/10/27 19:25:01 bruno Exp $
+# $Id: __init__.py,v 1.11 2009/01/14 00:20:56 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,18 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.11  2009/01/14 00:20:56  bruno
+# unify the physical node and VM node boot action functionality
+#
+# - all bootaction's are global
+#
+# - the node table has a 'runaction' (what bootaction should the node do when
+#   a node normally boots) and an 'installaction (the bootaction for installs).
+#
+# - the 'boot' table has an entry for each node and it dictates what the node
+#   will do on the next boot -- it will look up the runaction in the nodes table
+#   (for a normal boot) or the installaction in the nodes table (for an install).
+#
 # Revision 1.10  2008/10/27 19:25:01  bruno
 # folded 'rocks * host vm boot' commands into 'rocks * host vm'
 #
@@ -210,8 +222,6 @@ class Command(rocks.commands.list.host.command):
 			macs = None
 			disks = None
 			physhost = None
-			runprofile = None
-			installprofile = None
 
 			if showstatus:
 				status = None
@@ -242,17 +252,14 @@ class Command(rocks.commands.list.host.command):
 			# get the VM configuration parameters
 			#
 			rows = self.db.execute("""select vn.id, vn.mem,
-				n.cpus, vn.slice, vn.runprofile,
-				vn.installprofile from nodes n, vm_nodes vn
+				n.cpus, vn.slice from nodes n, vm_nodes vn
 				where vn.node = n.id and n.name = '%s'""" %
 				host)
 
 			if rows < 1:
 				continue
 
-			for vmnodeid, mem, cpus, slice, runprofile, \
-				installprofile in self.db.fetchall():
-
+			for vmnodeid, mem, cpus, slice in self.db.fetchall():
 				if not vmnodeid:
 					continue
 
@@ -290,8 +297,7 @@ class Command(rocks.commands.list.host.command):
 				if len(disks) > 0:
 					(disk, disksize) = disks[0]
 
-				info = (slice, mem, cpus, mac, physhost,
-					runprofile, installprofile)
+				info = (slice, mem, cpus, mac, physhost)
 				if showstatus:
 					info += (status,)
 				if showdisks:
@@ -323,8 +329,8 @@ class Command(rocks.commands.list.host.command):
 
 					index += 1
 
-		header = [ 'vm-host', 'slice', 'mem', 'cpus', 'mac', 'host',
-			'runprofile', 'installprofile' ]
+		header = [ 'vm-host', 'slice', 'mem', 'cpus', 'mac', 'host' ]
+
 		if showstatus:
 			header.append('status')
 		if showdisks:

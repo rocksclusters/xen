@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.6 2009/01/12 23:53:30 bruno Exp $
+# $Id: __init__.py,v 1.7 2009/01/14 00:20:56 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,18 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.7  2009/01/14 00:20:56  bruno
+# unify the physical node and VM node boot action functionality
+#
+# - all bootaction's are global
+#
+# - the node table has a 'runaction' (what bootaction should the node do when
+#   a node normally boots) and an 'installaction (the bootaction for installs).
+#
+# - the 'boot' table has an entry for each node and it dictates what the node
+#   will do on the next boot -- it will look up the runaction in the nodes table
+#   (for a normal boot) or the installaction in the nodes table (for an install).
+#
 # Revision 1.6  2009/01/12 23:53:30  bruno
 # don't reset the install profile to 'install' if the 'installprofile' flag is
 # not supplied
@@ -115,21 +127,6 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.set.command):
 	'hardware'.
 	</param>
 
-	<param type='string' name='runprofile'>
-	The label name for the bootprofile to use when a node is running
-	normally. Usually this is empty, and the kernel defined inside of 
-	the VM will be used for booting. For a list of bootprofiles,
-	execute: 'rocks list host bootaction &lt;hostname&gt;'.
-	Set this string to 'None' to clear the run profile.
-	</param>
-
-	<param type='string' name='installprofile'>
-	The label name for the bootprofile to use when installing a node. 
-	For a list of available bootprofiles, execute:
-	'rocks list host bootaction &lt;hostname&gt;'.
-	It is an error to set the install profile to None.
-	</param>
-
 	<example cmd='set host vm compute-0-0-0 mem=4096'>
 	Change the memory allocation for VM compute-0-0-0 to 4 GB.
 	</example>
@@ -161,23 +158,17 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.set.command):
 	def run(self, params, args):
 		mem = None
 
-		(physnode, disk, disksize, m, slice, virt_type, runprofile,
-			installprofile) = self.fillParams([ ('physnode', None),
+		(physnode, disk, disksize, m, slice, virt_type) = \
+			self.fillParams([ ('physnode', None),
 				('disk', None), ('disksize', None),
 				('mem', None), ('slice', None),
-				('virt-type', None), ('runprofile', None),
-				('installprofile', None) ])
+				('virt-type', None) ])
 
 		try:
 			if m:
 				mem = int(m)
 		except:
 			self.abort('"mem" parameter must be an integer')
-
-		if runprofile and runprofile.lower() == "none":
-			runprofile = None
-		if installprofile and installprofile.lower() == "none":
-			self.abort('"installprofile" cannot be "none"')
 
 		if physnode:
 			p = self.getHostnames([physnode])
@@ -278,41 +269,4 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.set.command):
 			rows = self.db.execute("""update vm_nodes set
 				virt_type = %s where id = %d""" %
 				(virt_type, vmnodeid))
-
-		if runprofile:
-			query = """select action from bootaction where
-				(node = 0 or node = %s)
-				and action = "%s" """ % (vmnodeid, runprofile)
-
-			rows = self.db.execute(query)
-
-			if rows == 0:
-				self.abort('runprofile (%s) ' % (runprofile) +
-					'is not defined for host ' +
-					'(%s)' % (host))
-
-			rows = self.db.execute("""update vm_nodes set
-				runprofile = '%s' where id = %d""" %
-				(runprofile, vmnodeid))
-		else:
-			rows = self.db.execute("""update vm_nodes set
-				runprofile = NULL where id = %d""" %
-				(vmnodeid))
-
-		if installprofile:
-			query = """select action from bootaction where
-				(node = %s or node = 0) and action = "%s"
-				""" % (vmnodeid, installprofile)
-
-			rows = self.db.execute(query)
-
-			if rows == 0:
-				self.abort('installprofile ' +
-					'(%s) ' % (installprofile) +
-					'is not defined for host ' +
-					'(%s)' % (host))
-
-			rows = self.db.execute("""update vm_nodes set
-				installprofile = '%s' where id = %d""" %
-				(installprofile, vmnodeid))
 

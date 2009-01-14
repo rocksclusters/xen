@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.4 2008/10/27 20:14:51 bruno Exp $
+# $Id: __init__.py,v 1.5 2009/01/14 00:20:56 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,18 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.5  2009/01/14 00:20:56  bruno
+# unify the physical node and VM node boot action functionality
+#
+# - all bootaction's are global
+#
+# - the node table has a 'runaction' (what bootaction should the node do when
+#   a node normally boots) and an 'installaction (the bootaction for installs).
+#
+# - the 'boot' table has an entry for each node and it dictates what the node
+#   will do on the next boot -- it will look up the runaction in the nodes table
+#   (for a normal boot) or the installaction in the nodes table (for an install).
+#
 # Revision 1.4  2008/10/27 20:14:51  bruno
 # add installprofile and runprofile to dump command
 #
@@ -208,8 +220,7 @@ class Command(rocks.commands.dump.host.command):
 		# get the VM configuration parameters
 		#
 		rows = self.db.execute("""select vn.id, vn.mem,
-			vn.slice, vn.virt_type, vn.runprofile,
-			vn.installprofile from nodes n, vm_nodes vn
+			vn.slice, vn.virt_type from nodes n, vm_nodes vn
 			where vn.node = n.id and n.name = '%s'""" %
 			host)
 
@@ -217,8 +228,7 @@ class Command(rocks.commands.dump.host.command):
 			self.abort('cannot find a configuration data ' +
 				'for VM "%s"' % host)
 
-		vmnodeid, mem, slice, virt_type, runprofile, installprofile = \
-			self.db.fetchone()
+		vmnodeid, mem, slice, virt_type = self.db.fetchone()
 
 		disks = []
 		disksizes = []
@@ -243,9 +253,6 @@ class Command(rocks.commands.dump.host.command):
 			(' '.join(disks), ' '.join(disksizes))
 		str += "mem='%d' slice='%d' virt-type='%s'" % \
 			(mem, slice, virt_type)
-		if runprofile:
-			str += " runprofile='%s'" % (runprofile)
-		str += " installprofile='%s'" % (installprofile)
 
 		self.dump(str)
 
