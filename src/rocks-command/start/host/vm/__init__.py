@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.13 2009/01/14 01:08:26 bruno Exp $
+# $Id: __init__.py,v 1.14 2009/01/16 23:58:15 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,10 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.14  2009/01/16 23:58:15  bruno
+# configuring the boot action and writing the boot files (e.g., PXE host config
+# files and Xen config files) are now done in exactly the same way.
+#
 # Revision 1.13  2009/01/14 01:08:26  bruno
 # kill the 'install=y' flag
 #
@@ -158,16 +162,8 @@ class Command(rocks.commands.start.host.command):
 				continue
 
 			#
-			# create the configuration file
+			# boot the VM
 			#
-			temp = tempfile.mktemp()
-			fout = open(temp, 'w')
-			fout.write(self.command('report.host.vm', [ host ]))
-			fout.close()
-			os.system('scp -q %s %s:/etc/xen/rocks/%s' % 
-				(temp, physhost, host))
-			os.unlink(temp)
-
 			os.system('ssh -q %s "xm create /etc/xen/rocks/%s"' % 
 				(physhost, host))
-		
+
