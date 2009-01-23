@@ -15,6 +15,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-base.xml,v $
+Revision 1.24  2009/01/23 21:24:26  bruno
+replaced var tags with entities
+
 Revision 1.23  2008/11/21 18:37:29  bruno
 make sure 'rocks report host xen bridge' is called when a frontend is
 installing.
@@ -99,7 +102,7 @@ Revision 1.1  2005/12/17 05:27:19  mjk
 
 
 <post>
-MINMEM=<var name="Xen_Dom0MinMem"/>
+MINMEM=&Xen_Dom0MinMem;
 
 <!-- we need this case below for a frontend install -->
 if [ "$MINMEM" == "" ]
