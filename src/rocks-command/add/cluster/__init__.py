@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.13 2009/01/14 00:20:55 bruno Exp $
+# $Id: __init__.py,v 1.14 2009/02/09 00:29:04 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.14  2009/02/09 00:29:04  bruno
+# parallelize 'rocks sync host network'
+#
 # Revision 1.13  2009/01/14 00:20:55  bruno
 # unify the physical node and VM node boot action functionality
 #
@@ -239,17 +242,17 @@ class Command(rocks.commands.add.command):
 				'iface=vlan%d' % vlan, 'subnet=private',
 				'vlan=%d' % vlan])
 
-			#
-			# reconfigure the network stack on the host
-			#
-			# need to catch exceptions -- when the network is
-			# reconfigured on a remote host, the connection is
-			# dropped, which results in an I/O error
-			#
-			try:
-				self.command('sync.host.network', [ host ] )
-			except:
-				pass
+		#
+		# reconfigure the network stack on the host
+		#
+		# need to catch exceptions -- when the network is
+		# reconfigured on a remote host, the connection is
+		# dropped, which results in an I/O error
+		#
+		try:
+			self.command('sync.host.network', hosts)
+		except:
+			pass
 
 
 	def createFrontend(self, vlan, fqdn, ip):
