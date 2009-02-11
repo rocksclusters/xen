@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.24 2009/01/14 00:20:55 bruno Exp $
+# $Id: __init__.py,v 1.25 2009/02/11 19:03:50 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,11 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.25  2009/02/11 19:03:50  bruno
+# create a locally administered base mac address that will be used by VMs.
+#
+# this address is based on the public IP of the frontend.
+#
 # Revision 1.24  2009/01/14 00:20:55  bruno
 # unify the physical node and VM node boot action functionality
 #
@@ -429,33 +434,97 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 		return ip
 
 
+	def makeOctets(self, str):
+		octets = []
+		for a in str.split(':'):
+			octets.append(int(a, 16))
+
+		return octets
+			
+
 	def getNextMac(self):
 		#
-		# find the next free MAC address in the database
+		# find the next free VM MAC address in the database
 		#
-		rows = self.db.execute("""select mac from networks where mac
-			like '00:16:3e:%'""")
+
+		#
+		# get the VM MAC base addr and its mask
+		#
+		rows = self.db.execute("""select value from global_attributes
+			where attr = 'vm_mac_base_addr' """)
+
+		if rows > 0:
+			vm_mac_base_addr, = self.db.fetchone()
+			base_addr = self.makeOctets(vm_mac_base_addr)
+		else:
+			self.abort('no VM MAC base address is defined')
+
+		rows = self.db.execute("""select value from global_attributes
+			where attr = 'vm_mac_base_addr_mask' """)
+
+		if rows > 0:
+			vm_mac_base_addr_mask, = self.db.fetchone()
+			mask = self.makeOctets(vm_mac_base_addr_mask)
+		else:
+			self.abort('no VM MAC base address mask is defined')
+
+		rows = self.db.execute("""select mac from networks where
+			mac is not NULL""")
 
 		max = 0
 		if rows > 0:
-			for mac, in self.db.fetchall():
-				m = string.split(mac, ':')
-				x = int(m[3], 16) * (2 ** 16)
-				x += int(m[4], 16) * (2 ** 8)
-				x += int(m[5], 16)
-	
+			for m, in self.db.fetchall():
+				mac = self.makeOctets(m)
+
+				i = 0
+				match = 1
+				for a in base_addr:
+					if (base_addr[i] & mask[i]) != \
+							(mac[i] & mask[i]):
+						match = 0
+						break
+					i += 1
+
+				if match == 0:
+					continue
+
+				i = 0
+				x = 0
+				for a in range(len(mac) - 1, -1, -1):
+					y = (mac[a] * (2 ** (8 * i)))
+					x += y
+					i += 1
+					
 				if x > max:
 					max = x
 
-		max += 1
+		newmac = []
 
-		mac = '00:16:3e'
-		mac += ':%02x' % ((max & 0xff0000) >> 16)
-		mac += ':%02x' % ((max & 0xff00) >> 8)
-		mac += ':%02x' % (max & 0xff)
+		if max == 0:
+			#
+			# this is the first assignment, use the base_addr as
+			# the mac address
+			#
+			for a in base_addr:
+				newmac.append('%02x' % a)
+		else:
+			max += 1
 
-		return mac
+			#
+			# now convert the integer into a mac address
+			#
+			i = 0
+			bitmask = 0xff
+			for a in range(len(mac) - 1, -1, -1):
+				newmac.append('%02x' %
+					((max & bitmask) >> (8 * i)))
+				bitmask = bitmask << 8 
+				i += 1
 
+			newmac.reverse()
+
+		return ':'.join(newmac)
+				
 
 	def addVMHost(self, host, membership, nodename, ip, subnet, mem, cpus,
 		slice, mac, num_macs, disk, disksize, vlan, module):
@@ -620,7 +689,7 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 			module = None
 		else:
 			module = "'xennet'"
-			
+
 		for host in hosts:
 			self.addVMHost(host, membership, nodename, ip, subnet,
 				mem, cpus, slice, mac, num_macs, disk, disksize,

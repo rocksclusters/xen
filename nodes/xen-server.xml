@@ -16,6 +16,11 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-server.xml,v $
+Revision 1.23  2009/02/11 19:03:50  bruno
+create a locally administered base mac address that will be used by VMs.
+
+this address is based on the public IP of the frontend.
+
 Revision 1.22  2009/01/23 21:24:26  bruno
 replaced var tags with entities
 
@@ -136,6 +141,68 @@ chmod a+x /tmp/do-xen-bridge.sh
 
 </post>
 
+
+<post arg="--interpreter /opt/rocks/bin/python">
+<![CDATA[
+#
+# calculate the VM MAC base address
+#
+import os
+
+a = '&Kickstart_PublicAddress;'
+
+ip_octets = []
+for i in a.split('.'):
+	ip_octets.append(int(i))
+
+#
+# save the last two bits of the first octet
+#
+locally_administered_bit = 0x2
+multicast_bit = 0x1
+
+last_two = ip_octets[0] & (locally_administered_bit | multicast_bit)
+
+#
+# turn off the locally administered bit and multicast bit
+#
+p = ip_octets[0] & ~(locally_administered_bit | multicast_bit)
+
+#
+# set the locally administered bit
+#
+p |= locally_administered_bit
+
+prefix = []
+prefix.append('%x' % p)
+
+#
+# now set the next 3 octets
+#
+for a in range(1, 4):
+	prefix.append('%x' % ip_octets[a])
+
+#
+# the 5th octet is also a special case. it is the last two bits of the first
+# octet
+#
+prefix.append('%x' % (last_two << 6))
+
+#
+# the sixth octet is 00
+#
+prefix.append('00')
+
+vm_mac_base_addr = ':'.join(prefix)
+os.system('/opt/rocks/bin/rocks set attr vm_mac_base_addr %s' % \
+	(vm_mac_base_addr))
+
+]]>
+</post>
+
+<post>
+/opt/rocks/bin/rocks set attr vm_mac_base_addr_mask ff:ff:ff:ff:c0:00
+</post>
 
 </kickstart>
 
