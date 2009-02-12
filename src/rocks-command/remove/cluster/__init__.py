@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.3 2008/10/18 00:56:23 mjk Exp $
+# $Id: __init__.py,v 1.4 2009/02/12 05:15:36 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.4  2009/02/12 05:15:36  bruno
+# add and remove virtual clusters faster
+#
 # Revision 1.3  2008/10/18 00:56:23  mjk
 # copyright 5.1
 #
@@ -136,6 +139,7 @@ class Command(rocks.commands.HostArgumentProcessor,
 			#
 			# remove the VLAN configuration from the physical nodes
 			#
+			pnodes = []
 			for node, vlanid, subnet in phys_nodes:
 				rows = self.db.execute("""select net.device from
 					nodes n, networks net where
@@ -172,22 +176,25 @@ class Command(rocks.commands.HostArgumentProcessor,
 
 				self.command('run.host', [ node, cmd ] )
 
-				#
-				# reconfigure and restart the network on the
-				# physical host
-				#
-				try:
-					self.command('sync.host.network',
-						[ node ] )
-				except:
-					pass
+				pnodes.append(node)
+
+			#
+			# reconfigure and restart the network on the
+			# physical hosts
+			#
+			try:
+				self.command('sync.host.network', pnodes)
+			except:
+				pass
 
 			#
 			# remove all the VMs associated with the cluster
 			#
+			vnodes = []
 			for node, vlanid, subnet in vm_nodes:
-				self.command('remove.host', [ node ] )
+				vnodes.append(node)
 
+			self.command('remove.host', vnodes )
 
 		self.command('sync.config')
 

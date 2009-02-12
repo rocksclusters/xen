@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.14 2009/02/09 00:29:04 bruno Exp $
+# $Id: __init__.py,v 1.15 2009/02/12 05:15:35 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.15  2009/02/12 05:15:35  bruno
+# add and remove virtual clusters faster
+#
 # Revision 1.14  2009/02/09 00:29:04  bruno
 # parallelize 'rocks sync host network'
 #
@@ -258,7 +261,7 @@ class Command(rocks.commands.add.command):
 	def createFrontend(self, vlan, fqdn, ip):
 		output = self.command('add.host.vm', [ self.getFrontend(),
 			'membership=Frontend', 'num-macs=2',
-			'vlan=%d,0' % vlan ] )
+			'vlan=%d,0' % vlan, 'sync-config=n' ] )
 
 		self.frontendname = None
 
@@ -304,7 +307,8 @@ class Command(rocks.commands.add.command):
 				'cpus=%s' % cpus_per_compute,
 				'mem=%s' % mem_per_compute,
 				'disksize=%s' % disk_per_compute,
-				'vlan=%d' % vlan ] )
+				'vlan=%d' % vlan,
+				'sync-config=n' ] )
 
 			line = output.split()
 			if line[0] == 'added' and line[1] == 'VM':

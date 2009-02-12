@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.25 2009/02/11 19:03:50 bruno Exp $
+# $Id: __init__.py,v 1.26 2009/02/12 05:15:36 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.26  2009/02/12 05:15:36  bruno
+# add and remove virtual clusters faster
+#
 # Revision 1.25  2009/02/11 19:03:50  bruno
 # create a locally administered base mac address that will be used by VMs.
 #
@@ -233,6 +236,11 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 	specify a vlan ID for interface 1 and 3, but not interface 2, type:
 	vlan="3,none,5".
 	The default is to not assign a vlan ID.
+	</param>
+
+	<param type='bool' name='sync-config'>
+	Decides if 'rocks sync config' should be run after the VM is added.
+	The default is: yes.
 	</param>
 
 	<example cmd='add host vm'>
@@ -648,7 +656,7 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 		# fillParams with the above default values
 		#
 		(nodename, ip, subnet, mem, cpus, slice, mac, macs, disk,
-			disksize, vlan) = self.fillParams(
+			disksize, vlan, sync_config) = self.fillParams(
 				[('name', None),
 				('ip', None),
 				('subnet', 'private'),
@@ -659,7 +667,8 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 				('num-macs', '1'),
 				('disk', None),
 				('disksize', 36),
-				('vlan', None)
+				('vlan', None),
+				('sync-config', 'y')
 				])
 
 		hosts = self.getHostnames(args)
@@ -695,8 +704,11 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 				mem, cpus, slice, mac, num_macs, disk, disksize,
 				vlan, module)
 		
-		#
-		# reconfigure and restart the appropriate rocks services
-		#
-		self.command('sync.config')
+		syncit = self.str2bool(sync_config)
+
+		if syncit:
+			#
+			# reconfigure and restart the appropriate rocks services
+			#
+			self.command('sync.config')
 

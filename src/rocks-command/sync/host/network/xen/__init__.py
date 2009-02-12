@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.3 2008/10/18 00:56:24 mjk Exp $
+# $Id: __init__.py,v 1.4 2009/02/12 05:15:36 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.4  2009/02/12 05:15:36  bruno
+# add and remove virtual clusters faster
+#
 # Revision 1.3  2008/10/18 00:56:24  mjk
 # copyright 5.1
 #
@@ -69,6 +72,19 @@
 import os
 import rocks.vm
 import rocks.commands
+import threading
+
+max_threading = 512
+timeout = 30.0
+
+class Parallel(threading.Thread):
+	def __init__(self, cmd):
+		threading.Thread.__init__(self)
+		self.cmd = cmd
+
+	def run(self):
+		os.system(self.cmd)
+
 
 class Command(rocks.commands.sync.host.command):
 	"""
@@ -81,6 +97,8 @@ class Command(rocks.commands.sync.host.command):
 
 	def run(self, params, args):
 		hosts = self.getHostnames(args)
+
+		threads = []
 		for host in hosts:
 			#
 			# make sure the host is a physical host
@@ -89,13 +107,49 @@ class Command(rocks.commands.sync.host.command):
 			if vm.isVM(host):
 				continue
 
+			if max_threading > 0:
+				while threading.activeCount() > max_threading:
+					#
+					# need to wait for some threads to
+					# complete before starting any new ones
+					#
+					time.sleep(0.001)
+
 			cmd = '/opt/rocks/bin/rocks report host xen bridge '
 			cmd += '%s | ' % host
 			cmd += '/opt/rocks/bin/rocks report script | '
 			cmd += 'ssh %s bash > /dev/null 2>&1' % host
-			os.system(cmd)
 
-			cmd = 'ssh %s "service xend restart" ' % host
+			p = Parallel(cmd)
+			threads.append(p)
+			p.start()
+
+		#
+		# collect the threads
+		#
+		for thread in threads:
+			thread.join(timeout)
+
+		threads = []
+		for host in hosts:
+			if max_threading > 0:
+				while threading.activeCount() > max_threading:
+					#
+					# need to wait for some threads to
+					# complete before starting any new ones
+					#
+					time.sleep(0.001)
+
+			cmd = 'ssh %s "/sbin/service xend restart" ' % host
 			cmd += '> /dev/null 2>&1'
-			os.system(cmd)
+
+			p = Parallel(cmd)
+			threads.append(p)
+			p.start()
+
+		#
+		# collect the threads
+		#
+		for thread in threads:
+			thread.join(timeout)
 
