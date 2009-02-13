@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.26 2009/02/12 05:15:36 bruno Exp $
+# $Id: __init__.py,v 1.27 2009/02/13 18:38:34 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,10 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.27  2009/02/13 18:38:34  bruno
+# ensure the locally administered bit is set and the multicast bit is not
+# set in the first MAC octet
+#
 # Revision 1.26  2009/02/12 05:15:36  bruno
 # add and remove virtual clusters faster
 #
@@ -524,8 +528,25 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 			i = 0
 			bitmask = 0xff
 			for a in range(len(mac) - 1, -1, -1):
-				newmac.append('%02x' %
-					((max & bitmask) >> (8 * i)))
+				x = (max & bitmask) >> (8 * i)
+				if a == 0:
+					#
+					# special case for the first MAC octet.
+					#
+					# the first bit should be zero (the
+					# multicast bit).
+					#
+					if (x & 0x1) == 1:
+						x += 1
+
+					# 
+					# the second bit should be one (the
+					# locally administered bit).
+					#
+					if (x & 0x2) == 0:
+						x |= 0x2
+					
+				newmac.append('%02x' % x)
 				bitmask = bitmask << 8 
 				i += 1
 
