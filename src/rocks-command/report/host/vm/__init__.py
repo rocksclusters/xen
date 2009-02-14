@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.38 2009/01/14 01:08:26 bruno Exp $
+# $Id: __init__.py,v 1.39 2009/02/14 00:02:36 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.39  2009/02/14 00:02:36  bruno
+# clean up bootaction selection
+#
 # Revision 1.38  2009/01/14 01:08:26  bruno
 # kill the 'install=y' flag
 #
@@ -384,13 +387,15 @@ class Command(rocks.commands.report.host.command):
 		# Install?
 		# look up the boot action
 		bootaction = None
-		rows = self.db.execute("""select b.action from boot b,
-			nodes n where n.name = '%s' and n.id = b.node
-			and action like 'install%%' """ % host)
+		rows = self.db.execute("""select b.action from boot b, nodes n
+			where n.name = '%s' and n.id = b.node """ % host)
+
 		if rows > 0:
 			bootaction, = self.db.fetchone()
+		else:
+			self.abort('could not find bootaction for "%s' % host)
 
-		if bootaction:
+		if bootaction == 'install':
 			self.configContents.append(forceConfig)
 	
 		### Now get the other configuration file contents
