@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.14 2009/01/16 23:58:15 bruno Exp $
+# $Id: __init__.py,v 1.15 2009/03/06 21:21:30 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.15  2009/03/06 21:21:30  bruno
+# updated for host attributes
+#
 # Revision 1.14  2009/01/16 23:58:15  bruno
 # configuring the boot action and writing the boot files (e.g., PXE host config
 # files and Xen config files) are now done in exactly the same way.
@@ -160,6 +163,17 @@ class Command(rocks.commands.start.host.command):
 				physhost, = self.db.fetchone()
 			else:
 				continue
+
+			#
+			# create the configuration file
+			#
+			temp = tempfile.mktemp()
+			fout = open(temp, 'w')
+			fout.write(self.command('report.host.vm', [ host ]))
+			fout.close()
+			os.system('scp -q %s %s:/etc/xen/rocks/%s' % 
+				(temp, physhost, host))
+			os.unlink(temp)
 
 			#
 			# boot the VM
