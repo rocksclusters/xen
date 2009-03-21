@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.15 2009/02/12 05:15:35 bruno Exp $
+# $Id: __init__.py,v 1.16 2009/03/21 22:22:55 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,11 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.16  2009/03/21 22:22:55  bruno
+#  - lights-out install of VM frontends with new node_rolls table
+#  - nuked 'site' columns and tables from database
+#  - worked through some bugs regarding entities
+#
 # Revision 1.15  2009/02/12 05:15:35  bruno
 # add and remove virtual clusters faster
 #
@@ -290,6 +295,12 @@ class Command(rocks.commands.add.command):
 		self.command('set.host.installaction', [ self.frontendname,
 			'install vm frontend' ] )
 
+		#
+		# set the default boot action to be 'install'
+		#
+		self.command('set.host.boot', [ self.frontendname,
+			'action=install' ] )
+
 		self.addOutput('', 'created frontend VM named: %s' % 
 			self.frontendname)
 
@@ -325,6 +336,12 @@ class Command(rocks.commands.add.command):
 				'none' ] )
 			self.command('set.host.installaction', [ line[2], 
 				'install vm' ] )
+
+			#
+			# set the default boot action to be 'install'
+			#
+			self.command('set.host.boot', [ line[2], 
+				'action=install' ] )
 
 			self.addOutput('', '\tcreated compute VM named: %s' % 
 				line[2])
