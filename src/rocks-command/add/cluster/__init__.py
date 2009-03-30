@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.16 2009/03/21 22:22:55 bruno Exp $
+# $Id: __init__.py,v 1.17 2009/03/30 19:15:46 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,12 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.17  2009/03/30 19:15:46  bruno
+# change first free VLAN id from 3 back to 2. this reverses a previous change.
+# we found that the root cause of the problem was identical MAC addresses for
+# the public side of virtual frontends. we not have a strategy to allocate
+# unique MAC addresses for virtual clusters.
+#
 # Revision 1.16  2009/03/21 22:22:55  bruno
 #  - lights-out install of VM frontends with new node_rolls table
 #  - nuked 'site' columns and tables from database
@@ -201,7 +207,7 @@ class Command(rocks.commands.add.command):
 		#
 		# find a free vlanid
 		#
-		for i in range(3, 4096):
+		for i in range(2, 4096):
 			if i not in vlanids:
 				return i
 
