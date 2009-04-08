@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.39 2009/02/14 00:02:36 bruno Exp $
+# $Id: __init__.py,v 1.40 2009/04/08 22:27:58 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.40  2009/04/08 22:27:58  bruno
+# retool the xen commands to use libvirt
+#
 # Revision 1.39  2009/02/14 00:02:36  bruno
 # clean up bootaction selection
 #
@@ -220,57 +223,13 @@ bootRamdisk = %s
 bootArgs = %s
 """
 
-diskConfig =  """
-disksize = % s
-"""
-
 forceConfig = """
 forceInstall = True
-"""
-######
-### Python Snippet that creates the cfgfile on the local 
-### node. This drives rocks-pygrub so that it can switch 
-### install vs. run state
-writeConfigFile = """
-cfgfile = "%s"
-contents = %s
-
-if not os.path.exists(bootdisk) or os.path.getsize(bootdisk) == 0:
-        if not os.path.exists(os.path.dirname(bootdisk)):
-                os.makedirs(os.path.dirname(bootdisk), 0700)
-        cmd = 'dd if=/dev/zero of=%s bs=1 count=1 seek=%d > /dev/null 2>&1' 
-        os.system(cmd)
-        contents.append('forceInstall=True')
-
-if not os.path.exists(cfgfile):
-        if not os.path.exists(os.path.dirname(cfgfile)):
-                os.makedirs(os.path.dirname(cfgfile), 0700)
-cf = open(cfgfile,"w")
-for line in contents:
-     cf.write(line)
-cf.close()
-"""
-
-
-runheader = """
-#
-# python code to extract the kernel from the disk image
-#
-bootloader = '/opt/rocks/bin/rocks-pygrub'
-"""
-
-linuxroot = """
-root = "/dev/%s ro"
-"""
-
-trailer= """
-vnc=1
-vncpasswd=''
 """
 
 class Command(rocks.commands.report.host.command):
 	"""
-	Outputs the VM configuration file for a slice on a physical node.
+	Outputs a configuration file used by rocks-pygrub in order to boot a VM.
 	
 	<arg name='host' type='string'>
 	One VM host name (e.g., compute-0-0-0).
@@ -288,46 +247,36 @@ class Command(rocks.commands.report.host.command):
 	<related>set host vm boot</related>
 	"""
 
-	def getBridgeName(self, host, subnetid, vlanid):
-		bridge = None
+	def getDisks(self, host):
+		#
+		# get the VM disk specifications
+		#
+		rows = self.db.execute("""select vd.vbd_type, vd.prefix,
+			vd.name, vd.device, vd.mode, vd.size from
+			vm_disks vd, vm_nodes vn, nodes n where
+			vd.vm_node = vn.id and vn.node = n.id and
+			n.name = '%s' """ % host)
 
-		if vlanid:
+		disks = self.db.fetchall()
+		if not disks:
+			return
+
+		vmdisks = []
+		index = 0
+		bootdisk = None
+		bootdevice = None
+		for vbd_type,prefix,name,device,mode,size in disks:
 			#
-			# first make sure the vlan is defined for the physical
-			# host and get the logical subnet where the vlan is tied
+			# if the disk specification is a 'regular' file, then
+			# make sure the file for the disk space exists. if
+			# it doesn't, create a sparse file for the disk space.
 			#
-			rows = self.db.execute("""select net.subnet from
-				networks net, nodes n where net.node = n.id and
-				n.name = '%s' and (net.device like 'vlan%%' or
-				net.device like '%%.%d') and
-				net.vlanid = %d""" % (host, vlanid, vlanid))
+			file = os.path.join(prefix, name)
 
-			if rows == 0:
-				self.abort('vlan %d not defined for host %s' %
-					(vlanid, host))
-			vlanOnLogical, = self.db.fetchone()
-
-			rows = self.db.execute("""select net.device from
-				networks net, nodes n where net.node = n.id
-				and n.name = '%s' and
-				net.device not like 'vlan%%' and
-				net.subnet = %d""" % (host, vlanOnLogical))
-		else:
-			rows = self.db.execute("""select net.device from
-				networks net, nodes n where net.node = n.id and
-				n.name = '%s' and net.ip is not NULL and
-				net.device not like 'vlan%%' and
-				net.subnet = %d""" % (host, subnetid))
-		if rows:
-			dev, = self.db.fetchone()
-			bridge = 'xenbr.%s' % (dev)
-			if vlanid:
-				reg = re.compile('.*\.%d' % vlanid)
-				if not reg.match(dev):
-					bridge = 'xenbr.%s.%d' % (dev, vlanid)
-
-		return bridge
-
+			if vbd_type in [ 'file', 'tap:aio' ]:
+				self.addOutput(host, 'disk = %s' % file)
+				self.addOutput(host, 'disksize = %s' % size)
+				
 
 	def getBootProfile(self, host, profile):
 		"""Return what's defined by the named profile, Return
@@ -362,10 +311,6 @@ class Command(rocks.commands.report.host.command):
 		#      if the bootaction is like 'install%' force install
 		#          on next boot
 		
-		# keep Track of what is going into the rocks-pygrub compatible
-		# .cfg file 
-		self.configContents = []
-
 		runAction = None
 		installAction = None
 		rows = self.db.execute("""select runaction, installaction
@@ -375,15 +320,20 @@ class Command(rocks.commands.report.host.command):
 		
 		# boot profile
 		kern, ramdsk, bootargs = self.getBootProfile(host, runAction)
-		self.configContents.append(bootConfig % (kern, ramdsk,
-			bootargs))
+		self.addOutput(host, 'bootKernel = %s' % kern)
+		self.addOutput(host, 'bootRamdisk = %s' % ramdsk)
+		self.addOutput(host, 'bootArgs = %s' % bootargs)
 
 		# install profile
 		kern, ramdsk, bootargs = self.getBootProfile(host,
 			installAction)
-		self.configContents.append(installConfig % (kern, ramdsk,
-			bootargs))
-		
+		self.addOutput(host, 'installKernel = %s' % kern)
+		self.addOutput(host, 'installRamdisk = %s' % ramdsk)
+		self.addOutput(host, 'installArgs = %s' % bootargs)
+
+		# disk specifications
+		self.getDisks(host)
+
 		# Install?
 		# look up the boot action
 		bootaction = None
@@ -396,141 +346,8 @@ class Command(rocks.commands.report.host.command):
 			self.abort('could not find bootaction for "%s' % host)
 
 		if bootaction == 'install':
-			self.configContents.append(forceConfig)
+			self.addOutput(host, 'forceInstall = yes')
 	
-		### Now get the other configuration file contents
-		self.addOutput(host, header)
-		self.addOutput(host, "name = '%s'" % host)
-
-		#
-		# get the VM parameters
-		#
-		vmnodeid = None
-		mem = None
-		cpus = None
-		slice = None
-		macs = None
-		disks = None
-
-		rows = self.db.execute("""select vn.id, vn.mem, n.cpus
-			from nodes n, vm_nodes vn where vn.node = n.id and
-			n.name = '%s'""" % host)
-
-		vmnodeid, mem, cpus = self.db.fetchone()
-		if not vmnodeid or not mem or not cpus:
-			return
-
-		#
-		# get the VM disk specifications
-		#
-		rows = self.db.execute("""select vbd_type, prefix, name,
-			device, mode, size from vm_disks where vm_node = %s
-			order by id""" % vmnodeid)
-		disks = self.db.fetchall()
-		if not disks:
-			return
-
-		vmdisks = []
-		index = 0
-		bootdisk = None
-		bootdevice = None
-		for vbd_type,prefix,name,device,mode,size in disks:
-			#
-			# if the disk specification is a 'regular' file, then
-			# make sure the file for the disk space exists. if
-			# it doesn't, create a sparse file for the disk space.
-			#
-			file = os.path.join(prefix, name)
-
-			if vbd_type in [ 'file', 'tap:aio' ]:
-				#
-				# calculate how far to skip into
-				# new output file
-				#
-				skip = int(size) * 1000 * 1000 * 1000
-				self.configContents.append(diskConfig % skip)
-				disksize = skip
-
-			if not bootdisk:
-				bootdisk = file
-				bootdevice = device
-
-			disk = "'%s:%s,%s,%s'" % (vbd_type, file, device, mode)
-			vmdisks.append(disk)
-
-		#
-		# set the boot disk variable
-		#
-		if len(vmdisks) > 0:
-			self.addOutput(host, "bootdisk = '%s'" % bootdisk)
-			(basename,ext)= os.path.splitext(bootdisk)
-			configFile = "%s.cfg" % basename
-		else:
-			self.abort('no disks specified')
-
-		vm = rocks.vm.VM(self.db)
-		physhost = vm.getPhysHost(host)
-		if not physhost:
-			self.abort('could not determine the physical host ' +
-				'for host (%s)' % host)
-
-		dirprefix = vm.getLargestPartition(physhost)
-
-		if dirprefix:
-			self.addOutput(host, "dirprefix = '%s'" % dirprefix)
-
-		# Export Python Snippet that will create the local config file
-		self.addOutput(host, 
-			writeConfigFile % (configFile, self.configContents,
-			bootdisk, (disksize - 1)))
-
-		self.addOutput(host, runheader)
-
-		self.addOutput(host, '#')
-		self.addOutput(host, '# common config')
-		self.addOutput(host, '#')
-
-		self.addOutput(host, 'memory = %s' % mem)
-		self.addOutput(host, 'vcpus = %s' % cpus)
-
-		rows = self.db.execute("""select net.mac, net.subnet, net.vlanid
-			from networks net, nodes n, vm_nodes vn
-			where vn.node = n.id and net.node = n.id and
-			n.name = '%s' order by net.id""" % host)
-
-		macs = self.db.fetchall()
-		if not macs:
-			return
-
-		vifs = []
-		index = 0
-		for mac, subnetid, vlanid in macs:
-			bridge = self.getBridgeName(physhost, subnetid, vlanid)
-			vifs.append("'mac=%s, bridge=%s'" % (mac, bridge))
-			index += 1
-
-		self.addOutput(host, 'vif = [')
-		self.addOutput(host, string.join(vifs, ',\n'))
-		self.addOutput(host, ']')
-
-		self.addOutput(host, 'disk = [')
-		self.addOutput(host, string.join(vmdisks, ',\n'))
-		self.addOutput(host, ']')
-
-		# determine if file spec is raw disk, or a specific partition
-		reg = re.compile('[\w/]+[\d]+')
-		if not reg.match(bootdevice):
-			bootdevice = bootdevice + "1"
-
-		# if boot device is not a numerical device then
-		reg = re.compile('^[\d]+')
-		if not reg.match(bootdevice):
-			self.addOutput(host, linuxroot % bootdevice)
-
-		self.addOutput(host, trailer)
-
-		self.addOutput(host, "on_reboot = 'restart'\n")
-
 				
 	def run(self, params, args):
 		hosts = self.getHostnames(args)

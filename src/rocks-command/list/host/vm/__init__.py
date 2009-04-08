@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.11 2009/01/14 00:20:56 bruno Exp $
+# $Id: __init__.py,v 1.12 2009/04/08 22:27:58 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.12  2009/04/08 22:27:58  bruno
+# retool the xen commands to use libvirt
+#
 # Revision 1.11  2009/01/14 00:20:56  bruno
 # unify the physical node and VM node boot action functionality
 #
@@ -103,6 +106,11 @@ import os.path
 import rocks.commands
 import rocks.vm
 
+import sys
+sys.path.append('/usr/lib64/python2.4/site-packages')
+sys.path.append('/usr/lib/python2.4/site-packages')
+import libvirt
+
 class Command(rocks.commands.list.host.command):
 	"""
 	Lists the VM configuration for hosts.
@@ -129,73 +137,45 @@ class Command(rocks.commands.list.host.command):
 	</example>
 	"""
 
-	def getStatus(self, args, hosts):
-		vm = rocks.vm.VM(self.db)
-
-		#
-		# get a list of all the physical hosts
-		#
-		physhosts = []
-		for host in self.getHostnames():
-			if not vm.isVM(host):
-				physhosts.append(host)
-
-		#
-		# get the status for all running VMs
-		#
-		hostindex = -6
-		stateindex = -2
-		vm_status = {}
-
-		output = self.command('run.host', physhosts +
-			[ '/usr/sbin/xm list' ] )
-
-		for line in output.split('\n'):
-			if len(line) < 1:
-				continue 
-
-			l = line.split()
-
-			if len(l) > 5:
-				h = None
-
+	def getStatus(self, physhost, host):
+		try:
+			hipervisor = libvirt.open('xen://%s/' % physhost)
+		except:
+			return 'nostate'
+	
+		found = 0
+		for id in hipervisor.listDomainsID():
+			if id == 0:
 				#
-				# we need this loop because when a VM is
-				# migrating or saved, it changes the
-				# name of the VM to 'migrating-<hostname>'.
-				# this loop finds the hostname for the VM (if
-				# it running).
+				# skip dom0
 				#
-				for host in hosts:
-					if l[hostindex] in host:
-						h = host
-						break
+				continue
+			
+			domU = hipervisor.lookupByID(id)
+			if domU.name() == host:
+				found = 1
+				break
 
-				if not h:
-					continue
+		state = 'nostate'
 
-				state = []
-				#
-				# a 'blocked' VM can be one that is waiting
-				# for I/O or has gone to sleep. let's call it
-				# 'active', because the VM is running, it just
-				# isn't active.
-				#
-				if 'r' in l[stateindex] or 'b' in l[stateindex]:
-					state.append('active')
-				if 'p' in l[stateindex]:
-					state.append('paused')
-				if 's' in l[stateindex]:
-					state.append('shutdown')
-				if 'c' in l[stateindex]:
-					state.append('crashed')
-				if 'd' in l[stateindex]:
-					state.append('dying')
+		if found:
+			status = domU.info()[0]	
 
-				comma = ','
-				vm_status[h] = comma.join(state)
+			if status == libvirt.VIR_DOMAIN_NOSTATE:
+				state = 'nostate'
+			elif status == libvirt.VIR_DOMAIN_RUNNING or \
+					status == libvirt.VIR_DOMAIN_BLOCKED:
+				state = 'active'
+			elif status == libvirt.VIR_DOMAIN_PAUSED:
+				state = 'paused'
+			elif status == libvirt.VIR_DOMAIN_SHUTDOWN:
+				state = 'shutdown'
+			elif status == libvirt.VIR_DOMAIN_SHUTOFF:
+				state = 'shutoff'
+			elif status == libvirt.VIR_DOMAIN_CRASHED:
+				state = 'crashed'
 
-		return vm_status
+		return state
 
 
 	def run(self, params, args):
@@ -209,9 +189,6 @@ class Command(rocks.commands.list.host.command):
 
 		hosts = self.getHostnames(args)
 
-		if showstatus:
-			vm_status = self.getStatus(args, hosts)
-		
 		self.beginOutput()
 
 		for host in hosts:
@@ -222,11 +199,6 @@ class Command(rocks.commands.list.host.command):
 			macs = None
 			disks = None
 			physhost = None
-
-			if showstatus:
-				status = None
-				if vm_status.has_key(host):
-					status = vm_status[host]
 
 			#
 			# get the physical node that houses this VM
@@ -299,7 +271,8 @@ class Command(rocks.commands.list.host.command):
 
 				info = (slice, mem, cpus, mac, physhost)
 				if showstatus:
-					info += (status,)
+					info += (self.getStatus(physhost,
+						host),)
 				if showdisks:
 					info += (disk, disksize)
 
@@ -318,8 +291,7 @@ class Command(rocks.commands.list.host.command):
 						disk = ''
 						disksize = ''
 
-					info = (None, None, None, mac, None,
-						None, None)
+					info = (None, None, None, mac, None)
 					if showstatus:
 						info += (None,)
 					if showdisks:

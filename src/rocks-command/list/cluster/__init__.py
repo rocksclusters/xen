@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.6 2008/10/18 00:56:23 mjk Exp $
+# $Id: __init__.py,v 1.7 2009/04/08 22:27:58 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.7  2009/04/08 22:27:58  bruno
+# retool the xen commands to use libvirt
+#
 # Revision 1.6  2008/10/18 00:56:23  mjk
 # copyright 5.1
 #
@@ -75,6 +78,11 @@
 
 import rocks.vm
 import rocks.commands
+
+import sys
+sys.path.append('/usr/lib64/python2.4/site-packages')
+sys.path.append('/usr/lib/python2.4/site-packages')
+import libvirt
 
 class Command(rocks.commands.HostArgumentProcessor,
 	rocks.commands.list.command):
@@ -102,84 +110,72 @@ class Command(rocks.commands.HostArgumentProcessor,
 	</example>
 	"""
 
-	def getStatus(self, hosts):
-		vm = rocks.vm.VM(self.db)
-		vm_status = {}
-
+	def getStatus(self, host):
 		#
-		# get a list of all the physical hosts
+		# find the physical host for this virtual host
 		#
-		physhosts = []
-		for host in self.getHostnames():
-			if not vm.isVM(host):
-				physhosts.append(host)
+		rows = self.db.execute("""select vn.physnode from
+			vm_nodes vn, nodes n where n.name = '%s'
+			and n.id = vn.node""" % (host))
 
-		#
-		# get the status for all running VMs
-		#
-		hostindex = -6
-		stateindex = -2
-		self.vm_status = {}
+		if rows == 1:
+			physnodeid, = self.db.fetchone()
+		else:
+			return 'nostate'
 
-		output = self.command('run.host', physhosts +
-			[ '/usr/sbin/xm list' ] )
+		rows = self.db.execute("""select name from nodes where
+			id = %s""" % (physnodeid))
 
-		for line in output.split('\n'):
-			if len(line) < 1:
-				continue 
+		if rows == 1:
+			physhost, = self.db.fetchone()
+		else:
+			return 'nostate'
 
-			l = line.split()
-
-			if len(l) > 5:
-				h = None
-
+		try:
+			hipervisor = libvirt.open('xen://%s/' % physhost)
+		except:
+			return 'nostate'
+	
+		found = 0
+		for id in hipervisor.listDomainsID():
+			if id == 0:
 				#
-				# we need this loop because when a VM is
-				# migrating or saved, it changes the
-				# name of the VM to 'migrating-<hostname>'.
-				# this loop finds the hostname for the VM (if
-				# it running).
+				# skip dom0
 				#
-				for host in hosts:
-					if l[hostindex] in host:
-						h = host
-						break
+				continue
+			
+			domU = hipervisor.lookupByID(id)
+			if domU.name() == host:
+				found = 1
+				break
 
-				if not h:
-					continue
+		state = 'nostate'
 
-				state = []
-				#
-				# a 'blocked' VM can be one that is waiting
-				# for I/O or has gone to sleep. let's call it
-				# 'active', because the VM is running, it just
-				# isn't active.
-				#
-				if 'r' in l[stateindex] or 'b' in l[stateindex]:
-					state.append('active')
-				if 'p' in l[stateindex]:
-					state.append('paused')
-				if 's' in l[stateindex]:
-					state.append('shutdown')
-				if 'c' in l[stateindex]:
-					state.append('crashed')
-				if 'd' in l[stateindex]:
-					state.append('dying')
+		if found:
+			status = domU.info()[0]	
 
-				comma = ','
-				vm_status[h] = comma.join(state)
+			if status == libvirt.VIR_DOMAIN_NOSTATE:
+				state = 'nostate'
+			elif status == libvirt.VIR_DOMAIN_RUNNING or \
+					status == libvirt.VIR_DOMAIN_BLOCKED:
+				state = 'active'
+			elif status == libvirt.VIR_DOMAIN_PAUSED:
+				state = 'paused'
+			elif status == libvirt.VIR_DOMAIN_SHUTDOWN:
+				state = 'shutdown'
+			elif status == libvirt.VIR_DOMAIN_SHUTOFF:
+				state = 'shutoff'
+			elif status == libvirt.VIR_DOMAIN_CRASHED:
+				state = 'crashed'
 
-		return vm_status
+		return state
 
 
 	def getClientInfo(self, host, showstatus):
 		info = (host, 'VM')
 
 		if showstatus:
-			status = None
-			if self.vm_status.has_key(host):
-				status = self.vm_status[host]
-				info += (status,)
+			info += (self.getStatus(host),)
 		
 		return info
 
@@ -200,18 +196,6 @@ class Command(rocks.commands.HostArgumentProcessor,
 			hosts = frontends
 
 		vm = rocks.vm.VM(self.db)
-
-		if showstatus:
-			#
-			# get a list of all the VMs
-			#
-			vmhosts = []
-			for host in self.getHostnames():
-				if vm.isVM(host):
-					vmhosts.append(host)
-
-			self.vm_status = self.getStatus(vmhosts)
-
 		self.beginOutput()
 
 		for frontend in hosts:
@@ -232,10 +216,7 @@ class Command(rocks.commands.HostArgumentProcessor,
 			if vm.isVM(frontend):
 				info = ('', 'VM')
 				if showstatus:
-					status = None
-					if self.vm_status.has_key(frontend):
-						status = self.vm_status[frontend]
-					info += (status,)
+					info += (self.getStatus(frontend),)
 		
 				self.addOutput(fqdn, info)
 

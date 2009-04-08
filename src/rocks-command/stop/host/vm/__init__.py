@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.4 2008/10/18 00:56:24 mjk Exp $
+# $Id: __init__.py,v 1.5 2009/04/08 22:27:59 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.5  2009/04/08 22:27:59  bruno
+# retool the xen commands to use libvirt
+#
 # Revision 1.4  2008/10/18 00:56:24  mjk
 # copyright 5.1
 #
@@ -114,6 +117,7 @@ class Command(rocks.commands.stop.host.command):
 			else:
 				continue
 
-			os.system('ssh -q %s "xm destroy %s"' % 
-				(physhost, host))
-		
+			hipervisor = libvirt.open('xen://%s/' % physhost)
+			domU = hipervisor.lookupByName(host)
+			domU.destroy()
+

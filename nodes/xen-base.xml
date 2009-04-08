@@ -15,6 +15,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-base.xml,v $
+Revision 1.26  2009/04/08 22:27:58  bruno
+retool the xen commands to use libvirt
+
 Revision 1.25  2009/03/06 21:21:30  bruno
 updated for host attributes
 
@@ -102,6 +105,7 @@ Revision 1.1  2005/12/17 05:27:19  mjk
 <package>rocks-boot-xen</package>
 <package>rocks-pygrub</package>
 <package>rocks-create-vlan</package>
+<package>gnutls-utils</package>
 
 
 <post>
@@ -484,6 +488,82 @@ case "$command" in
 esac
 ]]>
 </file>
+
+</post>
+
+
+<!-- set up access to libvirt -->
+
+<post>
+
+<file name="/etc/sysconfig/libvirtd">
+LIBVIRTD_ARGS="--listen"
+</file>
+
+</post>
+
+<post>
+
+<file name="/etc/pki/CA/cacert.pem">
+<eval>
+cat /etc/pki/CA/cacert.pem
+</eval>
+</file>
+
+cat &gt; /tmp/cakey.pem &lt;&lt; 'EOF'
+<eval>
+cat /etc/pki/CA/private/cakey.pem
+</eval>
+EOF
+
+<!-- create a client cert -->
+
+mkdir -p /etc/pki/libvirt/private
+
+/usr/bin/certtool --generate-privkey > /etc/pki/libvirt/private/clientkey.pem
+
+<file name="/tmp/client.info">
+organization = &Info_CertificateOrganization;
+cn = &hostname;
+tls_www_client
+encryption_key
+signing_key
+</file>
+
+/usr/bin/certtool --generate-certificate \
+	--load-privkey /etc/pki/libvirt/private/clientkey.pem \
+	--load-ca-certificate /etc/pki/CA/cacert.pem \
+	--load-ca-privkey /tmp/cakey.pem \
+	--template /tmp/client.info --outfile /etc/pki/libvirt/clientcert.pem
+
+
+/bin/rm -f /tmp/client.info
+
+</post>
+
+
+<post>
+
+<!-- now create a server cert -->
+
+/usr/bin/certtool --generate-privkey > /etc/pki/libvirt/private/serverkey.pem
+
+<file name="/tmp/server.info">
+organization = &Info_CertificateOrganization;
+cn = &hostname;
+tls_www_server
+encryption_key
+signing_key
+</file>
+
+/usr/bin/certtool --generate-certificate \
+	--load-privkey /etc/pki/libvirt/private/serverkey.pem \
+	--load-ca-certificate /etc/pki/CA/cacert.pem \
+	--load-ca-privkey /tmp/cakey.pem \
+	--template /tmp/server.info --outfile /etc/pki/libvirt/servercert.pem
+
+/bin/rm -f /tmp/server.info
+/bin/rm -f /tmp/cakey.pem
 
 </post>
 

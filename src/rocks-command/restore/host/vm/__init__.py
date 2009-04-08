@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.3 2008/10/18 00:56:24 mjk Exp $
+# $Id: __init__.py,v 1.4 2009/04/08 22:27:58 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.4  2009/04/08 22:27:58  bruno
+# retool the xen commands to use libvirt
+#
 # Revision 1.3  2008/10/18 00:56:24  mjk
 # copyright 5.1
 #
@@ -118,6 +121,8 @@ class Command(rocks.commands.restore.host.command):
 				#
 				# send the restore command to the physical node
 				#
-				cmd = 'xm restore %s' % file
-				os.system('ssh -q %s "%s"' % (physhost, cmd))
+				hipervisor = libvirt.open('xen://%s/'
+					% physhost)
+				domU = hipervisor.lookupByName(host)
+				domU.restore(file)
 
