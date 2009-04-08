@@ -21,8 +21,7 @@
 #             bootArgs =
 #             installKernel =
 #             installRamdisk =
-#             installBootArgs =
-#             disksize =  
+#             installArgs =
 # Logic is as follows:
 #      if cfg file is empty/non-existent -- boot using pygrub
 #      if diskfile is non-existent -- create it, and force installation
@@ -82,6 +81,9 @@
 # @Copyright@
 #
 # $Log: rocks-pygrub,v $
+# Revision 1.7  2009/04/08 19:18:57  bruno
+# retooled rocks-pygrup to work with libvirt
+#
 # Revision 1.6  2009/01/09 22:07:58  bruno
 # get the installation vmlinuz and initrd.img from the database
 #
@@ -101,6 +103,7 @@
 # First round of rocks-pygrub
 #
 # Revision 1.19  2008/03/06 23:41:33  mjk
+#
 import os
 import os.path
 import sys
@@ -109,81 +112,110 @@ import tempfile
 import urllib
 import getopt
 
-## process arguments -- this is a wrapper for pygrub, interpret only
-## a few of the pygrub options
 try:
-        opts, args = getopt.gnu_getopt(sys.argv[1:], 'q',
-                                   ["quiet", "output="])
+	opts, args = getopt.gnu_getopt(sys.argv[1:], 'q',
+		[ "quiet", "output=", "hostname=" ] )
 except getopt.GetoptError:
-        sys.exit(1)
-if len(args) < 1:
-        sys.exit(1)
+	sys.exit(1)
 
-## Get the diskfile and parse a couple of arguments
-diskfile = args[0]
+if len(args) < 1:
+	sys.exit(1)
+
 outfile = None
-interactive=True
+
+#
+# get the hostname
+#
 for o, a in opts:
-	if o in ("-q", "--quiet"):
-       		interactive = False
-        elif o in ("--output",):
-            outfile = a
-	
-## Defaults for booting a Xen image
-vmParameters = {'forceInstall': False,
+	if o in ("--hostname",):
+		hostname = a
+	elif o in ("--output",):
+		outfile = a
+
+#
+# Defaults for booting a Xen image
+#
+vmParameters = {'forceInstall': 'no',
 		'bootKernel': '',
 		'bootRamdisk':'',	
 		'bootArgs': '',
 		'installKernel': '',
 		'installRamdisk' : '',
-		'installBootArgs' : '',
-		'disksize': 36000000000 }
+		'installArgs' : '',
+		'disk' : [],
+		'disksize' : [] }
 
+vmKernelConfig = '/etc/xen/rocks/%s' % hostname
 
-## 
-(basename, ext) = os.path.splitext(diskfile)
-vmKernelConfig = '%s.cfg' % basename
-
-## Read vmKernelConfig file. Don't fail out if it's not there -- already have defaults.
+#
+# Read vmKernelConfig file. Don't fail out if it's not there -- already have
+# defaults.
+#
 try: 
-	file = open(vmKernelConfig,'r')
+	file = open(vmKernelConfig, 'r')
 	output = []
 	for line in file.readlines():
 		if not line or len(line) <= 1:
-			token=''
-			val=''
+			token = ''
+			val = ''
 		elif line.find('=') >= 0 :
-			(token, val) = line.split('=',1)
+			(token, val) = line.split('=', 1)
 		else:
-			(token,val) = (line, '')
-		token=token.strip()
-		val=val.strip()
+			(token, val) = (line, '')
 
-		if vmParameters.has_key(token) :
-			vmParameters[token] = val
-		if token.lower() != 'forceInstall'.lower() :
+		token = token.strip()
+		val = val.strip()
+
+		if vmParameters.has_key(token):
+			if token == 'disk':
+				vmParameters[token].append(val)
+			elif token == 'disksize':
+				#
+				# disk size is in GB
+				#
+				v = int(val) * 1000 * 1000 * 1000
+				vmParameters[token].append(v)
+			else:
+				vmParameters[token] = val
+
+		#
+		# re-write the config file, but make sure that 'forceInstall'
+		# is not in the new config file
+		#
+		if token.lower() != 'forceinstall':
 			output.append(line) 
-		else:
-			vmParameters['forceInstall']=True
+
 	file.close()
-	file = open(vmKernelConfig,'w')
+	file = open(vmKernelConfig, 'w')
 	file.writelines(output)
 	file.close()
+
 except:
 	pass		
 
-## Create the disk file, if it doesn't exist, force Install if creating
-if not os.path.exists(diskfile):
-        if not os.path.exists(os.path.dirname(diskfile)):
-                os.makedirs(os.path.dirname(diskfile), 0700)
+#
+# Create the disk file, if it doesn't exist, force Install if creating
+#
+i = 0
+for diskfile in vmParameters['disk']:
+	if not os.path.exists(diskfile):
+		if not os.path.exists(os.path.dirname(diskfile)):
+			os.makedirs(os.path.dirname(diskfile), 0700)
 
-        cmd = 'dd if=/dev/zero of=%s bs=1 count=1 seek=%d > /dev/null 2>&1' % (diskfile, vmParameters['disksize'] - 1)
-	# os.system(cmd)
-	vmParameters['forceInstall'] = True
+		cmd = 'dd if=/dev/zero of=%s bs=1 count=1 ' % diskfile
+		cmd += 'seek=%d ' % (vmParameters['disksize'][i] - 1)
+		cmd += '> /dev/null 2>&1'
+		os.system(cmd)
 
-## Choose the right kernel, initrd
-if  vmParameters['forceInstall'] :
-	bootargs = 'installBootArgs'
+		vmParameters['forceInstall'] = 'yes'
+
+	i += 1
+
+#
+# Choose the right kernel, initrd
+#
+if vmParameters['forceInstall'] == 'yes':
+	bootargs = 'installArgs'
 	bootkernel = 'installKernel'
 	bootramdisk = 'installRamdisk'
 else:
@@ -191,62 +223,73 @@ else:
 	bootkernel = 'bootKernel'
 	bootramdisk = 'bootRamdisk'
 
-### Make a temporary directory and then wget the kernel and the initial ramdisk
-## now try to wget the kernel and ramdisk that we just chose
+#
+# Make a temporary directory and then wget the kernel and the initial ramdisk
+# now try to wget the kernel and ramdisk that we just chose
+#
 tmpdir = tempfile.mkdtemp(dir='/tmp')
 
-## try to retrieve the kernel and ramdisk via url
-kernel=os.path.basename(vmParameters[bootkernel])
-ramdisk=os.path.basename(vmParameters[bootramdisk])
-pygrubKernel=''
-pygrubRamdisk=''
+#
+# try to retrieve the kernel and ramdisk via url
+#
+kernel = os.path.basename(vmParameters[bootkernel])
+ramdisk = os.path.basename(vmParameters[bootramdisk])
+pygrubKernel = ''
+pygrubRamdisk = ''
+
 if kernel:
 	pygrubKernel = os.path.join(tmpdir, kernel)
 	try:
 		urllib.urlretrieve(vmParameters[bootkernel], pygrubKernel)
 	except:
-		pygrubKernel=''
+		pygrubKernel = ''
+
 if ramdisk:
 	pygrubRamdisk = os.path.join(tmpdir, ramdisk)
 	try:
 		urllib.urlretrieve(vmParameters[bootramdisk], pygrubRamdisk)
 	except:
-		pygrubRamdisk=''
+		pygrubRamdisk = ''
 
-## if we have a pygrubKernel, then construct output, else call pygrub
+#
+# if we have a pygrubKernel, then construct output, else call pygrub
+#
 if pygrubKernel:
 	rval = "linux (kernel %s)" % pygrubKernel 
+
 	if pygrubRamdisk:
 		rval += "(ramdisk %s)" % pygrubRamdisk 
+
 	if vmParameters[bootargs]:
 		rval += "(args \"%s\")" % vmParameters[bootargs] 
 else:
-## Construct the pygrub command line
-	pygrubCmd='/usr/bin/pygrub -q '
+	#
+	# Construct the pygrub command line
+	#
+	pygrubCmd = '/usr/bin/pygrub -q '
 	if vmParameters[bootargs]:
 		pygrubCmd += '--args \"%s\" ' % vmParameters[bootargs]
 
-	pygrubCmd += diskfile	 
+	pygrubCmd += vmParameters['disk'][0]
 
-	## now call pygrub
-	rval=''
+	#
+	# now call pygrub
+	#
+	rval = ''
 	try:
 		output = os.popen(pygrubCmd)
 		for line in output.readlines():
 			rval += line 
 	except: 
 		pass 
+
+#
 # print out the returned value (either calling pygrub or our construction)
-if outfile is None or output == "-":
+#
+if outfile == None or outfile == '-':
 	print rval
 else:
-	file = open(outfile,'w')
+	file = open(outfile, 'w')
 	file.write(rval)
 	file.close()
-
-## Clean up empty tmpdir directory
-try:
-	os.path.rmdir(tmpdir)
-except:
-	pass
 
