@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.5 2009/04/08 22:27:59 bruno Exp $
+# $Id: __init__.py,v 1.6 2009/04/14 17:41:37 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.6  2009/04/14 17:41:37  bruno
+# bug fix
+#
 # Revision 1.5  2009/04/08 22:27:59  bruno
 # retool the xen commands to use libvirt
 #
@@ -74,6 +77,11 @@
 import os
 import tempfile
 import rocks.commands
+
+import sys
+sys.path.append('/usr/lib64/python2.4/site-packages')
+sys.path.append('/usr/lib/python2.4/site-packages')
+import libvirt
 
 class Command(rocks.commands.stop.host.command):
 	"""
