@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.40 2009/04/08 22:27:58 bruno Exp $
+# $Id: __init__.py,v 1.41 2009/04/14 16:12:17 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.41  2009/04/14 16:12:17  bruno
+# push towards chimmy beta
+#
 # Revision 1.40  2009/04/08 22:27:58  bruno
 # retool the xen commands to use libvirt
 #
@@ -242,9 +245,6 @@ class Command(rocks.commands.report.host.command):
 	<example cmd='report host vm compute-0-0-0'>
 	Create the VM configuration file for host compute-0-0-0.
 	</example>
-
-
-	<related>set host vm boot</related>
 	"""
 
 	def getDisks(self, host):
