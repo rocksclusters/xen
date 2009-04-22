@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.7 2009/01/14 00:20:56 bruno Exp $
+# $Id: __init__.py,v 1.8 2009/04/22 18:34:29 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.8  2009/04/22 18:34:29  bruno
+# can now resize a VMs disk
+#
 # Revision 1.7  2009/01/14 00:20:56  bruno
 # unify the physical node and VM node boot action functionality
 #
@@ -111,7 +114,7 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.set.command):
 	</param>
 
 	<param type='string' name='disksize'>
-	The size of the VM disk. 
+	The size of the VM disk in gigabytes.
 	</param>
 
 	<param type='string' name='mem'>
@@ -229,7 +232,38 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.set.command):
 				physnode = '%s' where id = '%s'""" %
 				(physnodeid, vmnodeid))
 			
-		if disk:
+		#
+		# is this just a disk resize?
+		#
+		if disksize and not disk:
+			#
+			# get the ids of the VM disks
+			#
+			self.db.execute("""select vd.id from vm_disks vd,
+				vm_nodes vn, nodes n where vd.vm_node = vn.id
+				and vn.node = n.id and n.name = '%s' order
+				by id""" % host)
+				
+			diskid = []
+			for v, in self.db.fetchall():
+				diskid.append(v)
+
+			i = 0
+			for ds in disksize.split(' '):
+				try:
+					dsize = int(ds)
+				except:
+					msg = '"disksize" values must be '
+					msg += 'integers'
+					self.abort(msg)
+
+				if dsize > 0: 
+					self.db.execute("""update vm_disks
+						set size = %d where
+						id = %s""" % (dsize, diskid[i]))
+
+				i += 0
+		elif disk:
 			#
 			# first remove all disk entries
 			#
