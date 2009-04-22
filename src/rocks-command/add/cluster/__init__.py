@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.17 2009/03/30 19:15:46 bruno Exp $
+# $Id: __init__.py,v 1.18 2009/04/22 17:52:28 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.18  2009/04/22 17:52:28  bruno
+# allow the user to set the size of the frontend disk size.
+#
 # Revision 1.17  2009/03/30 19:15:46  bruno
 # change first free VLAN id from 3 back to 2. this reverses a previous change.
 # we found that the root cause of the problem was identical MAC addresses for
@@ -166,6 +169,11 @@ class Command(rocks.commands.add.command):
 	node. The default is 36.
 	</param>
 
+	<param type='string' name='disk-per-frontend'>
+	The size of the disk (in gigabytes) to allocate to the VM frontend
+	node. The default is 36.
+	</param>
+
 	<param type='string' name='mem-per-compute'>
 	The amount of memory (in megabytes) to allocate to each VM compute
 	node. The default is 1024.
@@ -269,10 +277,11 @@ class Command(rocks.commands.add.command):
 			pass
 
 
-	def createFrontend(self, vlan, fqdn, ip):
+	def createFrontend(self, vlan, fqdn, ip, disksize):
 		output = self.command('add.host.vm', [ self.getFrontend(),
 			'membership=Frontend', 'num-macs=2',
-			'vlan=%d,0' % vlan, 'sync-config=n' ] )
+			'disksize=%s' % disksize, 'vlan=%d,0' % vlan,
+			'sync-config=n' ] )
 
 		self.frontendname = None
 
@@ -375,11 +384,12 @@ class Command(rocks.commands.add.command):
 		# fillParams with the above default values
 		#
 		(cpus_per_compute, mem_per_compute, disk_per_compute,
-			container_hosts, vlan) = \
+			disk_per_frontend, container_hosts, vlan) = \
 			self.fillParams(
 				[('cpus-per-compute', 1),
 				('mem-per-compute', 1024),
 				('disk-per-compute', 36),
+				('disk-per-frontend', 36),
 				('container-hosts', None),
 				('vlan', None)
 				])
@@ -410,7 +420,7 @@ class Command(rocks.commands.add.command):
 		#
 		# create the frontend VM
 		#
-		self.createFrontend(vlanid, fqdn, ip)
+		self.createFrontend(vlanid, fqdn, ip, disk_per_frontend)
 
 		#
 		# create the compute nodes
