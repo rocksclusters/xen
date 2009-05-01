@@ -9,12 +9,16 @@
 	</description>
 
 	<copyright>
-	Copyright (c) 2000 - 2008 The Regents of the University of California.
-	All rights reserved. Rocks(r) v5.1 www.rocksclusters.org
+	Copyright (c) 2000 - 2009 The Regents of the University of California.
+	All rights reserved. Rocks(r) v5.2 www.rocksclusters.org
+	
 	</copyright>
 
 <changelog>
 $Log: xen.xml,v $
+Revision 1.17  2009/05/01 19:07:33  mjk
+chimi con queso
+
 Revision 1.16  2008/11/21 18:37:29  bruno
 make sure 'rocks report host xen bridge' is called when a frontend is
 installing.
