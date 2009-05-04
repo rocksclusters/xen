@@ -16,6 +16,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-server.xml,v $
+Revision 1.28  2009/05/04 21:11:50  bruno
+speed up certtool
+
 Revision 1.27  2009/04/08 22:27:58  bruno
 retool the xen commands to use libvirt
 
@@ -238,6 +241,10 @@ os.system('/opt/rocks/bin/rocks set attr vm_mac_base_addr %s' % \
 
 mkdir -p /etc/pki/CA/private
 
+<!-- speed up certtool -->
+mv /dev/random /dev/random.orig
+ln -s /dev/urandom /dev/random
+
 /usr/bin/certtool --generate-privkey > /etc/pki/CA/private/cakey.pem
 
 <file name="/tmp/ca.info">
@@ -260,6 +267,11 @@ chmod 750 /etc/pki/CA/private
 chown root.apache /etc/pki/CA/private
 chmod 440 /etc/pki/CA/private/cakey.pem
 chown root.apache /etc/pki/CA/private/cakey.pem
+
+
+<!-- restore original system -->
+rm /dev/random
+mv /dev/random.orig /dev/random
 
 </post>
 

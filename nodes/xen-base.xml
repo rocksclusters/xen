@@ -15,6 +15,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-base.xml,v $
+Revision 1.27  2009/05/04 21:11:50  bruno
+speed up certtool
+
 Revision 1.26  2009/04/08 22:27:58  bruno
 retool the xen commands to use libvirt
 
@@ -520,6 +523,11 @@ EOF
 
 mkdir -p /etc/pki/libvirt/private
 
+<!-- speed up certtool -->
+mv /dev/random /dev/random.orig
+ln -s /dev/urandom /dev/random
+
+
 /usr/bin/certtool --generate-privkey > /etc/pki/libvirt/private/clientkey.pem
 
 <file name="/tmp/client.info">
@@ -564,6 +572,11 @@ signing_key
 
 /bin/rm -f /tmp/server.info
 /bin/rm -f /tmp/cakey.pem
+
+
+<!-- restore original system -->
+rm /dev/random
+mv /dev/random.orig /dev/random
 
 </post>
 
