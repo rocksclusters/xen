@@ -16,6 +16,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-db.xml,v $
+Revision 1.8  2009/05/05 19:06:36  bruno
+use foundation mysql
+
 Revision 1.7  2009/01/14 00:20:55  bruno
 unify the physical node and VM node boot action functionality
 
@@ -81,7 +84,7 @@ CREATE TABLE vm_disks (
 
 </file>
 
-/usr/bin/mysql cluster &lt; /tmp/xen-tables.sql
+/opt/rocks/bin/mysql cluster &lt; /tmp/xen-tables.sql
 
 </post>
 
