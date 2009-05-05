@@ -16,6 +16,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-db.xml,v $
+Revision 1.9  2009/05/05 23:01:27  bruno
+another xen db fix
+
 Revision 1.8  2009/05/05 19:06:36  bruno
 use foundation mysql
 
@@ -84,7 +87,7 @@ CREATE TABLE vm_disks (
 
 </file>
 
-/opt/rocks/bin/mysql cluster &lt; /tmp/xen-tables.sql
+/opt/rocks/bin/mysql --user=root --password='' cluster &lt; /tmp/xen-tables.sql
 
 </post>
 
