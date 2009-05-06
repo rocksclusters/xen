@@ -1,5 +1,5 @@
 # 
-# $Id: Makefile,v 1.10 2009/05/01 19:07:35 mjk Exp $
+# $Id: Makefile,v 1.11 2009/05/06 20:16:37 bruno Exp $
 #
 # @Copyright@
 # 
@@ -55,6 +55,9 @@
 # @Copyright@
 #
 # $Log: Makefile,v $
+# Revision 1.11  2009/05/06 20:16:37  bruno
+# build outside the source tree
+#
 # Revision 1.10  2009/05/01 19:07:35  mjk
 # chimi con queso
 #
@@ -116,7 +119,8 @@
 
 PKGROOT         = /var/www/html/roll-documentation/xen/$(VERSION)
 REDHAT.ROOT     = $(PWD)/../../
-ROCKSROOT       = ../../../../..
+
+
 -include $(ROCKSROOT)/etc/Rules.mk
 include Rules.mk
 
