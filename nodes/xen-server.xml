@@ -16,6 +16,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-server.xml,v $
+Revision 1.29  2009/05/06 17:58:12  bruno
+all can't be in CDATA
+
 Revision 1.28  2009/05/04 21:11:50  bruno
 speed up certtool
 
@@ -164,7 +167,9 @@ chmod a+x /tmp/do-xen-bridge.sh
 #
 import os
 
+]]>
 a = '&Kickstart_PublicAddress;'
+<![CDATA[
 
 ip_octets = []
 
