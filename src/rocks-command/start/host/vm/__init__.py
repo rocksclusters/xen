@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.18 2009/05/01 19:07:35 mjk Exp $
+# $Id: __init__.py,v 1.19 2009/05/06 16:37:12 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.19  2009/05/06 16:37:12  bruno
+# keep a xen domain up after a crash. helpful for debugging.
+#
 # Revision 1.18  2009/05/01 19:07:35  mjk
 # chimi con queso
 #
@@ -309,7 +312,7 @@ class Command(rocks.commands.start.host.command):
 		#
 		xmlconfig.append("<on_poweroff>destroy</on_poweroff>")
 		xmlconfig.append("<on_reboot>restart</on_reboot>")
-		xmlconfig.append("<on_crash>restart</on_crash>")
+		xmlconfig.append("<on_crash>preserve</on_crash>")
 
 		xmlconfig.append("</domain>")
 
