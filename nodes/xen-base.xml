@@ -15,6 +15,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-base.xml,v $
+Revision 1.29  2009/05/07 23:38:41  bruno
+set Xen_Dom0MinMem on the frontend too.
+
 Revision 1.28  2009/05/07 22:30:33  bruno
 get the certs built correctly for libvirtd
 
@@ -120,7 +123,7 @@ MINMEM=&Xen_Dom0MinMem;
 <!-- we need this case below for a frontend install -->
 if [ "$MINMEM" == "" ]
 then
-	MINMEM=`/opt/rocks/bin/rocks list host attr localhost Xen_Dom0MinMem`
+	MINMEM=`/opt/rocks/bin/rocks list attr | grep Xen_Dom0MinMem | awk '{print $2}'`
 fi
 
 <file name="/etc/xen/xend-config.sxp">

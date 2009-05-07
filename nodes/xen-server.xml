@@ -16,6 +16,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-server.xml,v $
+Revision 1.31  2009/05/07 23:38:41  bruno
+set Xen_Dom0MinMem on the frontend too.
+
 Revision 1.30  2009/05/07 22:30:33  bruno
 get the certs built correctly for libvirtd
 
@@ -136,7 +139,7 @@ Revision 1.1  2005/12/17 05:27:19  mjk
 /opt/rocks/bin/rocks add appliance hosted-vm \
 	membership='Hosted VM' public='no'
 
-/opt/rocks/bin/rocks set appliance attr vm-container Xen_Dom0MinMem 768
+/opt/rocks/bin/rocks set attr Xen_Dom0MinMem 768
 /opt/rocks/bin/rocks set host bootflags flags="dom0_mem=1024M"
 
 /opt/rocks/bin/rocks add bootaction action="install vm" \
