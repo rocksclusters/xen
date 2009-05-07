@@ -16,6 +16,9 @@
 
 <changelog>
 $Log: xen.xml,v $
+Revision 1.18  2009/05/07 22:30:33  bruno
+get the certs built correctly for libvirtd
+
 Revision 1.17  2009/05/01 19:07:33  mjk
 chimi con queso
 
@@ -93,6 +96,10 @@ start of xen roll
 		<tail>xen-base</tail>
 	</order>
 
+	<order head="xen-client">
+		<tail>xen-base</tail>
+	</order>
+
 
 	<edge from="server">
 		<to>xen-server</to>
@@ -103,6 +110,7 @@ start of xen roll
 
 	<edge from="vm-container-client">
 		<to>client</to>
+		<to>xen-client</to>
 		<to>xen-base</to>
 		<to>vm-container</to>
 	</edge>

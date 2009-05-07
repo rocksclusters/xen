@@ -15,6 +15,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-base.xml,v $
+Revision 1.28  2009/05/07 22:30:33  bruno
+get the certs built correctly for libvirtd
+
 Revision 1.27  2009/05/04 21:11:50  bruno
 speed up certtool
 
@@ -506,18 +509,6 @@ LIBVIRTD_ARGS="--listen"
 </post>
 
 <post>
-
-<file name="/etc/pki/CA/cacert.pem">
-<eval>
-cat /etc/pki/CA/cacert.pem
-</eval>
-</file>
-
-cat &gt; /tmp/cakey.pem &lt;&lt; 'EOF'
-<eval>
-cat /etc/pki/CA/private/cakey.pem
-</eval>
-EOF
 
 <!-- create a client cert -->
 

@@ -1,0 +1,42 @@
+<?xml version="1.0" standalone="no"?>
+
+<kickstart>
+
+
+<description>
+Xen support for the backend machines.
+</description>
+
+
+<copyright>
+Copyright (c) 2000 - 2007 The Regents of the University of California.
+All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
+</copyright>
+
+
+<changelog>
+$Log: xen-client.xml,v $
+Revision 1.1  2009/05/07 22:30:33  bruno
+get the certs built correctly for libvirtd
+
+</changelog>
+
+
+<post>
+
+<file name="/etc/pki/CA/cacert.pem">
+<eval>
+cat /etc/pki/CA/cacert.pem
+</eval>
+</file>
+
+cat &gt; /tmp/cakey.pem &lt;&lt; 'EOF'
+<eval>
+cat /etc/pki/CA/private/cakey.pem
+</eval>
+EOF
+
+</post>
+
+</kickstart>
+

@@ -16,6 +16,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-server.xml,v $
+Revision 1.30  2009/05/07 22:30:33  bruno
+get the certs built correctly for libvirtd
+
 Revision 1.29  2009/05/06 17:58:12  bruno
 all can't be in CDATA
 
@@ -253,7 +256,7 @@ ln -s /dev/urandom /dev/random
 /usr/bin/certtool --generate-privkey > /etc/pki/CA/private/cakey.pem
 
 <file name="/tmp/ca.info">
-organization = &Info_CertificateOrganization;
+cn = &Info_CertificateOrganization;
 ca
 cert_signing_key
 </file>
@@ -277,6 +280,13 @@ chown root.apache /etc/pki/CA/private/cakey.pem
 <!-- restore original system -->
 rm /dev/random
 mv /dev/random.orig /dev/random
+
+</post>
+
+<post>
+
+<!-- set up a temp CA key for the common cert creations in xen-base -->
+cp /etc/pki/CA/private/cakey.pem /tmp/cakey.pem
 
 </post>
 
