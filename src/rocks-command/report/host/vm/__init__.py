@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.42 2009/05/01 19:07:34 mjk Exp $
+# $Id: __init__.py,v 1.43 2009/05/12 00:45:16 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.43  2009/05/12 00:45:16  bruno
+# append networking info onto the install boot args
+#
 # Revision 1.42  2009/05/01 19:07:34  mjk
 # chimi con queso
 #
@@ -330,6 +333,23 @@ class Command(rocks.commands.report.host.command):
 		# install profile
 		kern, ramdsk, bootargs = self.getBootProfile(host,
 			installAction)
+		#
+		# append networking info onto the install boot args
+		#
+		ip = self.db.getHostAttr(host, 'Kickstart_PublicAddress')
+		netmask = self.db.getHostAttr(host, 'Kickstart_PublicNetmask')
+		dns = self.db.getHostAttr(host, 'Kickstart_PublicDNSServers')
+		gateway = self.db.getHostAttr(host, 'Kickstart_PublicGateway')
+
+		if ip:
+			bootargs += ' ip=%s ' % ip
+		if netmask:
+			bootargs += ' netmask=%s ' % netmask
+		if dns:
+			bootargs += ' dns=%s ' % dns
+		if gateway:
+			bootargs += ' gateway=%s ' % gateway
+
 		self.addOutput(host, 'installKernel = %s' % kern)
 		self.addOutput(host, 'installRamdisk = %s' % ramdsk)
 		self.addOutput(host, 'installArgs = %s' % bootargs)
