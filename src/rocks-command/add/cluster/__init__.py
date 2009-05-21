@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.19 2009/05/01 19:07:33 mjk Exp $
+# $Id: __init__.py,v 1.20 2009/05/21 21:14:43 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.20  2009/05/21 21:14:43  bruno
+# tweaks
+#
 # Revision 1.19  2009/05/01 19:07:33  mjk
 # chimi con queso
 #
@@ -280,7 +283,7 @@ class Command(rocks.commands.add.command):
 			pass
 
 
-	def createFrontend(self, vlan, fqdn, ip, disksize):
+	def createFrontend(self, vlan, fqdn, ip, disksize, gateway):
 		output = self.command('add.host.vm', [ self.getFrontend(),
 			'membership=Frontend', 'num-macs=2',
 			'disksize=%s' % disksize, 'vlan=%d,0' % vlan,
@@ -304,6 +307,11 @@ class Command(rocks.commands.add.command):
 			'eth1', ip ] )
 		self.command('set.host.interface.name', [ self.frontendname,
 			'eth1', fqdn ] )
+		if not gateway:
+			gateway = self.db.getHostAttr(self.frontendname,
+				'Kickstart_PublicGateway')
+		self.command('add.host.route', [ self.frontendname, '0.0.0.0',
+			gateway, 'netmask=0.0.0.0' ] )
 
 		#
 		# set the run and install actions for this VM
@@ -387,14 +395,15 @@ class Command(rocks.commands.add.command):
 		# fillParams with the above default values
 		#
 		(cpus_per_compute, mem_per_compute, disk_per_compute,
-			disk_per_frontend, container_hosts, vlan) = \
+			disk_per_frontend, container_hosts, vlan, gateway) = \
 			self.fillParams(
 				[('cpus-per-compute', 1),
 				('mem-per-compute', 1024),
 				('disk-per-compute', 36),
 				('disk-per-frontend', 36),
 				('container-hosts', None),
-				('vlan', None)
+				('vlan', None),
+				('gateway', None)
 				])
 
 		if vlan:
@@ -423,7 +432,8 @@ class Command(rocks.commands.add.command):
 		#
 		# create the frontend VM
 		#
-		self.createFrontend(vlanid, fqdn, ip, disk_per_frontend)
+		self.createFrontend(vlanid, fqdn, ip, disk_per_frontend,
+			gateway)
 
 		#
 		# create the compute nodes

@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.43 2009/05/12 00:45:16 bruno Exp $
+# $Id: __init__.py,v 1.44 2009/05/21 21:14:43 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.44  2009/05/21 21:14:43  bruno
+# tweaks
+#
 # Revision 1.43  2009/05/12 00:45:16  bruno
 # append networking info onto the install boot args
 #
@@ -333,13 +336,34 @@ class Command(rocks.commands.report.host.command):
 		# install profile
 		kern, ramdsk, bootargs = self.getBootProfile(host,
 			installAction)
+
 		#
 		# append networking info onto the install boot args
 		#
-		ip = self.db.getHostAttr(host, 'Kickstart_PublicAddress')
-		netmask = self.db.getHostAttr(host, 'Kickstart_PublicNetmask')
+
+		if host in self.getHostnames( [ 'frontend' ]):
+			subnet = 'public'
+		else:
+			subnet = 'private'
+			
+		rows = self.db.execute("""select net.ip, s.netmask from
+			networks net,
+			nodes n, subnets s where n.name='%s' and
+			n.id = net.node and net.subnet = s.id and
+			s.name = '%s' """ % (host, subnet))
+
+		if rows == 0:
+			ip = None
+			netmask = None
+		else:
+			(ip, netmask) = self.db.fetchone()
+
 		dns = self.db.getHostAttr(host, 'Kickstart_PublicDNSServers')
-		gateway = self.db.getHostAttr(host, 'Kickstart_PublicGateway')
+
+		gateway = None
+		for (key, val) in self.db.getHostRoutes(host).items():
+			if key == '0.0.0.0' and val[0] == '0.0.0.0':
+				gateway = val[1]
 
 		if ip:
 			bootargs += ' ip=%s ' % ip
