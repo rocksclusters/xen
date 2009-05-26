@@ -16,6 +16,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-server.xml,v $
+Revision 1.33  2009/05/26 23:04:42  bruno
+mo' bugs
+
 Revision 1.32  2009/05/26 21:25:07  bruno
 increase cert expirations to 10 years
 
@@ -169,7 +172,7 @@ chmod a+x /tmp/do-xen-bridge.sh
 </post>
 
 
-<post arg="--interpreter /opt/rocks/bin/python">
+<post interpreter="/opt/rocks/bin/python">
 <![CDATA[
 #
 # calculate the VM MAC base address
