@@ -15,6 +15,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-base.xml,v $
+Revision 1.30  2009/05/26 21:25:07  bruno
+increase cert expirations to 10 years
+
 Revision 1.29  2009/05/07 23:38:41  bruno
 set Xen_Dom0MinMem on the frontend too.
 
@@ -527,6 +530,7 @@ ln -s /dev/urandom /dev/random
 <file name="/tmp/client.info">
 organization = &Info_CertificateOrganization;
 cn = &hostname;
+expiration_days = 3650
 tls_www_client
 encryption_key
 signing_key
@@ -553,6 +557,7 @@ signing_key
 <file name="/tmp/server.info">
 organization = &Info_CertificateOrganization;
 cn = &hostname;
+expiration_days = 3650
 tls_www_server
 encryption_key
 signing_key

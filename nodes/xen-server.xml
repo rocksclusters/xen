@@ -16,6 +16,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-server.xml,v $
+Revision 1.32  2009/05/26 21:25:07  bruno
+increase cert expirations to 10 years
+
 Revision 1.31  2009/05/07 23:38:41  bruno
 set Xen_Dom0MinMem on the frontend too.
 
@@ -260,6 +263,7 @@ ln -s /dev/urandom /dev/random
 
 <file name="/tmp/ca.info">
 cn = &Info_CertificateOrganization;
+expiration_days = 3650
 ca
 cert_signing_key
 </file>
