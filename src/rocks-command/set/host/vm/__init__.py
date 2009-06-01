@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.9 2009/05/01 19:07:35 mjk Exp $
+# $Id: __init__.py,v 1.10 2009/06/01 23:38:29 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.10  2009/06/01 23:38:29  bruno
+# can use a physical partition for a VMs disk
+#
 # Revision 1.9  2009/05/01 19:07:35  mjk
 # chimi con queso
 #
@@ -283,7 +286,7 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.set.command):
 				ds = []
 
 			for d in disk.split(' '):
-				if len(ds) < index:
+				if (len(ds) - 1) < index:
 					dsize = '36'
 				else:
 					dsize = ds[index]

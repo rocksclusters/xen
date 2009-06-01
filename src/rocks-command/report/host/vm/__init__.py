@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.44 2009/05/21 21:14:43 bruno Exp $
+# $Id: __init__.py,v 1.45 2009/06/01 23:38:29 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.45  2009/06/01 23:38:29  bruno
+# can use a physical partition for a VMs disk
+#
 # Revision 1.44  2009/05/21 21:14:43  bruno
 # tweaks
 #
@@ -285,7 +288,8 @@ class Command(rocks.commands.report.host.command):
 			if vbd_type in [ 'file', 'tap:aio' ]:
 				self.addOutput(host, 'disk = %s' % file)
 				self.addOutput(host, 'disksize = %s' % size)
-				
+			elif vbd_type == 'phy':
+				self.addOutput(host, 'disk = /dev/%s' % name)
 
 	def getBootProfile(self, host, profile):
 		"""Return what's defined by the named profile, Return

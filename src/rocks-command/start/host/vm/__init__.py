@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.19 2009/05/06 16:37:12 bruno Exp $
+# $Id: __init__.py,v 1.20 2009/06/01 23:38:30 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.20  2009/06/01 23:38:30  bruno
+# can use a physical partition for a VMs disk
+#
 # Revision 1.19  2009/05/06 16:37:12  bruno
 # keep a xen domain up after a crash. helpful for debugging.
 #
@@ -286,10 +289,26 @@ class Command(rocks.commands.start.host.command):
 				a = "<disk type='file' device='disk'>"
 				xmlconfig.append(a)
 
-				a = "<driver name='file'/>"
+				if vbd_type == 'file':
+					a = "<driver name='file'/>"
+				elif vbd_type == 'tap:aio':
+					a = "<driver name='tap' type='aio'/>"
 				xmlconfig.append(a)
 
 				a = "<source file='%s'/>" % file
+				xmlconfig.append(a)
+
+				a = "<target dev='%s'/>" % device
+				xmlconfig.append(a)
+
+				a = "</disk>"
+				xmlconfig.append(a)
+
+			elif vbd_type == 'phy':
+				a = "<disk type='block' device='disk'>"
+				xmlconfig.append(a)
+
+				a = "<source dev='/dev/%s'/>" % name
 				xmlconfig.append(a)
 
 				a = "<target dev='%s'/>" % device
