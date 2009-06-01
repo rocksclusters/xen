@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.11 2009/05/01 19:07:34 mjk Exp $
+# $Id: __init__.py,v 1.12 2009/06/01 21:43:57 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,10 @@
 # @Copyright@ 
 #
 # $Log: __init__.py,v $
+# Revision 1.12  2009/06/01 21:43:57  bruno
+# restart the network after the xen bridge is created. this ensures our static
+# routes are reconstituted
+#
 # Revision 1.11  2009/05/01 19:07:34  mjk
 # chimi con queso
 #
@@ -118,6 +122,11 @@ xenbrup () {
 		next_free_vifnum
 		/etc/xen/scripts/network-bridge start netdev=$1 \\
 			bridge=$2 vifnum=$VIFNUM
+
+		#
+		# needed in order to ensure all our static routes are in place
+		#
+		/sbin/service network restart
 	fi
 }
 
