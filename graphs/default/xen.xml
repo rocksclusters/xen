@@ -16,6 +16,9 @@
 
 <changelog>
 $Log: xen.xml,v $
+Revision 1.19  2009/06/10 23:12:22  bruno
+xen-db must be before pxe
+
 Revision 1.18  2009/05/07 22:30:33  bruno
 get the certs built correctly for libvirtd
 
@@ -86,6 +89,10 @@ start of xen roll
 
 	<order head="networking-server">
 		<tail>xen-db</tail>
+	</order> 
+
+	<order head="xen-db">
+		<tail>pxe</tail>
 	</order> 
 
 	<order head="xen-db">
