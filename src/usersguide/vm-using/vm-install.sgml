@@ -35,8 +35,8 @@ xreflabel="Adding, Installing and Booting VMs with a Physical Frontend">
 
 <para>
 In the common case, you will execute three Rocks commands over the
-lifetime of your VMs: add (to add VM info to the database), create (to
-install a newly added VM) and start (to boot an installed VM).
+lifetime of your VMs: add (to add VM info to the database), start (to
+boot or install a VM) and stop (to shutdown an installed VM).
 </para>
 
 <para>
@@ -68,14 +68,32 @@ The next step is to install the VM.
 </para>
 
 <para>
-VMs are installed with the <computeroutput>start</computeroutput> command
-with the <computeroutput>install=yes</computeroutput> flag.
+VMs are installed with the <computeroutput>start</computeroutput>.
 Here's how to install the VM that was added above:
 </para>
 
 <screen>
-# rocks start host vm compute-0-0-0 install=yes
+# rocks start host vm compute-0-0-0
 </screen>
+
+<note>
+<para>
+After running the command above, you may see the following message:
+</para>
+
+<screen>
+libvir: Xen Daemon error : POST operation failed: (xend.err "Error creating domain: Disk isn't accessible")
+</screen>
+
+<para>
+This is not a problem.
+The above means the file that will be used for the VMs disk space was not
+present when the VM was started.
+The "rocks start host vm" command eventually creates it and starts the VM.
+That is, while you may see the error message above, the VM is actually running
+and installing.
+</para>
+</note>
 
 <para>
 The above command will start the standard Rocks installation process for
