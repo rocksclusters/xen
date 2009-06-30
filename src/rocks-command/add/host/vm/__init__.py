@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.29 2009/06/30 16:30:26 bruno Exp $
+# $Id: __init__.py,v 1.30 2009/06/30 16:59:38 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.30  2009/06/30 16:59:38  bruno
+# move code to correct location
+#
 # Revision 1.29  2009/06/30 16:30:26  bruno
 # fixes to support for virtual compute nodes that are managed by a
 # physical frontend
@@ -663,6 +666,17 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 			vlanids, module)
 
 		#
+		# set the default installaction
+		#
+		self.command('set.host.installaction', [ nodename,
+			'install vm' ] )
+
+		#
+		# set the first boot state to 'install'
+		#
+		self.command('set.host.boot', [ nodename, 'install' ] )
+
+		#
 		# print the name of the new VM
 		#
 		self.beginOutput()
@@ -732,17 +746,6 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 				mem, cpus, slice, mac, num_macs, disk, disksize,
 				vlan, module)
 
-			#
-			# set the default installaction
-			#
-			self.command('set.host.installaction', [ host, 
-				'install vm' ] )
-
-			#
-			# set the first boot state to 'install'
-			#
-			self.command('set.host.boot', [ host, 'install' ] )
-		
 		syncit = self.str2bool(sync_config)
 
 		if syncit:
