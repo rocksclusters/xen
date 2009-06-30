@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.28 2009/05/01 19:07:33 mjk Exp $
+# $Id: __init__.py,v 1.29 2009/06/30 16:30:26 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,10 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.29  2009/06/30 16:30:26  bruno
+# fixes to support for virtual compute nodes that are managed by a
+# physical frontend
+#
 # Revision 1.28  2009/05/01 19:07:33  mjk
 # chimi con queso
 #
@@ -727,6 +731,17 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 			self.addVMHost(host, membership, nodename, ip, subnet,
 				mem, cpus, slice, mac, num_macs, disk, disksize,
 				vlan, module)
+
+			#
+			# set the default installaction
+			#
+			self.command('set.host.installaction', [ host, 
+				'install vm' ] )
+
+			#
+			# set the first boot state to 'install'
+			#
+			self.command('set.host.boot', [ host, 'install' ] )
 		
 		syncit = self.str2bool(sync_config)
 

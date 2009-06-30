@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.45 2009/06/01 23:38:29 bruno Exp $
+# $Id: __init__.py,v 1.46 2009/06/30 16:30:26 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,10 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.46  2009/06/30 16:30:26  bruno
+# fixes to support for virtual compute nodes that are managed by a
+# physical frontend
+#
 # Revision 1.45  2009/06/01 23:38:29  bruno
 # can use a physical partition for a VMs disk
 #
@@ -342,32 +346,31 @@ class Command(rocks.commands.report.host.command):
 			installAction)
 
 		#
-		# append networking info onto the install boot args
+		# append networking info onto the install boot args for
+		# virtual frontends
 		#
-
+		ip = None
+		netmask = None
+		dns = None
+		gateway = None
 		if host in self.getHostnames( [ 'frontend' ]):
 			subnet = 'public'
-		else:
-			subnet = 'private'
 			
-		rows = self.db.execute("""select net.ip, s.netmask from
-			networks net,
-			nodes n, subnets s where n.name='%s' and
-			n.id = net.node and net.subnet = s.id and
-			s.name = '%s' """ % (host, subnet))
+			rows = self.db.execute("""select net.ip, s.netmask from
+				networks net,
+				nodes n, subnets s where n.name='%s' and
+				n.id = net.node and net.subnet = s.id and
+				s.name = '%s' """ % (host, subnet))
 
-		if rows == 0:
-			ip = None
-			netmask = None
-		else:
-			(ip, netmask) = self.db.fetchone()
+			if rows > 0:
+				(ip, netmask) = self.db.fetchone()
 
-		dns = self.db.getHostAttr(host, 'Kickstart_PublicDNSServers')
+			dns = self.db.getHostAttr(host,
+					'Kickstart_PublicDNSServers')
 
-		gateway = None
-		for (key, val) in self.db.getHostRoutes(host).items():
-			if key == '0.0.0.0' and val[0] == '0.0.0.0':
-				gateway = val[1]
+			for (key, val) in self.db.getHostRoutes(host).items():
+				if key == '0.0.0.0' and val[0] == '0.0.0.0':
+					gateway = val[1]
 
 		if ip:
 			bootargs += ' ip=%s ' % ip
