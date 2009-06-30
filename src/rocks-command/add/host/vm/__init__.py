@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.30 2009/06/30 16:59:38 bruno Exp $
+# $Id: __init__.py,v 1.31 2009/06/30 17:15:50 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.31  2009/06/30 17:15:50  bruno
+# one more time
+#
 # Revision 1.30  2009/06/30 16:59:38  bruno
 # move code to correct location
 #
@@ -674,7 +677,7 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 		#
 		# set the first boot state to 'install'
 		#
-		self.command('set.host.boot', [ nodename, 'install' ] )
+		self.command('set.host.boot', [ nodename, 'action=install' ] )
 
 		#
 		# print the name of the new VM
