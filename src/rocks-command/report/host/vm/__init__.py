@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.46 2009/06/30 16:30:26 bruno Exp $
+# $Id: __init__.py,v 1.47 2009/07/16 22:46:58 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.47  2009/07/16 22:46:58  bruno
+# if there is no boot action for a VM, assume install
+#
 # Revision 1.46  2009/06/30 16:30:26  bruno
 # fixes to support for virtual compute nodes that are managed by a
 # physical frontend
@@ -397,7 +400,11 @@ class Command(rocks.commands.report.host.command):
 		if rows > 0:
 			bootaction, = self.db.fetchone()
 		else:
-			self.abort('could not find bootaction for "%s' % host)
+			#
+			# if there is no bootaction for a node, assume
+			# 'install'
+			#
+			bootaction = 'install'
 
 		if bootaction == 'install':
 			self.addOutput(host, 'forceInstall = yes')
