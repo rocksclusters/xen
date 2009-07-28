@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.31 2009/06/30 17:15:50 bruno Exp $
+# $Id: __init__.py,v 1.32 2009/07/28 17:52:20 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.32  2009/07/28 17:52:20  bruno
+# be consistent -- all references to 'vlanid' should be 'vlan'
+#
 # Revision 1.31  2009/06/30 17:15:50  bruno
 # one more time
 #
@@ -248,7 +251,7 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 	<param type='string' name='vlan'>
 	The vlan ID to set for each interface. If you supply multiple MACs
 	(e.g., 'num-macs' > 1), you can specify multiple vlan IDs by a
-	comma separated list (e.g., vlan="3,4,5"). To not specify a vlanid
+	comma separated list (e.g., vlan="3,4,5"). To not specify a vlan
 	for a MAC, use the keyword 'none'. For example, if you want to
 	specify a vlan ID for interface 1 and 3, but not interface 2, type:
 	vlan="3,none,5".
