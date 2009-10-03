@@ -15,6 +15,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-base.xml,v $
+Revision 1.31  2009/10/03 00:19:41  bruno
+can build compute nodes with RHEL 5.4
+
 Revision 1.30  2009/05/26 21:25:07  bruno
 increase cert expirations to 10 years
 
@@ -121,13 +124,6 @@ Revision 1.1  2005/12/17 05:27:19  mjk
 
 
 <post>
-MINMEM=&Xen_Dom0MinMem;
-
-<!-- we need this case below for a frontend install -->
-if [ "$MINMEM" == "" ]
-then
-	MINMEM=`/opt/rocks/bin/rocks list attr | grep Xen_Dom0MinMem | awk '{print $2}'`
-fi
 
 <file name="/etc/xen/xend-config.sxp">
 (xend-unix-server yes)
@@ -135,13 +131,11 @@ fi
 (xend-relocation-hosts-allow '^localhost$ ^localhost\\.localdomain$')
 (network-script 'rocks-network-bridge')
 (vif-script vif-bridge) 
-(dom0-cpus 1)
 (vncpasswd '')
 </file>
 
-echo "(dom0-min-mem $MINMEM)" &gt;&gt; /etc/xen/xend-config.sxp
-
 </post>
+
 
 <post>
 <!-- increase the max number of virtual interfaces that can be created -->
