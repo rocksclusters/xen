@@ -15,6 +15,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-base.xml,v $
+Revision 1.32  2009/10/06 22:48:32  bruno
+phil's phixes to the xen bridge bring up code.
+
 Revision 1.31  2009/10/03 00:19:41  bruno
 can build compute nodes with RHEL 5.4
 
@@ -236,6 +239,13 @@ is_bonding() {
 is_vlan() {
     [ -f /proc/net/vlan/$1 ]
 }
+get_mtu() {
+	ip link show $1 | sed -e '1q' | cut -d ' ' -f 5
+}
+set_mtu() {
+	ip link set $1 mtu $2 
+	logger -p local0.info "Network Bridge: set MTU $1 to $2"
+}
 # ROCKS
 
 is_ifup() {
@@ -380,7 +390,12 @@ using loopback.nloopbacks=<N> on the domain 0 kernel command line.
         fi
     fi
 
+    #ROCKS
+    netdevMTU=$(get_mtu ${netdev})
+    #ROCKS
+
     create_bridge ${bridge}
+
 
     if link_exists "$vdev"; then
 	mac=`ip link show ${netdev} | grep 'link\/ether' | sed -e 's/.*ether \(..:..:..:..:..:..\).*/\1/'`
@@ -398,14 +413,23 @@ using loopback.nloopbacks=<N> on the domain 0 kernel command line.
 	ip link set ${netdev} name ${pdev}
 	ip link set ${vdev} name ${netdev}
 
+
 	setup_bridge_port ${pdev}
 	setup_bridge_port ${vif0}
 	ip link set ${netdev} addr ${mac} arp on
+
 
 	ip link set ${bridge} up
 	add_to_bridge  ${bridge} ${vif0}
 	add_to_bridge2 ${bridge} ${pdev}
 	do_ifup ${netdev}
+
+        #ROCKS Make sure the MTU of the original physical device is 
+        #reflected in the bridge devices. Then Set bridge MTU 
+        set_mtu ${vif0} ${netdevMTU}
+        set_mtu ${pdev} ${netdevMTU}
+        set_mtu ${bridge} ${netdevMTU}
+        #ROCKS
     else
 	# old style without ${vdev}
 	transfer_addrs  ${netdev} ${bridge}
