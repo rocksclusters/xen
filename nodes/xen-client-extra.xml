@@ -1,0 +1,38 @@
+<?xml version="1.0" standalone="no"?>
+
+<kickstart>
+
+
+<description>
+Extra Xen backend configuration that must be ordered after xen-base. The
+xen-client XML node file must be ordered before xen-base so it can lay down
+certificate files before xen-base is called.
+</description>
+
+
+<copyright>
+Copyright (c) 2000 - 2007 The Regents of the University of California.
+All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
+</copyright>
+
+
+<changelog>
+$Log: xen-client-extra.xml,v $
+Revision 1.1  2009/10/07 18:48:18  bruno
+new
+
+</changelog>
+
+
+<post>
+
+<file name="/etc/xen/xend-config.sxp" mode="append">
+(dom0-cpus 1)
+(dom0-min-mem &Xen_Dom0MinMem;)
+</file>
+
+</post>
+
+
+</kickstart>
+
