@@ -15,6 +15,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-base.xml,v $
+Revision 1.33  2009/10/08 18:27:06  bruno
+it turns out that the frontend needs dom0-min-mem set too.
+
 Revision 1.32  2009/10/06 22:48:32  bruno
 phil's phixes to the xen bridge bring up code.
 
@@ -128,6 +131,14 @@ Revision 1.1  2005/12/17 05:27:19  mjk
 
 <post>
 
+MINMEM=&Xen_Dom0MinMem;
+
+<!-- we need this case below for a frontend install -->
+if [ "$MINMEM" == "" ]
+then
+	MINMEM=`/opt/rocks/bin/rocks list attr | grep Xen_Dom0MinMem | awk '{print $2}'`
+fi
+
 <file name="/etc/xen/xend-config.sxp">
 (xend-unix-server yes)
 (xend-unix-path /var/lib/xend/xend-socket)
@@ -136,6 +147,8 @@ Revision 1.1  2005/12/17 05:27:19  mjk
 (vif-script vif-bridge) 
 (vncpasswd '')
 </file>
+
+echo "(dom0-min-mem $MINMEM)" &gt;&gt; /etc/xen/xend-config.sxp
 
 </post>
 

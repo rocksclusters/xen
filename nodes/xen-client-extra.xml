@@ -18,6 +18,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-client-extra.xml,v $
+Revision 1.2  2009/10/08 18:27:06  bruno
+it turns out that the frontend needs dom0-min-mem set too.
+
 Revision 1.1  2009/10/07 18:48:18  bruno
 new
 
@@ -28,7 +31,6 @@ new
 
 <file name="/etc/xen/xend-config.sxp" mode="append">
 (dom0-cpus 1)
-(dom0-min-mem &Xen_Dom0MinMem;)
 </file>
 
 </post>
