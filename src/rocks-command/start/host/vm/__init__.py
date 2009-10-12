@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.20 2009/06/01 23:38:30 bruno Exp $
+# $Id: __init__.py,v 1.21 2009/10/12 21:12:39 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.21  2009/10/12 21:12:39  bruno
+# suppress error message when we boot a VM for the first time
+#
 # Revision 1.20  2009/06/01 23:38:30  bruno
 # can use a physical partition for a VMs disk
 #
@@ -137,6 +140,20 @@ import sys
 sys.path.append('/usr/lib64/python2.4/site-packages')
 sys.path.append('/usr/lib/python2.4/site-packages')
 import libvirt
+
+#
+# this function is used to suppress an error message when we start a VM
+# for the very first time and there isn't a disk file created for it yet.
+# the error message looks like:
+#
+#	libvir: Xen Daemon error : POST operation failed: (xend.err "Error
+#	creating domain: Disk isn't accessible)"
+#
+def handler(ctxt, err):
+	global errno
+
+	errno = err
+
 
 class Command(rocks.commands.start.host.command):
 	"""
@@ -341,6 +358,12 @@ class Command(rocks.commands.start.host.command):
 	def bootVM(self, physhost, host, xmlconfig):
 		hipervisor = libvirt.open('xen://%s/' % physhost)
 
+		#
+		# suppress an error message when a VM is started and
+		# the disk file doesn't exist yet.
+		#
+		libvirt.registerErrorHandler(handler, 'context')
+
 		retry = 0
 
 		try:
@@ -362,6 +385,8 @@ class Command(rocks.commands.start.host.command):
 				os.system(cmd)
 
 				retry = 1
+			else:
+				print str
 
 		if retry:
 			hipervisor.createLinux(xmlconfig, 0)
