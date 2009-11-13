@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.32 2009/07/28 17:52:20 bruno Exp $
+# $Id: __init__.py,v 1.33 2009/11/13 21:42:39 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,10 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.33  2009/11/13 21:42:39  bruno
+# fix from federico sacerdoti to enable using physical devices (partitions,
+# LVM partitions, etc.) as devices for virtual disks.
+#
 # Revision 1.32  2009/07/28 17:52:20  bruno
 # be consistent -- all references to 'vlanid' should be 'vlan'
 #
@@ -396,8 +400,13 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 
 		e = d[0].split(':')
 		vbd_type = ':'.join(e[0:-1])
-		prefix = os.path.dirname(e[-1])
-		name = os.path.basename(e[-1])
+
+		if vbd_type == 'phy':
+			prefix = ''
+			name = e[-1]	# allows for '/' in name for LVM
+		else:
+			prefix = os.path.dirname(e[-1])
+			name = os.path.basename(e[-1])
 
 		self.db.execute("""insert into vm_disks (vm_node, vbd_type,
 			prefix, name, device, mode, size)
