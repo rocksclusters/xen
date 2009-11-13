@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.33 2009/11/13 21:42:39 bruno Exp $
+# $Id: __init__.py,v 1.34 2009/11/13 23:22:52 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,10 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.34  2009/11/13 23:22:52  bruno
+# another fix from federico sacerdoti. if an IP address is specified on the
+# command line, need to make sure it is single quoted.
+#
 # Revision 1.33  2009/11/13 21:42:39  bruno
 # fix from federico sacerdoti to enable using physical devices (partitions,
 # LVM partitions, etc.) as devices for virtual disks.
@@ -664,6 +668,12 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 				ip = 'NULL'
 			else:
 				ip = "'%s'" % self.getNextIP(subnet)
+		else:
+			#
+			# make sure the ip is single quoted
+			#
+			newip = "'%s'" % ip.strip("'")
+			ip = newip
 
 		if vlan:
 			vlanids = vlan.split(',')
