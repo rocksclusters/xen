@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.7 2009/05/01 19:07:35 mjk Exp $
+# $Id: __init__.py,v 1.8 2009/12/01 18:54:41 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.8  2009/12/01 18:54:41  bruno
+# suppress error message when trying to stop a VM that is isn't running.
+#
 # Revision 1.7  2009/05/01 19:07:35  mjk
 # chimi con queso
 #
@@ -85,6 +88,19 @@ import sys
 sys.path.append('/usr/lib64/python2.4/site-packages')
 sys.path.append('/usr/lib/python2.4/site-packages')
 import libvirt
+
+#
+# this function is used to suppress an error message when we start a VM
+# for the very first time and there isn't a disk file created for it yet.
+# the error message looks like:
+#
+#	libvirt.libvirtError: Domain not found: xenUnifiedDomainLookupByName
+#
+def handler(ctxt, err):
+	global errno
+
+	errno = err
+
 
 class Command(rocks.commands.stop.host.command):
 	"""
@@ -129,6 +145,11 @@ class Command(rocks.commands.stop.host.command):
 				continue
 
 			hipervisor = libvirt.open('xen://%s/' % physhost)
-			domU = hipervisor.lookupByName(host)
-			domU.destroy()
+			libvirt.registerErrorHandler(handler, 'context')
+
+			try:
+				domU = hipervisor.lookupByName(host)
+				domU.destroy()
+			except:
+				pass
 
