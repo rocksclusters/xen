@@ -16,6 +16,9 @@
 
 <changelog>
 $Log: xen.xml,v $
+Revision 1.21  2009/12/16 00:21:33  bruno
+ordering fix for restore roll and xen
+
 Revision 1.20  2009/10/03 00:19:41  bruno
 can build compute nodes with RHEL 5.4
 
@@ -90,7 +93,7 @@ start of xen roll
 </changelog>
 
 
-	<order head="networking-server">
+	<order head="database-data">
 		<tail>xen-db</tail>
 	</order> 
 
@@ -98,7 +101,8 @@ start of xen roll
 		<tail>pxe</tail>
 	</order> 
 
-	<order head="xen-db">
+
+	<order head="networking-server">
 		<tail>xen-server</tail>
 	</order>
 
