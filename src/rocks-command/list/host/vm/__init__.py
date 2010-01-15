@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.13 2009/05/01 19:07:33 mjk Exp $
+# $Id: __init__.py,v 1.14 2010/01/15 20:16:25 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,10 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.14  2010/01/15 20:16:25  bruno
+# set the disk and disksize to the empty string if no disks are specified
+# for a VM.
+#
 # Revision 1.13  2009/05/01 19:07:33  mjk
 # chimi con queso
 #
@@ -271,6 +275,9 @@ class Command(rocks.commands.list.host.command):
 
 				if len(disks) > 0:
 					(disk, disksize) = disks[0]
+				else:
+					disk = ''
+					disksize = ''
 
 				info = (slice, mem, cpus, mac, physhost)
 				if showstatus:
