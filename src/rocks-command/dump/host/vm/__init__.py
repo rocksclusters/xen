@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.6 2009/05/01 19:07:33 mjk Exp $
+# $Id: __init__.py,v 1.7 2010/04/30 20:52:50 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,10 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.7  2010/04/30 20:52:50  bruno
+#  - nuke dead code
+#  - make sure the dump commands call self.dumpHostname()
+#
 # Revision 1.6  2009/05/01 19:07:33  mjk
 # chimi con queso
 #
@@ -107,84 +111,6 @@ class Command(rocks.commands.dump.host.command):
 		
 	<related>add host vm</related>
 	"""
-
-	def noSubnetsTable(self, params, args):
-		for host in self.getHostnames(args):
-                        rows = self.db.execute("""select
-				net.device, net.mac, net.ip,
-				net.netmask, net.gateway, net.module,
-				net.name from
-				networks net, nodes n
-				where n.name = "%s" and net.node = n.id
-				order by net.device""" % (host))
-
-			if rows < 1:
-				continue
-
-			for (iface, mac, ip, netmask, gateway,
-				module, name) in self.db.fetchall():
-				
-				if not iface:
-					continue # nothing to dump
-		
-				self.dump('add host interface %s %s' % 
-					(host, iface))
-
-				set = 'set host interface %%s %s %s %%s' % \
-					(host, iface)
-				if ip:
-					self.dump(set % ('ip', ip))
-				if gateway:
-					self.dump(set % ('gateway', gateway))
-				if name:
-					self.dump(set % ('name', name))
-				if mac:
-					self.dump(set % ('mac', mac))
-				if module:
-					self.dump(set % ('module', module))
-				if iface == 'eth0':
-					self.dump(set % ('subnet', 'private'))
-				elif iface == 'eth1':
-					self.dump(set % ('subnet', 'public'))
-
-	def hasSubnetsTable(self, params, args):
-		for host in self.getHostnames(args):
-                        rows = self.db.execute("""select distinctrow
-				IF(net.subnet, sub.name, NULL),
-				net.device, net.mac, net.ip,
-				IF(net.subnet, sub.netmask, NULL),
-				net.gateway, net.module, net.name from
-				nodes n, networks net, subnets sub
-				where
-				n.name='%s' and net.node=n.id and
-				(net.subnet=sub.id or net.subnet is NULL)
-				order by net.device""" % host )
-			if rows < 1:
-				continue
-			for (subnet, iface, mac, ip, netmask, gateway,
-				module, name) in self.db.fetchall():
-				
-				if not iface:
-					continue # nothing to dump
-		
-				self.dump('add host interface %s %s' % 
-					(host, iface))
-
-				set = 'set host interface %%s %s %s %%s' % \
-					(host, iface)
-				if ip:
-					self.dump(set % ('ip', ip))
-				if gateway:
-					self.dump(set % ('gateway', gateway))
-				if name:
-					self.dump(set % ('name', name))
-				if mac:
-					self.dump(set % ('mac', mac))
-				if module:
-					self.dump(set % ('module', module))
-				if subnet:
-					self.dump(set % ('subnet', subnet))
-
 
 	def dumpVM(self, host):
 		vmnodeid = None
@@ -251,7 +177,8 @@ class Command(rocks.commands.dump.host.command):
 				disks.append(disk)
 				disksizes.append('%d' % size)
 
-		str = "set host vm %s physnode='%s' " % (host, physhost)
+		str = "set host vm %s physnode='%s' " % \
+			(self.dumpHostname(host), self.dumpHostname(physhost))
 		str += "disk='%s' disksize='%s' " % \
 			(' '.join(disks), ' '.join(disksizes))
 		str += "mem='%d' slice='%d' virt-type='%s'" % \
