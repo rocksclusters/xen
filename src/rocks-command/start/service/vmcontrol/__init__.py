@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.1 2010/06/15 19:38:45 bruno Exp $
+# $Id: __init__.py,v 1.2 2010/06/21 22:47:06 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,18 +54,26 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.2  2010/06/21 22:47:06  bruno
+# use new ssl python library
+#
 # Revision 1.1  2010/06/15 19:38:45  bruno
 # start/stop the vmcontrol service
 #
 #
 
 import socket
-import POW
+import ssl
+import M2Crypto
+import M2Crypto.BIO
+import sha
 import os
 import sys
+import MySQLdb
+import subprocess
+import select
 import rocks.vm
 import rocks.commands
-import MySQLdb
 
 #
 # 'V' 'M' -- 86, 77 is decimal representation of 'V' 'M' in ASCII
@@ -77,6 +85,11 @@ class Command(rocks.commands.start.service.command):
 	Starts the VM Control service. This service validates commands from
 	remote hosts and, if the command is accepted, the command is parsed
 	and applied to VMs that are managed by this host.
+
+	<param type='boolean' name='foreground'>
+	If set to to 'yes', this service will stay in the foreground. Default
+	is 'no'.
+	</param>
 	"""
 
 	def reconnect(self):
@@ -136,7 +149,7 @@ class Command(rocks.commands.start.service.command):
 		return (Database)
 
 
-	def listmacs(self, ssl, frontend):
+	def listmacs(self, s, frontend):
 		#
 		# return a list of all the MACs associated with this cluster
 		#
@@ -171,8 +184,66 @@ class Command(rocks.commands.start.service.command):
 		for m in macs:
 			msg += '%s\n' % m
 
-		ssl.write('%08d\n' % len(msg))
-		ssl.write(msg)
+		s.write('%08d\n' % len(msg))
+		s.write(msg)
+
+
+	def console(self, s, clientfd, frontend, dst_mac):
+		client = self.db.getHostname(dst_mac)
+		if not client:
+			return
+
+		#
+		# get the physical node that controls this VM
+		#
+		rows = self.db.execute("""select n.name from nodes n,
+			vm_nodes vn where vn.node = (select id from nodes
+			where name = '%s') and vn.physnode = n.id""" % client)
+
+		if rows == 0:
+			return
+
+		physnode, = self.db.fetchone()
+
+		#
+		# open an ssh tunnel
+		#
+		fds = socket.socketpair()
+
+		pid = os.fork()
+		if pid == 0:
+			fds[0].close()
+
+			os.close(0)
+			os.close(1)
+
+			os.dup(fds[1].fileno())
+			os.dup(fds[1].fileno())
+
+			cmd = ['ssh', 'ssh', physnode, 'nc', 'localhost',
+				'5900']
+			os.execlp(*cmd)
+			os._exit(1)
+
+		#
+		# parent
+		#
+		fds[1].close()
+		fd = fds[0].fileno()
+
+		done = 0
+		while not done:
+			(i, o, e) = select.select([fd], [], [], 0.00001)
+			if fd in i:
+				buf = os.read(fd, 65536)
+				retval = s.write(buf)
+
+			(i, o, e) = select.select([clientfd], [], [], 0.00001)
+			if clientfd in i:
+				buf = s.read()
+				retval = os.write(fd, buf)
+
+		return
 
 
 	def parse_msg(self, buf):
@@ -181,7 +252,7 @@ class Command(rocks.commands.start.service.command):
 		op = b[0].strip()
 		src_mac = b[1].strip()
 
-		if len(b) == 3:
+		if len(b) > 2:
 			dst_mac = b[2].strip()
 		else:
 			dst_mac = ''
@@ -193,9 +264,6 @@ class Command(rocks.commands.start.service.command):
 		if not frontend:
 			return 0
 
-		digest = POW.Digest(POW.RIPEMD160_DIGEST)
-		digest.update(clear_text)
-
 		rows = self.db.execute("""select public_key from 
 			public_keys where node = (select id from nodes
 			where name = '%s') """ % frontend)
@@ -203,12 +271,21 @@ class Command(rocks.commands.start.service.command):
 		if rows == 0:
 			return 0
 
-		for public_key, in self.db.fetchall():
-			key = POW.pemRead(POW.RSA_PUBLIC_KEY, public_key)
+		digest = sha.sha(clear_text).digest()
 
-			if key.verify(signature, digest.digest(), \
-					POW.RIPEMD160_DIGEST):
-				return 1
+		for public_key, in self.db.fetchall():
+			bio = M2Crypto.BIO.MemoryBuffer(public_key)
+			key = M2Crypto.RSA.load_pub_key_bio(bio)
+
+			#key = M2Crypto.RSA.load_key_string(public_key)
+
+			try:
+				verify = key.verify(digest, signature,
+					'ripemd160')
+				if verify == 1:
+					return 1
+			except:
+				pass
 
 		return 0
 
@@ -261,7 +338,10 @@ class Command(rocks.commands.start.service.command):
 
 
 	def run(self, params, args):
-		self.daemonize()
+		foreground, = self.fillParams([ ('foreground', 'n') ])
+
+		if not self.str2bool(foreground):
+			self.daemonize()
 
 		#
 		# after this program becomes a daemon, we need to get a new
@@ -276,40 +356,27 @@ class Command(rocks.commands.start.service.command):
 		self.db.database = database
 		self.db.link = database.cursor()
 
-		s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-		s.bind(('', port))
-		s.listen(1)
-
-		#
-		# read the key/cert
-		#
-		keyfile = open('/etc/pki/libvirt/private/serverkey.pem', 'r')
-		certfile = open('/etc/pki/libvirt/servercert.pem', 'r')
-
-		rsa = POW.pemRead(POW.RSA_PRIVATE_KEY, keyfile.read())
-		x509 = POW.pemRead(POW.X509_CERTIFICATE, certfile.read())
-
-		keyfile.close()
-		certfile.close()
-
-		ssl = POW.Ssl(POW.SSLV23_SERVER_METHOD)
-		ssl.useCertificate(x509)
-		ssl.useKey(rsa)
+		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		sock.bind(('', port))
+		sock.listen(1)
 
 		done = 0
 		while not done:
-			conn, addr = s.accept()
+			conn, addr = sock.accept()
 
 			print 'received message from: ', addr
 			sys.stdout.flush()
 
-			ssl.setFd(conn.fileno())
-			ssl.accept()
-
+			s = ssl.wrap_socket(conn,
+				server_side = True,
+				keyfile = '/etc/pki/libvirt/private/serverkey.pem',
+				certfile = '/etc/pki/libvirt/servercert.pem',
+				ssl_version = ssl.PROTOCOL_SSLv23)
+			
 			#
 			# read the length of the clear text
 			#
-			buf = ssl.read(9)
+			buf = s.read(9)
 
 			try:
 				clear_text_len = int(buf)
@@ -321,7 +388,7 @@ class Command(rocks.commands.start.service.command):
 			#
 			clear_text = ''
 			while len(clear_text) != clear_text_len:
-				msg = ssl.read(clear_text_len - len(clear_text))
+				msg = s.read(clear_text_len - len(clear_text))
 				clear_text += msg
 
 			(op, src_mac, dst_mac) = self.parse_msg(clear_text) 
@@ -336,7 +403,7 @@ class Command(rocks.commands.start.service.command):
 			#
 			# get the digital signature
 			#
-			buf = ssl.read(9)
+			buf = s.read(9)
 
 			try:
 				signature_len = int(buf)
@@ -345,7 +412,7 @@ class Command(rocks.commands.start.service.command):
 
 			signature = ''
 			while len(signature) != signature_len:
-				msg = ssl.read(signature_len - len(signature))
+				msg = s.read(signature_len - len(signature))
 				signature += msg
 
 			#
@@ -363,7 +430,10 @@ class Command(rocks.commands.start.service.command):
 					self.command('start.host.vm',
 						[ dst_mac ] )
 				elif op == 'list macs':
-					self.listmacs(ssl, frontend)
+					self.listmacs(s, frontend)
+				elif op == 'console':
+					self.console(s, conn.fileno(),
+						frontend, dst_mac)
 			else:
 				print '\tmessage signature is invalid'
 				sys.stdout.flush()
@@ -374,5 +444,7 @@ class Command(rocks.commands.start.service.command):
 				# the remote client won't hang.
 				#
 				if op == 'list macs':
-					ssl.write('%08d\n' % 0)
+					s.write('%08d\n' % 0)
+
+			s.close()
 
