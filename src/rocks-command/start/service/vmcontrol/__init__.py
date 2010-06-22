@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.2 2010/06/21 22:47:06 bruno Exp $
+# $Id: __init__.py,v 1.3 2010/06/22 21:41:14 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.3  2010/06/22 21:41:14  bruno
+# basic control of VMs from within a VM
+#
 # Revision 1.2  2010/06/21 22:47:06  bruno
 # use new ssl python library
 #
@@ -233,15 +236,30 @@ class Command(rocks.commands.start.service.command):
 
 		done = 0
 		while not done:
-			(i, o, e) = select.select([fd], [], [], 0.00001)
+			retval = 0
+			(i, o, e) = select.select([fd], [], [fd], 0.00001)
 			if fd in i:
 				buf = os.read(fd, 65536)
-				retval = s.write(buf)
+				try:
+					retval = s.write(buf)
+				except:
+					done = 1
+					continue
 
-			(i, o, e) = select.select([clientfd], [], [], 0.00001)
+			if e:
+				print 'e:1: ', e
+
+			(i, o, e) = select.select([clientfd], [], [clientfd], 0.00001)
 			if clientfd in i:
-				buf = s.read()
-				retval = os.write(fd, buf)
+				try:
+					buf = s.read()
+					retval = os.write(fd, buf)
+				except:
+					done = 1
+					continue
+
+			if e:
+				print 'e: ', e
 
 		return
 
