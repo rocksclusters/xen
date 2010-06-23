@@ -1,4 +1,4 @@
-# $Id: plugin_virtual_host.py,v 1.1 2010/06/22 21:41:14 bruno Exp $
+# $Id: plugin_virtual_host.py,v 1.2 2010/06/23 22:23:37 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: plugin_virtual_host.py,v $
+# Revision 1.2  2010/06/23 22:23:37  bruno
+# fixes
+#
 # Revision 1.1  2010/06/22 21:41:14  bruno
 # basic control of VMs from within a VM
 #
@@ -61,6 +64,7 @@
 
 import rocks.commands
 import rocks.vm
+import sys
 
 class Plugin(rocks.commands.Plugin):
 
@@ -72,6 +76,10 @@ class Plugin(rocks.commands.Plugin):
 		state = args[1]
 		key = args[2]
 
+		if not key:
+			print 'need to supply a private key'
+			sys.exit(-1)
+			
 		#
 		# if 'vm-controller' is set, then we assume this is a virtual
 		# frontend and we want to send a command to the VM controller
@@ -80,8 +88,7 @@ class Plugin(rocks.commands.Plugin):
 		vm_controller = self.db.getHostAttr('localhost',
 			'vm-controller')
 		if vm_controller:
-			me = self.db.getHostname()
-			vm = rocks.vm.VMControl(self.db, me, vm_controller)
+			vm = rocks.vm.VMControl(self.db, vm_controller, key)
 
 			if state == 'on':
 				op = 'power on'

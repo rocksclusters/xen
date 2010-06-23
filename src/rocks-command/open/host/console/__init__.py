@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.1 2010/06/22 21:41:14 bruno Exp $
+# $Id: __init__.py,v 1.2 2010/06/23 22:23:37 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.2  2010/06/23 22:23:37  bruno
+# fixes
+#
 # Revision 1.1  2010/06/22 21:41:14  bruno
 # basic control of VMs from within a VM
 #
@@ -62,23 +65,41 @@
 import rocks.commands
 import rocks.vm
 
-class Command(rocks.commands.HostArgumentProcessor,
+class command(rocks.commands.HostArgumentProcessor,
 	rocks.commands.open.command):
+
+	MustBeRoot = 0
+
+
+class Command(command):
 	"""
 	Open a console to a virtual machine.
 
 	<arg type='string' name='host'>
 	Host name of machine.
 	</arg>
+
+	<param type='string' name='key'>
+	A private key that will be used to authenticate the request. This
+	should be a file name that contains the private key.
+	</param>
 	"""
 
 	def run(self, params, args):
+		key, = self.fillParams([ ('key', ) ])
+
+		if not key:
+			self.abort('must supply a path name to a private key')
+
 		vm_controller = self.db.getHostAttr('localhost',
 			'vm-controller')
 
+		if not vm_controller:
+			self.abort('the "vm-controller" attribute is not set')
+
 		for host in self.getHostnames(args):
-			me = self.db.getHostname()
-			vm = rocks.vm.VMControl(self.db, me, vm_controller)
+			vm = rocks.vm.VMControl(self.db, vm_controller, key)
 
 			if vm.cmd('console', host) == 'failed':
 				self.abort('command failed')
+

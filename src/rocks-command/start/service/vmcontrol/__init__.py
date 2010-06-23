@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.3 2010/06/22 21:41:14 bruno Exp $
+# $Id: __init__.py,v 1.4 2010/06/23 22:23:37 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.4  2010/06/23 22:23:37  bruno
+# fixes
+#
 # Revision 1.3  2010/06/22 21:41:14  bruno
 # basic control of VMs from within a VM
 #
@@ -152,24 +155,40 @@ class Command(rocks.commands.start.service.command):
 		return (Database)
 
 
-	def listmacs(self, s, frontend):
+	def getmacs(self, dst_mac):
 		#
 		# return a list of all the MACs associated with this cluster
 		#
 		macs = []
 
+		host = self.db.getHostname(dst_mac)
+		if not host:
+			return macs
+
 		vm = rocks.vm.VM(self.db)
-		if vm.isVM(frontend):
+		if vm.isVM(host):
 			#
-			# all client nodes of this VM frontend have
-			# the same vlan id as this frontend
+			# all the hosts associated with this host have
+			# the same vlan id
 			#
-			rows = self.db.execute("""select
-				net.vlanid from
-				networks net, nodes n, subnets s where
-				n.name = '%s' and net.node = n.id and
-				s.name = 'private' and
-				s.id = net.subnet""" % frontend)
+			rows = self.db.execute("""select vlanid from networks
+				where mac = '%s' and vlanid > 0"""  % dst_mac)
+
+			if rows == 0:
+				#
+				# it may be the case that the MAC is the MAC
+				# for the VM frontend and it is associated with
+				# the public connection. in this case, there is
+				# no vlan id.
+				#
+				# let's see if we can find a vlan id for the
+				# private network for this host
+				#
+				rows = self.db.execute("""select vlanid from
+					networks where node = (select id from
+					nodes where name = '%s') and subnet =
+					(select id from subnets where name =
+					'private')""" % host)
 
 			if rows > 0:
 				vlanid, = self.db.fetchone()
@@ -183,17 +202,32 @@ class Command(rocks.commands.start.service.command):
 					if vm.isVM(client):
 						macs.append(mac)
 
+		return macs
+
+
+	def listmacs(self, s, macs):
 		msg = ''
 		for m in macs:
 			msg += '%s\n' % m
 
-		s.write('%08d\n' % len(msg))
-		s.write(msg)
+		msglen = '%08d\n' % len(msg)
+		bytes = 0
+		while bytes != len(msglen):
+			bytes += s.write(msglen[bytes:])
+
+		bytes = 0
+		while bytes != len(msg):
+			bytes += s.write(msg[bytes:])
 
 
-	def console(self, s, clientfd, frontend, dst_mac):
+	def console(self, s, clientfd, dst_mac):
 		client = self.db.getHostname(dst_mac)
 		if not client:
+			msglen = '%08d\n' % 0
+			bytes = 0
+			while bytes != len(msglen):
+				bytes += s.write(msglen[bytes:])
+
 			return
 
 		#
@@ -204,6 +238,11 @@ class Command(rocks.commands.start.service.command):
 			where name = '%s') and vn.physnode = n.id""" % client)
 
 		if rows == 0:
+			msglen = '%08d\n' % 0
+			bytes = 0
+			while bytes != len(msglen):
+				bytes += s.write(msglen[bytes:])
+
 			return
 
 		physnode, = self.db.fetchone()
@@ -234,32 +273,40 @@ class Command(rocks.commands.start.service.command):
 		fds[1].close()
 		fd = fds[0].fileno()
 
+		#
+		# the connection is good. send back a non-zero status
+		#
+		msglen = '%08d\n' % 1
+		bytes = 0
+		while bytes != len(msglen):
+			bytes += s.write(msglen[bytes:])
+
 		done = 0
 		while not done:
 			retval = 0
-			(i, o, e) = select.select([fd], [], [fd], 0.00001)
+			(i, o, e) = select.select([fd], [], [], 0.00001)
 			if fd in i:
 				buf = os.read(fd, 65536)
 				try:
-					retval = s.write(buf)
+					bytes = 0
+					while bytes != len(buf):
+						bytes += s.write(buf[bytes:])
 				except:
 					done = 1
 					continue
 
-			if e:
-				print 'e:1: ', e
-
-			(i, o, e) = select.select([clientfd], [], [clientfd], 0.00001)
+			(i, o, e) = select.select([clientfd], [], [], 0.00001)
 			if clientfd in i:
 				try:
 					buf = s.read()
-					retval = os.write(fd, buf)
+
+					bytes = 0
+					while bytes != len(buf):
+						bytes += os.write(fd,
+							buf[bytes:])
 				except:
 					done = 1
 					continue
-
-			if e:
-				print 'e: ', e
 
 		return
 
@@ -268,25 +315,39 @@ class Command(rocks.commands.start.service.command):
 		b = buf.split('\n')
 
 		op = b[0].strip()
-		src_mac = b[1].strip()
 
-		if len(b) > 2:
-			dst_mac = b[2].strip()
+		if len(b) > 1:
+			dst_mac = b[1].strip()
 		else:
 			dst_mac = ''
 
-		return (op, src_mac, dst_mac)
+		return (op, dst_mac)
 
 
-	def check_signature(self, frontend, clear_text, signature):
-		if not frontend:
-			return 0
+	def check_signature(self, clear_text, signature, macs):
+		#
+		# look through all the macs and see if there is match
+		# in the public_key table
+		#
+		rows = 0
+		for mac in macs:
+			host = self.db.getHostname(mac)
+			if not host:
+				continue
 
-		rows = self.db.execute("""select public_key from 
-			public_keys where node = (select id from nodes
-			where name = '%s') """ % frontend)
+			rows = self.db.execute("""select public_key from 
+				public_keys where node = (select id from nodes
+				where name = '%s') """ % host)
+
+			if rows > 0:
+				print '\tusing public key for host:\t%s' % host
+				sys.stdout.flush()
+				break
 
 		if rows == 0:
+			#
+			# no keys were found
+			#
 			return 0
 
 		digest = sha.sha(clear_text).digest()
@@ -294,8 +355,6 @@ class Command(rocks.commands.start.service.command):
 		for public_key, in self.db.fetchall():
 			bio = M2Crypto.BIO.MemoryBuffer(public_key)
 			key = M2Crypto.RSA.load_pub_key_bio(bio)
-
-			#key = M2Crypto.RSA.load_key_string(public_key)
 
 			try:
 				verify = key.verify(digest, signature,
@@ -355,6 +414,106 @@ class Command(rocks.commands.start.service.command):
 		os.dup2(se.fileno(), sys.stderr.fileno())
 
 
+	def dorequest(self, conn):
+		s = ssl.wrap_socket(conn,
+			server_side = True,
+			keyfile = '/etc/pki/libvirt/private/serverkey.pem',
+			certfile = '/etc/pki/libvirt/servercert.pem',
+			ssl_version = ssl.PROTOCOL_SSLv23)
+		
+		#
+		# read the length of the clear text
+		#
+		buf = ''
+		while len(buf) != 9:
+			buf += s.read(1)
+
+		try:
+			clear_text_len = int(buf)
+		except:
+			s.close()
+			conn.close()
+			return
+
+		#
+		# now read the clear text
+		#
+		clear_text = ''
+		while len(clear_text) != clear_text_len:
+			msg = s.read(clear_text_len - len(clear_text))
+			clear_text += msg
+
+		(op, dst_mac) = self.parse_msg(clear_text) 
+
+		print '\top:\t\t%s' % op
+		print '\tdst_mac:\t%s' % dst_mac
+		sys.stdout.flush()
+
+		#
+		# get the digital signature
+		#
+		buf = ''
+		while len(buf) != 9:
+			buf += s.read(1)
+
+		try:
+			signature_len = int(buf)
+		except:
+			s.close()
+			conn.close()
+			return
+
+		signature = ''
+		while len(signature) != signature_len:
+			msg = s.read(signature_len - len(signature))
+			signature += msg
+
+		#
+		# check the signature
+		#
+		macs = self.getmacs(dst_mac)
+
+		if self.check_signature(clear_text, signature, macs):
+			print '\tmessage signature is valid'
+			sys.stdout.flush()
+
+			if op == 'power off':
+				self.command('stop.host.vm',
+					[ dst_mac ] )
+			elif op == 'power on':
+				self.command('start.host.vm',
+					[ dst_mac ] )
+			elif op == 'list macs':
+				self.listmacs(s, macs)
+			elif op == 'console':
+				self.console(s, conn.fileno(), dst_mac)
+		else:
+			print '\tmessage signature is invalid'
+			sys.stdout.flush()
+
+			#
+			# for the commands that require a response
+			# we need to send back an empty message so
+			# the remote client won't hang.
+			#
+			if op in [ 'list macs', 'console' ]:
+				msglen = '%08d\n' % 0
+
+				bytes = 0
+				while bytes != len(msglen):
+					bytes += s.write(msglen[bytes:])
+
+		try:
+			s.write(' ')
+			s.shutdown(socket.SHUT_RDWR)
+			conn.shutdown(socket.SHUT_RDWR)
+		except:
+			pass
+
+		s.close()
+		conn.close()
+
+
 	def run(self, params, args):
 		foreground, = self.fillParams([ ('foreground', 'n') ])
 
@@ -385,84 +544,12 @@ class Command(rocks.commands.start.service.command):
 			print 'received message from: ', addr
 			sys.stdout.flush()
 
-			s = ssl.wrap_socket(conn,
-				server_side = True,
-				keyfile = '/etc/pki/libvirt/private/serverkey.pem',
-				certfile = '/etc/pki/libvirt/servercert.pem',
-				ssl_version = ssl.PROTOCOL_SSLv23)
-			
 			#
-			# read the length of the clear text
+			# for a child process to handle the request
 			#
-			buf = s.read(9)
-
-			try:
-				clear_text_len = int(buf)
-			except:
-				continue
-
-			#
-			# now read the clear text
-			#
-			clear_text = ''
-			while len(clear_text) != clear_text_len:
-				msg = s.read(clear_text_len - len(clear_text))
-				clear_text += msg
-
-			(op, src_mac, dst_mac) = self.parse_msg(clear_text) 
-
-			print '\top:\t\t%s' % op
-			print '\tsrc_mac:\t%s' % src_mac
-			print '\tdst_mac:\t %s' % dst_mac
-			sys.stdout.flush()
-
-			frontend = self.db.getHostname(src_mac)
-
-			#
-			# get the digital signature
-			#
-			buf = s.read(9)
-
-			try:
-				signature_len = int(buf)
-			except:
-				continue
-
-			signature = ''
-			while len(signature) != signature_len:
-				msg = s.read(signature_len - len(signature))
-				signature += msg
-
-			#
-			# check the signature
-			#
-			if self.check_signature(frontend, clear_text,
-					signature):
-				print '\tmessage signature is valid'
-				sys.stdout.flush()
-
-				if op == 'power off':
-					self.command('stop.host.vm',
-						[ dst_mac ] )
-				elif op == 'power on':
-					self.command('start.host.vm',
-						[ dst_mac ] )
-				elif op == 'list macs':
-					self.listmacs(s, frontend)
-				elif op == 'console':
-					self.console(s, conn.fileno(),
-						frontend, dst_mac)
+			pid = os.fork()
+			if pid == 0:
+				self.dorequest(conn)
+				os._exit(0)
 			else:
-				print '\tmessage signature is invalid'
-				sys.stdout.flush()
-
-				#
-				# for the commands that require a response
-				# we need to send back an empty message so
-				# the remote client won't hang.
-				#
-				if op == 'list macs':
-					s.write('%08d\n' % 0)
-
-			s.close()
-
+				conn.close()
