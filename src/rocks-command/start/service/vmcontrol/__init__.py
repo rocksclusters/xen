@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.4 2010/06/23 22:23:37 bruno Exp $
+# $Id: __init__.py,v 1.5 2010/06/24 23:43:51 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.5  2010/06/24 23:43:51  bruno
+# use libvirt to determine the VNC port number for a VM client
+#
 # Revision 1.4  2010/06/23 22:23:37  bruno
 # fixes
 #
@@ -80,11 +83,29 @@ import subprocess
 import select
 import rocks.vm
 import rocks.commands
+import xml.sax.handler
+import time
+
+sys.path.append('/usr/lib64/python2.4/site-packages')
+sys.path.append('/usr/lib/python2.4/site-packages')
+import libvirt
 
 #
 # 'V' 'M' -- 86, 77 is decimal representation of 'V' 'M' in ASCII
 #
 port = 8677
+
+#
+# this class is used to get the VNC port number of a VM's console
+#
+class VirtHandler(xml.sax.handler.ContentHandler):
+	def __init__(self):
+		self.port = '0'
+ 
+	def startElement(self, name, attributes):
+		if name == "graphics":
+			self.port = attributes["port"]
+
 
 class Command(rocks.commands.start.service.command):
 	"""
@@ -220,6 +241,28 @@ class Command(rocks.commands.start.service.command):
 			bytes += s.write(msg[bytes:])
 
 
+	def getVNCport(self, client, physnode):
+		h = libvirt.open('xen://%s/' % physnode)
+
+		for id in h.listDomainsID():
+			if id == 0:
+				#
+				# skip dom0
+				#
+				continue
+
+			domU = h.lookupByID(id)
+			if domU.name() == client:
+				parser = xml.sax.make_parser()
+				handler = VirtHandler()
+				parser.setContentHandler(handler)
+				parser.feed(domU.XMLDesc(0))
+
+				return handler.port
+
+		return ''
+
+
 	def console(self, s, clientfd, dst_mac):
 		client = self.db.getHostname(dst_mac)
 		if not client:
@@ -252,6 +295,13 @@ class Command(rocks.commands.start.service.command):
 		#
 		fds = socket.socketpair()
 
+		vncport = self.getVNCport(client, physnode)
+		if not vncport:
+			self.abort('could not get VNC port for %s' % client)
+
+		print '\tconnecting console on physical host %s port %s' % \
+			(physnode, vncport)
+
 		pid = os.fork()
 		if pid == 0:
 			fds[0].close()
@@ -263,7 +313,8 @@ class Command(rocks.commands.start.service.command):
 			os.dup(fds[1].fileno())
 
 			cmd = ['ssh', 'ssh', physnode, 'nc', 'localhost',
-				'5900']
+				vncport]
+
 			os.execlp(*cmd)
 			os._exit(1)
 
@@ -284,9 +335,15 @@ class Command(rocks.commands.start.service.command):
 		done = 0
 		while not done:
 			retval = 0
+
 			(i, o, e) = select.select([fd], [], [], 0.00001)
 			if fd in i:
-				buf = os.read(fd, 65536)
+				buf = os.read(fd, 8192)
+				if len(buf) == 0:
+					done = 1
+					continue
+
+				(i, o, e) = select.select([fd], [], [], 0.00001)
 				try:
 					bytes = 0
 					while bytes != len(buf):
@@ -299,6 +356,9 @@ class Command(rocks.commands.start.service.command):
 			if clientfd in i:
 				try:
 					buf = s.read()
+					if len(buf) == 0:
+						done = 1
+						continue
 
 					bytes = 0
 					while bytes != len(buf):
