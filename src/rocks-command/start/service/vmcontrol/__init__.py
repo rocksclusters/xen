@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.6 2010/06/25 19:09:06 bruno Exp $
+# $Id: __init__.py,v 1.7 2010/06/25 19:36:16 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.7  2010/06/25 19:36:16  bruno
+# tweaks
+#
 # Revision 1.6  2010/06/25 19:09:06  bruno
 # tweak
 #
@@ -272,7 +275,9 @@ class Command(rocks.commands.start.service.command):
 		#
 		vncport = self.getVNCport(client, physnode)
 		if not vncport:
-			self.abort('could not get VNC port for %s' % client)
+			print 'could not get VNC port for %s' % client
+			sys.stdout.flush()
+			return None
 
 		print '\tconnecting console on physical host %s port %s' % \
 			(physnode, vncport)
@@ -333,6 +338,13 @@ class Command(rocks.commands.start.service.command):
 
 		fds = socket.socketpair()
 		fd = self.openTunnel(client, physnode, fds)
+		if not fd:
+			msglen = '%08d\n' % 0
+			bytes = 0
+			while bytes != len(msglen):
+				bytes += s.write(msglen[bytes:])
+
+			return
 
 		#
 		# the connection is good. send back a non-zero status
@@ -350,6 +362,7 @@ class Command(rocks.commands.start.service.command):
 			if fd in i:
 				buf = os.read(fd, 8192)
 				if len(buf) == 0:
+					try:
 						fd.close()
 					except:
 						pass
