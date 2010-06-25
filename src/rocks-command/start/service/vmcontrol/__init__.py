@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.5 2010/06/24 23:43:51 bruno Exp $
+# $Id: __init__.py,v 1.6 2010/06/25 19:09:06 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.6  2010/06/25 19:09:06  bruno
+# tweak
+#
 # Revision 1.5  2010/06/24 23:43:51  bruno
 # use libvirt to determine the VNC port number for a VM client
 #
@@ -263,6 +266,44 @@ class Command(rocks.commands.start.service.command):
 		return ''
 
 
+	def openTunnel(self, client, physnode, fds):
+		#
+		# open an ssh tunnel
+		#
+		vncport = self.getVNCport(client, physnode)
+		if not vncport:
+			self.abort('could not get VNC port for %s' % client)
+
+		print '\tconnecting console on physical host %s port %s' % \
+			(physnode, vncport)
+
+		pid = os.fork()
+		if pid == 0:
+			fds[0].close()
+
+			os.close(0)
+			os.close(1)
+
+			os.dup(fds[1].fileno())
+			os.dup(fds[1].fileno())
+
+			cmd = ['ssh', 'ssh', physnode, 'nc', 'localhost',
+				vncport]
+
+			os.execlp(*cmd)
+
+			file = open('/tmp/vs.debug', 'w')
+			file.write('died')
+			file.close()
+			os._exit(1)
+
+		#
+		# parent
+		#
+		fds[1].close()
+		return fds[0].fileno()
+
+
 	def console(self, s, clientfd, dst_mac):
 		client = self.db.getHostname(dst_mac)
 		if not client:
@@ -290,39 +331,8 @@ class Command(rocks.commands.start.service.command):
 
 		physnode, = self.db.fetchone()
 
-		#
-		# open an ssh tunnel
-		#
 		fds = socket.socketpair()
-
-		vncport = self.getVNCport(client, physnode)
-		if not vncport:
-			self.abort('could not get VNC port for %s' % client)
-
-		print '\tconnecting console on physical host %s port %s' % \
-			(physnode, vncport)
-
-		pid = os.fork()
-		if pid == 0:
-			fds[0].close()
-
-			os.close(0)
-			os.close(1)
-
-			os.dup(fds[1].fileno())
-			os.dup(fds[1].fileno())
-
-			cmd = ['ssh', 'ssh', physnode, 'nc', 'localhost',
-				vncport]
-
-			os.execlp(*cmd)
-			os._exit(1)
-
-		#
-		# parent
-		#
-		fds[1].close()
-		fd = fds[0].fileno()
+		fd = self.openTunnel(client, physnode, fds)
 
 		#
 		# the connection is good. send back a non-zero status
@@ -340,10 +350,13 @@ class Command(rocks.commands.start.service.command):
 			if fd in i:
 				buf = os.read(fd, 8192)
 				if len(buf) == 0:
+						fd.close()
+					except:
+						pass
+
 					done = 1
 					continue
 
-				(i, o, e) = select.select([fd], [], [], 0.00001)
 				try:
 					bytes = 0
 					while bytes != len(buf):
@@ -360,6 +373,7 @@ class Command(rocks.commands.start.service.command):
 						done = 1
 						continue
 
+					
 					bytes = 0
 					while bytes != len(buf):
 						bytes += os.write(fd,
