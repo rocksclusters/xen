@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.7 2010/06/25 19:36:16 bruno Exp $
+# $Id: __init__.py,v 1.8 2010/06/25 20:29:20 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.8  2010/06/25 20:29:20  bruno
+# don't send a space character at the end of a console session
+#
 # Revision 1.7  2010/06/25 19:36:16  bruno
 # tweaks
 #
@@ -591,7 +594,6 @@ class Command(rocks.commands.start.service.command):
 					bytes += s.write(msglen[bytes:])
 
 		try:
-			s.write(' ')
 			s.shutdown(socket.SHUT_RDWR)
 			conn.shutdown(socket.SHUT_RDWR)
 		except:
