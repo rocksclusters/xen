@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.8 2010/06/25 20:29:20 bruno Exp $
+# $Id: __init__.py,v 1.9 2010/06/29 00:25:41 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.9  2010/06/29 00:25:41  bruno
+# a little code restructuring and now the console can handle reboots
+#
 # Revision 1.8  2010/06/25 20:29:20  bruno
 # don't send a space character at the end of a console session
 #
@@ -370,6 +373,12 @@ class Command(rocks.commands.start.service.command):
 					except:
 						pass
 
+					#
+					# the VNC server on the remote end
+					# shutdown. this may be because the
+					# node rebooted. try to reestablish
+					# a connection
+					#
 					done = 1
 					continue
 

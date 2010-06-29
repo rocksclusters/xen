@@ -1,5 +1,5 @@
 #
-# $Id: Makefile,v 1.4 2009/05/01 19:07:33 mjk Exp $
+# $Id: Makefile,v 1.5 2010/06/29 00:25:41 bruno Exp $
 #
 # @Copyright@
 # 
@@ -55,6 +55,9 @@
 # @Copyright@
 #
 # $Log: Makefile,v $
+# Revision 1.5  2010/06/29 00:25:41  bruno
+# a little code restructuring and now the console can handle reboots
+#
 # Revision 1.4  2009/05/01 19:07:33  mjk
 # chimi con queso
 #
@@ -71,7 +74,7 @@
 
 PKGROOT         = /opt/rocks
 REDHAT.ROOT     = $(CURDIR)/../../
-ROCKSROOT       = ../../../../..
+# ROCKSROOT       = ../../../../..
 -include $(ROCKSROOT)/etc/Rules.mk
 include Rules.mk
 
