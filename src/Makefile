@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.7 2009/05/01 19:07:33 mjk Exp $
+# $Id: Makefile,v 1.8 2010/06/30 19:51:31 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: Makefile,v $
+# Revision 1.8  2010/06/30 19:51:31  bruno
+# make fixes
+#
 # Revision 1.7  2009/05/01 19:07:33  mjk
 # chimi con queso
 #
@@ -90,7 +93,7 @@
 #
 
 
-SRCDIRS = `find . -type d -maxdepth 1 -not -name CVS -not -name .`
+SRCDIRS = `find . -maxdepth 1 -type d -not -name CVS -not -name .`
 
 default:	rpm
 

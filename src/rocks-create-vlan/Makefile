@@ -1,5 +1,5 @@
 #
-# $Id: Makefile,v 1.3 2009/05/01 19:07:35 mjk Exp $
+# $Id: Makefile,v 1.4 2010/06/30 19:51:31 bruno Exp $
 #
 # @Copyright@
 # 
@@ -55,6 +55,9 @@
 # @Copyright@
 #
 # $Log: Makefile,v $
+# Revision 1.4  2010/06/30 19:51:31  bruno
+# make fixes
+#
 # Revision 1.3  2009/05/01 19:07:35  mjk
 # chimi con queso
 #
@@ -69,8 +72,7 @@
 SCRIPTS		= rocks-create-vlan
 
 PKGROOT		= /opt/rocks
-REDHAT.ROOT	= $(PWD)/../../
-ROCKSROOT = ../../../../..
+REDHAT.ROOT	= $(CURDIR)/../../
 -include $(ROCKSROOT)/etc/Rules.mk
 include Rules.mk
 
