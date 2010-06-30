@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.10 2010/06/30 17:59:58 bruno Exp $
+# $Id: __init__.py,v 1.11 2010/06/30 19:51:22 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.11  2010/06/30 19:51:22  bruno
+# fixes
+#
 # Revision 1.10  2010/06/30 17:59:58  bruno
 # can now route error messages back to the terminal that issued the command.
 #
@@ -362,8 +365,6 @@ class Command(rocks.commands.start.service.command):
 					# a connection
 					#
 					done = 1
-					continue
-
 				try:
 					self.sendresponse(s, 0, buf)
 				except:
@@ -603,7 +604,7 @@ class Command(rocks.commands.start.service.command):
 				self.sendresponse(s, status, response)
 
 			elif op == 'list macs':
-				self.sendresponse(s, 0, macs)
+				self.sendresponse(s, 0, '\n'.join(macs))
 			elif op == 'console':
 				self.console(s, conn.fileno(), dst_mac)
 		else:
