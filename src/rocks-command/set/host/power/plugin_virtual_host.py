@@ -1,4 +1,4 @@
-# $Id: plugin_virtual_host.py,v 1.2 2010/06/23 22:23:37 bruno Exp $
+# $Id: plugin_virtual_host.py,v 1.3 2010/06/30 17:59:58 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,11 @@
 # @Copyright@
 #
 # $Log: plugin_virtual_host.py,v $
+# Revision 1.3  2010/06/30 17:59:58  bruno
+# can now route error messages back to the terminal that issued the command.
+#
+# can optionally set the VNC viewer flags.
+#
 # Revision 1.2  2010/06/23 22:23:37  bruno
 # fixes
 #
@@ -95,22 +100,9 @@ class Plugin(rocks.commands.Plugin):
 			elif state == 'off':
 				op = 'power off'
 
-			if vm.cmd(op, host) == 'failed':
-				self.abort('command failed')
-		else:
-			#
-			# determine if this is a virtual host
-			#
-			virtnode = 1
+			(status, reason) = vm.cmd(op, host)
 
-			rows = self.db.execute("""show tables like
-				'vm_nodes' """)
-
-			if rows == 1:
-				rows = self.db.execute("""select vn.id from
-					vm_nodes vn, nodes n where
-					vn.node = n.id and
-					n.name = "%s" """ % (host))
-				if rows == 1:
-					virtnode = 0
+			if status != 0:
+				print 'command failed\n%s' % reason
+				sys.exit(-1)
 

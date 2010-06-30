@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.21 2009/10/12 21:12:39 bruno Exp $
+# $Id: __init__.py,v 1.22 2010/06/30 17:59:58 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,11 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.22  2010/06/30 17:59:58  bruno
+# can now route error messages back to the terminal that issued the command.
+#
+# can optionally set the VNC viewer flags.
+#
 # Revision 1.21  2009/10/12 21:12:39  bruno
 # suppress error message when we boot a VM for the first time
 #
@@ -391,6 +396,8 @@ class Command(rocks.commands.start.host.command):
 		if retry:
 			hipervisor.createLinux(xmlconfig, 0)
 			self.command('set.host.boot', [ host, "action=os" ])
+
+		return
 
 
 	def run(self, params, args):

@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.2 2010/06/23 22:23:37 bruno Exp $
+# $Id: __init__.py,v 1.3 2010/06/30 17:59:58 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,11 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.3  2010/06/30 17:59:58  bruno
+# can now route error messages back to the terminal that issued the command.
+#
+# can optionally set the VNC viewer flags.
+#
 # Revision 1.2  2010/06/23 22:23:37  bruno
 # fixes
 #
@@ -83,10 +88,18 @@ class Command(command):
 	A private key that will be used to authenticate the request. This
 	should be a file name that contains the private key.
 	</param>
+
+	<param type='string' name='vncflags'>
+	VNC flags to be passed to the VNC viewer. The default flags are:
+	"-log *:stderr:100 -FullColor -PreferredEncoding hextile".
+	</param>
 	"""
 
 	def run(self, params, args):
-		key, = self.fillParams([ ('key', ) ])
+		(key, vncflags) = self.fillParams([
+			('key', ),
+			('vncflags', '-log *:stderr:100 -FullColor -PreferredEncoding hextile')
+			])
 
 		if not key:
 			self.abort('must supply a path name to a private key')
@@ -98,7 +111,8 @@ class Command(command):
 			self.abort('the "vm-controller" attribute is not set')
 
 		for host in self.getHostnames(args):
-			vm = rocks.vm.VMControl(self.db, vm_controller, key)
+			vm = rocks.vm.VMControl(self.db, vm_controller, key,
+				vncflags)
 
 			if vm.cmd('console', host) == 'failed':
 				self.abort('command failed')

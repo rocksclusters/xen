@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.9 2010/06/29 00:25:41 bruno Exp $
+# $Id: __init__.py,v 1.10 2010/06/30 17:59:58 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,11 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.10  2010/06/30 17:59:58  bruno
+# can now route error messages back to the terminal that issued the command.
+#
+# can optionally set the VNC viewer flags.
+#
 # Revision 1.9  2010/06/29 00:25:41  bruno
 # a little code restructuring and now the console can handle reboots
 #
@@ -96,7 +101,8 @@ import select
 import rocks.vm
 import rocks.commands
 import xml.sax.handler
-import time
+import subprocess
+import shlex
 
 sys.path.append('/usr/lib64/python2.4/site-packages')
 sys.path.append('/usr/lib/python2.4/site-packages')
@@ -238,21 +244,6 @@ class Command(rocks.commands.start.service.command):
 		return macs
 
 
-	def listmacs(self, s, macs):
-		msg = ''
-		for m in macs:
-			msg += '%s\n' % m
-
-		msglen = '%08d\n' % len(msg)
-		bytes = 0
-		while bytes != len(msglen):
-			bytes += s.write(msglen[bytes:])
-
-		bytes = 0
-		while bytes != len(msg):
-			bytes += s.write(msg[bytes:])
-
-
 	def getVNCport(self, client, physnode):
 		h = libvirt.open('xen://%s/' % physnode)
 
@@ -318,11 +309,8 @@ class Command(rocks.commands.start.service.command):
 	def console(self, s, clientfd, dst_mac):
 		client = self.db.getHostname(dst_mac)
 		if not client:
-			msglen = '%08d\n' % 0
-			bytes = 0
-			while bytes != len(msglen):
-				bytes += s.write(msglen[bytes:])
-
+			self.sendresponse(s, -1,
+				'MAC address %s not in database' % dst_mac)
 			return
 
 		#
@@ -333,11 +321,9 @@ class Command(rocks.commands.start.service.command):
 			where name = '%s') and vn.physnode = n.id""" % client)
 
 		if rows == 0:
-			msglen = '%08d\n' % 0
-			bytes = 0
-			while bytes != len(msglen):
-				bytes += s.write(msglen[bytes:])
-
+			msg = 'could not find the physical host that controls'
+			msg += ' the VM for MAC address %s' % dst_mac
+			self.sendresponse(s, -1, msg)
 			return
 
 		physnode, = self.db.fetchone()
@@ -345,20 +331,16 @@ class Command(rocks.commands.start.service.command):
 		fds = socket.socketpair()
 		fd = self.openTunnel(client, physnode, fds)
 		if not fd:
-			msglen = '%08d\n' % 0
-			bytes = 0
-			while bytes != len(msglen):
-				bytes += s.write(msglen[bytes:])
-
+			msg = 'could not open a ssh tunnel to the physical '
+			msg += 'host %s' % physnode
+			self.sendresponse(s, -1, msg)
 			return
 
 		#
-		# the connection is good. send back a non-zero status
+		# the connection is good. send back a status of 0 and an
+		# empty 'reason' message
 		#
-		msglen = '%08d\n' % 1
-		bytes = 0
-		while bytes != len(msglen):
-			bytes += s.write(msglen[bytes:])
+		self.sendresponse(s, 0, '')
 
 		done = 0
 		while not done:
@@ -383,9 +365,7 @@ class Command(rocks.commands.start.service.command):
 					continue
 
 				try:
-					bytes = 0
-					while bytes != len(buf):
-						bytes += s.write(buf[bytes:])
+					self.sendresponse(s, 0, buf)
 				except:
 					done = 1
 					continue
@@ -513,6 +493,27 @@ class Command(rocks.commands.start.service.command):
 		os.dup2(se.fileno(), sys.stderr.fileno())
 
 
+	def sendresponse(self, s, status, response):
+		msg = 'status:%d\n' % status
+		msg += response
+
+		#
+		# send the length of the message
+		#
+		msglen = '%08d\n' % len(msg)
+
+		bytes = 0
+		while bytes != len(msglen):
+			bytes += s.write(msglen[bytes:])
+
+		#
+		# now send the contents of the message
+		#
+		bytes = 0
+		while bytes != len(msg):
+			bytes += s.write(msg[bytes:])
+
+
 	def dorequest(self, conn):
 		s = ssl.wrap_socket(conn,
 			server_side = True,
@@ -580,28 +581,36 @@ class Command(rocks.commands.start.service.command):
 				self.command('stop.host.vm',
 					[ dst_mac ] )
 			elif op == 'power on':
-				self.command('start.host.vm',
-					[ dst_mac ] )
+				#self.command('start.host.vm',
+					#[ dst_mac ] )
+
+				cmd = '/opt/rocks/bin/rocks start host vm ' + \
+					'%s' % dst_mac
+				p = subprocess.Popen(shlex.split(cmd),
+					stdin = subprocess.PIPE,
+					stdout = subprocess.PIPE,
+					stderr = subprocess.STDOUT)
+				p.wait()
+
+				response = ''
+				for line in p.stdout.readlines():
+					response += line
+
+				status = 0
+				if len(response) > 0:
+					status = -1
+
+				self.sendresponse(s, status, response)
+
 			elif op == 'list macs':
-				self.listmacs(s, macs)
+				self.sendresponse(s, 0, macs)
 			elif op == 'console':
 				self.console(s, conn.fileno(), dst_mac)
 		else:
 			print '\tmessage signature is invalid'
 			sys.stdout.flush()
 
-			#
-			# for the commands that require a response
-			# we need to send back an empty message so
-			# the remote client won't hang.
-			#
-			if op in [ 'list macs', 'console' ]:
-				msglen = '%08d\n' % 0
-
-				bytes = 0
-				while bytes != len(msglen):
-					bytes += s.write(msglen[bytes:])
-
+			self.sendresponse(s, -1, 'message signature is invalid')
 		try:
 			s.shutdown(socket.SHUT_RDWR)
 			conn.shutdown(socket.SHUT_RDWR)

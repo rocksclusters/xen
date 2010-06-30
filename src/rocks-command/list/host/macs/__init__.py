@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.1 2010/06/28 17:22:56 bruno Exp $
+# $Id: __init__.py,v 1.2 2010/06/30 17:59:58 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,11 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.2  2010/06/30 17:59:58  bruno
+# can now route error messages back to the terminal that issued the command.
+#
+# can optionally set the VNC viewer flags.
+#
 # Revision 1.1  2010/06/28 17:22:56  bruno
 # added 'list host macs' command
 #
@@ -106,8 +111,8 @@ class Command(command):
 		host = hosts[0]
 
 		vm = rocks.vm.VMControl(self.db, vm_controller, key)
-		macs = vm.cmd('list macs', host)
-		if macs == 'failed':
+		(status, macs) = vm.cmd('list macs', host)
+		if status != 0:
 			self.abort('command failed')
 
 		self.beginOutput()
