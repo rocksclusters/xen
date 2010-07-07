@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.11 2010/06/30 19:51:22 bruno Exp $
+# $Id: __init__.py,v 1.12 2010/07/07 23:18:39 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.12  2010/07/07 23:18:39  bruno
+# added 'power on + install' command
+#
 # Revision 1.11  2010/06/30 19:51:22  bruno
 # fixes
 #
@@ -391,6 +394,26 @@ class Command(rocks.commands.start.service.command):
 		return
 
 
+	def power(self, s, action, dst_mac):
+		cmd = '/opt/rocks/bin/rocks %s host vm %s' % (action, dst_mac)
+
+		p = subprocess.Popen(shlex.split(cmd),
+			stdin = subprocess.PIPE,
+			stdout = subprocess.PIPE,
+			stderr = subprocess.STDOUT)
+		p.wait()
+
+		response = ''
+		for line in p.stdout.readlines():
+			response += line
+
+		status = 0
+		if len(response) > 0:
+			status = -1
+
+		self.sendresponse(s, status, response)
+
+
 	def parse_msg(self, buf):
 		b = buf.split('\n')
 
@@ -579,30 +602,13 @@ class Command(rocks.commands.start.service.command):
 			sys.stdout.flush()
 
 			if op == 'power off':
-				self.command('stop.host.vm',
-					[ dst_mac ] )
+				self.power(s, 'stop', dst_mac)
 			elif op == 'power on':
-				#self.command('start.host.vm',
-					#[ dst_mac ] )
-
-				cmd = '/opt/rocks/bin/rocks start host vm ' + \
-					'%s' % dst_mac
-				p = subprocess.Popen(shlex.split(cmd),
-					stdin = subprocess.PIPE,
-					stdout = subprocess.PIPE,
-					stderr = subprocess.STDOUT)
-				p.wait()
-
-				response = ''
-				for line in p.stdout.readlines():
-					response += line
-
-				status = 0
-				if len(response) > 0:
-					status = -1
-
-				self.sendresponse(s, status, response)
-
+				self.power(s, 'start', dst_mac)
+			elif op == 'power on + install':
+				self.command('set.host.boot', [ dst_mac,
+					'action=install'])
+				self.power(s, 'start', dst_mac)
 			elif op == 'list macs':
 				self.sendresponse(s, 0, '\n'.join(macs))
 			elif op == 'console':

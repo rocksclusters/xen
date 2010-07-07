@@ -1,4 +1,4 @@
-# $Id: plugin_virtual_host.py,v 1.3 2010/06/30 17:59:58 bruno Exp $
+# $Id: plugin_virtual_host.py,v 1.4 2010/07/07 23:18:39 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: plugin_virtual_host.py,v $
+# Revision 1.4  2010/07/07 23:18:39  bruno
+# added 'power on + install' command
+#
 # Revision 1.3  2010/06/30 17:59:58  bruno
 # can now route error messages back to the terminal that issued the command.
 #
@@ -99,6 +102,8 @@ class Plugin(rocks.commands.Plugin):
 				op = 'power on'
 			elif state == 'off':
 				op = 'power off'
+			elif state == 'on+install':
+				op = 'power on + install'
 
 			(status, reason) = vm.cmd(op, host)
 

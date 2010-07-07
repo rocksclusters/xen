@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.2 2010/06/30 17:59:58 bruno Exp $
+# $Id: __init__.py,v 1.3 2010/07/07 23:18:39 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.3  2010/07/07 23:18:39  bruno
+# added 'power on + install' command
+#
 # Revision 1.2  2010/06/30 17:59:58  bruno
 # can now route error messages back to the terminal that issued the command.
 #
@@ -113,7 +116,7 @@ class Command(command):
 		vm = rocks.vm.VMControl(self.db, vm_controller, key)
 		(status, macs) = vm.cmd('list macs', host)
 		if status != 0:
-			self.abort('command failed')
+			self.abort('command failed: %s' % macs)
 
 		self.beginOutput()
 		for mac in macs.split('\n'):

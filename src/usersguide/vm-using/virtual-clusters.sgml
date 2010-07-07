@@ -1,13 +1,13 @@
 <section id="using-virtual-clusters" xreflabel="Installing Virtual Clusters">
 	<title>Installing Virtual Clusters</title>
 
-<section id="using-virtual-clusters-frontend"
-	xreflabel="Installing a VM Frontend">
-	<title>Installing a VM Frontend</title>
+<section id="provisioning-virtual-cluster"
+	xreflabel="Provisioning a Virtual Cluster">
+	<title>Provisioning a Virtual Cluster</title>
 
 <para>
 After you install a VM Server and at least one VM Container, you are ready
-to install a virtual cluster.
+to provision a virtual cluster.
 </para>
 
 <para>
@@ -31,10 +31,24 @@ The machine "frontend-0-0-0" is a virtual machine that is hosted by
 "espresso".
 The machines "hosted-vm-0-0-0" and "hosted-vm-0-1-0" are VMs that are
 associated with "frontend-0-0-0" (they are all in the same VLAN).
-The names "frontend-0-0-0", "hosted-vm-0-0-0" and "hosted-vm-0-1-0" are
-names used by physical machine to control the VMs (e.g., to start and
-stop them).
 </para>
+
+<para>
+The names "frontend-0-0-0", "hosted-vm-0-0-0" and "hosted-vm-0-1-0" are
+names used by Dom0 (the physical machines).
+The names for the same machines, but this time from the perspective of DomU
+(the virtual machine perspective) are "vi-1.rocksclusters.org", "compute-0-0"
+and "compute-0-1".
+</para>
+
+<note>
+<para>
+An important point is that the only common thing between the physical side
+and the virtual side is the MAC address (in green).
+We will use the MAC address of a virtual machine to control it (e.g., to
+initially power it on).
+</para>
+</note>
 
 <para>
 The names in the virtual cluster look like the names in a traditional
@@ -99,57 +113,149 @@ vi-1.rocksclusters.org:     ---------------- VM
 :                           hosted-vm-0-1-0  VM
 </screen>
 
+</section>
+
+
+<section id="creating-keys"
+	xreflabel="Creating an RSA Key Pair">
+	<title>Creating an RSA Key Pair</title>
+
 <para>
-Now we need to install the VM frontend.
-This is done by "starting" the VM:
+Before we can install a VM, we must create an RSA key pair.
+These keys will be used to authenticate VM control commands.
+To create a key pair, execute:
 </para>
 
 <screen>
-# rocks start host vm vi-1.rocksclusters.org install=yes
+# rocks create keys key=/root/private.key
 </screen>
 
 <para>
-To interact with the VM frontend's console, you need to start "virt-manager"
+The above command will ask for a pass phrase for the private key.
+If you would like a "passphraseless" private key, execute:
 </para>
 
 <screen>
-# virt-manager
+# rocks create keys key=/root/private.key passphrase=no
 </screen>
 
 <para>
-This will display a screen similar to:
+The above command will place your private key into the file /root/private.key
+and it will output the public key for your private key:
+</para>
+
+<screen>
+# rocks create keys key=/root/private.key
+Generating RSA private key, 1024 bit long modulus
+............++++++
+.......++++++
+e is 65537 (0x10001)
+Enter pass phrase for /root/private.key:
+Verifying - Enter pass phrase for /root/private.key:
+Enter pass phrase for /root/private.key:
+writing RSA key
+-----BEGIN PUBLIC KEY-----
+MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDMoCPmR/Kev64znRBxvtsniXIF
+dyQMxR/bBFKNDmvmzPuPUim5jmD3TLilnH75/KidtJCwlb+Lhr5Cs6/9sRzX6rX2
+ExVUZsgo4A+O+XMk8KeowO/c2rPc+YdXaBir3Aesm/MCfCZaidZae8QLmVKW7Va5
+qErl9gyhhR7uDX+hgwIDAQAB
+-----END PUBLIC KEY-----
+</screen>
+
+<para>
+Now save the public key to file, that is, copy the above public key:
+</para>
+
+<screen>
+-----BEGIN PUBLIC KEY-----
+MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDMoCPmR/Kev64znRBxvtsniXIF
+dyQMxR/bBFKNDmvmzPuPUim5jmD3TLilnH75/KidtJCwlb+Lhr5Cs6/9sRzX6rX2
+ExVUZsgo4A+O+XMk8KeowO/c2rPc+YdXaBir3Aesm/MCfCZaidZae8QLmVKW7Va5
+qErl9gyhhR7uDX+hgwIDAQAB
+-----END PUBLIC KEY-----
+</screen>
+
+<para>
+And save your public key into a file (e.g., /root/public.key).
+</para>
+
+<para>
+We now want to associate your public key with the virtual cluster you
+provisioned.
+This will allow you to use your private key to send authenticated commands
+to control your cluster.
+To associate your public key with your virtual cluster, execute:
+</para>
+
+<screen>
+# rocks add host key vi-1.rocksclusters.org key=/root/public.key
+</screen>
+
+<para>
+We can see the relationship by executing:
+</para>
+
+<screen>
+# rocks list host key
+HOST            ID PUBLIC KEY                                                      
+frontend-0-0-0: 7  -----BEGIN PUBLIC KEY-----                                      
+:                  MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDMoCPmR/Kev64znRBxvtsniXIF
+:                  dyQMxR/bBFKNDmvmzPuPUim5jmD3TLilnH75/KidtJCwlb+Lhr5Cs6/9sRzX6rX2
+:                  ExVUZsgo4A+O+XMk8KeowO/c2rPc+YdXaBir3Aesm/MCfCZaidZae8QLmVKW7Va5
+:                  qErl9gyhhR7uDX+hgwIDAQAB                                        
+:                  -----END PUBLIC KEY-----                                        
+:                  ----------------------------------------------------------------
+</screen>
+
+<para>
+We see that the public key is associated with "frontend-0-0-0" (the name of
+the VM in Dom0).
+</para>
+
+</section>
+
+
+<section id="using-virtual-clusters-frontend"
+	xreflabel="Installing a VM Frontend">
+	<title>Installing a VM Frontend</title>
+
+<para>
+Now, we'll want to install the virtual frontend.
+But before we do that, we need to set the name of the "VM controller".
+The VM controller is a service that authenticates Rocks VM control commands.
+In our case, we'll set the VM controller to the FQDN of the physical
+frontend:
+</para>
+
+<screen>
+# rocks add host attr localhost vm-controller espresso.rocksclusters.org
+</screen>
+
+<para>
+Now we can send VM control commands to our VMs.
+To start the VM frontend install, we'll need to "power on" the VM frontend:
+</para>
+
+<screen>
+# rocks set host power vi-1.rocksclusters.org switch=on key=/root/private.key
+</screen>
+
+<para>
+Then, to connect to the VM's console, execute:
+</para>
+
+<screen>
+# rocks open host console vi-1.rocksclusters.org key=/root/private.key
+</screen>
+
+<para>
+Soon you will see the familiar frontend installation screen:
 </para>
 
 <para>
 <mediaobject>
 	<imageobject>
-		<imagedata fileref="images/virt-manager-1.png" scale=50>
-	</imageobject>
-</mediaobject>
-</para>
-
-<para>
-Double click on the "localhost" entry and then you'll see:
-</para>
-
-<para>
-<mediaobject>
-	<imageobject>
-		<imagedata fileref="images/virt-manager-2.png" scale=50>
-	</imageobject>
-</mediaobject>
-</para>
-
-<para>
-To bring the up the console for the VM frontend, double click on
-"frontend-0-0-0".
-Now you should see the familiar frontend installation screen:
-</para>
-
-<para>
-<mediaobject>
-	<imageobject>
-		<imagedata fileref="images/virt-manager-4.png" scale=50>
+		<imagedata fileref="images/vm-frontend.png" scale=50>
 	</imageobject>
 </mediaobject>
 </para>
@@ -191,132 +297,63 @@ Select "Compute" as the appliance type.
 </para>
 
 <para>
-Back on the VM Server, we'll need to start the first VM that hosts the
-VM compute node.
-In this example, the name is "hosted-vm-0-0-0".
+In another terminal session on vi-1.rocksclusters.org, we'll need to set up
+the environment to send VM control commands to the physical frontend.
+First, put the RSA private key that we created in section
+<xref linkend="creating-keys"> (e.g., /root/private.key) in /root on
+vi-1.rocksclusters.org.
+Then, assign the location of the VM controller to the physical frontend:
 </para>
 
 <screen>
-# rocks start host vm hosted-vm-0-0-0 install=yes
+# rocks add host attr localhost vm-controller espresso.rocksclusters.org
 </screen>
 
 <para>
-Back in the VM frontend, you should see insert-ethers discover the VM compute
-node:
-</para>
-
-<para>
-<mediaobject>
-	<imageobject>
-		<imagedata fileref="images/discovered.png" scale=50>
-	</imageobject>
-</mediaobject>
-</para>
-
-<para>
-Repeat for each VM compute node.
-</para>
-
-<para>
-You now have a virtual cluster up and running within your physical cluster.
-</para>
-
-</section>
-
-<section id="virt-manager-compute"
-	xreflabel="Connecting to a VM Compute Node's Console">
-	<title>Connecting to a VM Compute Node's Console</title>
-
-<para>
-You can connect to a virtual compute node's console in a manner similar to
-connecting to the virtual frontend's console.
-Again, bring up "virt-manager":
+Now, we're ready to install compute nodes.
+But, there's a problem - when we first login to vi-1.rocksclusters.org, the
+only machine we know about is ourself (i.e., vi-1.rocksclusters.org).
+There are no other nodes in the database.
+The good news is, we can ask the VM controller for a list of MAC addresses
+that are assigned to our virtual cluster:
 </para>
 
 <screen>
-# virt-manager
+# rocks list host macs vi-1.rocksclusters.org key=/root/private.key 
 </screen>
 
 <para>
-We'll connect to the console for the virtual compute node "compute-0-0".
-In the example configuration described at the top of this page,
-The VM "compute-0-0" is hosted on the physical machine named
-"vm-container-0-0" so we'll need to tell "virt-manager" to open a connection
-to "vm-container-0-0".
+Which outputs:
+</para>
+
+<screen>
+MACS IN CLUSTER  
+36:77:6e:c0:00:02
+36:77:6e:c0:00:00
+36:77:6e:c0:00:03
+</screen>
+
+<para>
+The MAC address 36:77:6e:c0:00:00 is ourself (the VM frontend) and the other
+two MACs (36:77:6e:c0:00:02 and 36:77:6e:c0:00:03) are the VM compute nodes
+that are associated with our VM frontend.
 </para>
 
 <para>
-Inside "virt-manager", click on "File" then "Open connection...".
-This brings up a window that looks like:
+We can use the MAC address of the VM compute nodes to power up and install our
+compute nodes:
 </para>
 
-<para>
-<mediaobject>
-	<imageobject>
-		<imagedata fileref="images/virt-manager-10.png" scale=50>
-	</imageobject>
-</mediaobject>
-</para>
+<screen>
+# rocks set host power 36:77:6e:c0:00:02 key=/root/private.key action="on+install"
+</screen>
 
+<note>
 <para>
-Now change the "Connection:" field to "Remote tunnel over SSH" and enter
-"vm-container-0-0" for the "Hostname:" field:
+The action of "on+install" ensures that the VM will be put into install mode,
+then it will be powered on.
 </para>
-
-<para>
-<mediaobject>
-	<imageobject>
-		<imagedata fileref="images/virt-manager-11.png" scale=50>
-	</imageobject>
-</mediaobject>
-</para>
-
-<para>
-Then click "Connect".
-</para>
-
-<para>
-In the "virt-manager" window, you should see something similar to:
-</para>
-
-<para>
-<mediaobject>
-	<imageobject>
-		<imagedata fileref="images/virt-manager-12.png" scale=50>
-	</imageobject>
-</mediaobject>
-</para>
-
-<para>
-Double click on "vm-container-0-0" and then you'll see:
-</para>
-
-<para>
-<mediaobject>
-	<imageobject>
-		<imagedata fileref="images/virt-manager-13.png" scale=50>
-	</imageobject>
-</mediaobject>
-</para>
-
-<para>
-Now to connect to the compute node's console, double click on "hosted-vm-0-0-0".
-Recall that from the perspective of the physical frontend (the VM Server),
-"hosted-vm-0-0-0" is the name for the VM "compute-0-0" (again, see the
-figure at the top of this page).
-</para>
-
-<para>
-You should now see the console for compute-0-0:
-</para>
-
-<para>
-<mediaobject>
-	<imageobject>
-		<imagedata fileref="images/virt-manager-14.png" scale=50>
-	</imageobject>
-</mediaobject>
-</para>
+</note>
 
 </section>
 
