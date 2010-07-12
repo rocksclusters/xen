@@ -313,9 +313,12 @@ Then, assign the location of the VM controller to the physical frontend:
 Now, we're ready to install compute nodes.
 But, there's a problem - when we first login to vi-1.rocksclusters.org, the
 only machine we know about is ourself (i.e., vi-1.rocksclusters.org).
-There are no other nodes in the database.
-The good news is, we can ask the VM controller for a list of MAC addresses
-that are assigned to our virtual cluster:
+There are no other nodes in the virtual frontend's database.
+But the physical machine knows about the MAC addresses of the virtual
+compute nodes (e.g., hosted-vm-0-0-0 and hosted-vm-0-1-0) that are associated
+with this virtual cluster.
+The good news is, we can ask the VM controller on the physical frontend for a
+list of MAC addresses that are assigned to our virtual cluster:
 </para>
 
 <screen>
@@ -345,15 +348,178 @@ compute nodes:
 </para>
 
 <screen>
-# rocks set host power 36:77:6e:c0:00:02 key=/root/private.key action="on+install"
+# rocks set host power 36:77:6e:c0:00:02 key=/root/private.key action=install
 </screen>
 
 <note>
 <para>
-The action of "on+install" ensures that the VM will be put into install mode,
+The action of "install" ensures that the VM will be put into install mode,
 then it will be powered on.
 </para>
 </note>
+
+<para>
+Soon, you should see insert-ethers discover the VM compute node:
+</para>
+
+<para>
+<mediaobject>
+	<imageobject>
+		<imagedata fileref="images/discovered.png" scale=50>
+	</imageobject>
+</mediaobject>
+</para>
+
+<para>
+After the virtual compute node is discovered by insert-ethers, we can open
+a console to the node by executing:
+</para>
+
+<screen>
+# rocks open host console compute-0-0 key=/root/private.key
+</screen>
+
+<para>
+Lastly, to power off a virtual compute node (e.g., compute-0-0), execute:
+</para>
+
+<screen>
+# rocks set host power compute-0-0 key=/root/private.key action=off
+</screen>
+
+</section>
+
+
+<section id="using-virt-manager"
+	xreflabel="Using virt-manager">
+	<title>Using virt-manager</title>
+
+<para>
+Virt-manager is a program produced by RedHat that is a desktop user interface
+for managing virtual machines.
+This section describes how to use some of virt-manager's features to control
+and monitor VMs on a Rocks cluster.
+</para>
+
+<para>
+To interact with the VM frontend's console, on the physical frontend, you
+need to start "virt-manager":
+</para>
+
+<screen>
+# virt-manager
+</screen>
+
+<para>
+This will display a screen similar to:
+</para>
+
+<para>
+<mediaobject>
+	<imageobject>
+		<imagedata fileref="images/virt-manager-1.png" scale=50>
+	</imageobject>
+</mediaobject>
+</para>
+
+<para>
+Double click on the "localhost" entry and then you'll see:
+</para>
+
+<para>
+<mediaobject>
+	<imageobject>
+		<imagedata fileref="images/virt-manager-2.png" scale=50>
+	</imageobject>
+</mediaobject>
+</para>
+
+<para>
+To bring the up the console for the VM frontend, double click on
+"frontend-0-0-0".
+</para>
+
+<para>
+Now we'll describe how to connect to the console for the virtual compute
+node "compute-0-0".
+In the example configuration described at the top of this page,
+the VM "compute-0-0" is hosted on the physical machine named
+"vm-container-0-0" so we'll need to tell "virt-manager" to open a connection
+to "vm-container-0-0".
+</para>
+
+<para>
+Inside "virt-manager", click on "File" then "Open connection...".
+This brings up a window that looks like:
+</para>
+
+<para>
+<mediaobject>
+	<imageobject>
+		<imagedata fileref="images/virt-manager-10.png" scale=50>
+	</imageobject>
+</mediaobject>
+</para>
+
+<para>
+Now change the "Connection:" field to "Remote tunnel over SSH" and enter
+"vm-container-0-0" for the "Hostname:" field:
+</para>
+
+<para>
+<mediaobject>
+	<imageobject>
+		<imagedata fileref="images/virt-manager-11.png" scale=50>
+	</imageobject>
+</mediaobject>
+</para>
+
+<para>
+Then click "Connect".
+</para>
+
+<para>
+In the "virt-manager" window, you should see something similar to:
+</para>
+
+<para>
+<mediaobject>
+	<imageobject>
+		<imagedata fileref="images/virt-manager-12.png" scale=50>
+	</imageobject>
+</mediaobject>
+</para>
+
+<para>
+Double click on "vm-container-0-0" and then you'll see:
+</para>
+
+<para>
+<mediaobject>
+	<imageobject>
+		<imagedata fileref="images/virt-manager-13.png" scale=50>
+	</imageobject>
+</mediaobject>
+</para>
+
+<para>
+Now to connect to the compute node's console, double click on "hosted-vm-0-0-0".
+Recall that from the perspective of the physical frontend (the VM Server),
+"hosted-vm-0-0-0" is the name for the VM "compute-0-0" (again, see the
+figure at the top of this page).
+</para>
+
+<para>
+You should now see the console for compute-0-0:
+</para>
+
+<para>
+<mediaobject>
+	<imageobject>
+		<imagedata fileref="images/virt-manager-14.png" scale=50>
+	</imageobject>
+</mediaobject>
+</para>
 
 </section>
 
