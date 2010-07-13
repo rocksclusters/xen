@@ -302,24 +302,20 @@ the VM in Dom0).
 
 <para>
 Now, we'll want to install the virtual frontend.
-But before we do that, we need to set the name of the "VM controller".
-The VM controller is a service that authenticates Rocks VM control commands.
-In our case, we'll set the VM controller to the FQDN of the physical
+To start the VM frontend install, we'll need to power on and install the VM
 frontend:
 </para>
 
 <screen>
-# rocks add host attr localhost vm-controller espresso.rocksclusters.org
+# rocks set host power vi-1.rocksclusters.org action=install key=/root/private.key
 </screen>
 
+<note>
 <para>
-Now we can send VM control commands to our VMs.
-To start the VM frontend install, we'll need to "power on" the VM frontend:
+The action of "install" ensures that the VM will be put into install mode,
+then it will be powered on.
 </para>
-
-<screen>
-# rocks set host power vi-1.rocksclusters.org switch=on key=/root/private.key
-</screen>
+</note>
 
 <para>
 Then, to connect to the VM's console, execute:
@@ -379,16 +375,11 @@ Select "Compute" as the appliance type.
 
 <para>
 In another terminal session on vi-1.rocksclusters.org, we'll need to set up
-the environment to send VM control commands to the physical frontend.
-First, put the RSA private key that we created in section
+the environment to send commands to the VM Controller on the physical frontend.
+We'll do this by putting the RSA private key that we created in section
 <xref linkend="creating-keys"> (e.g., /root/private.key) in /root on
 vi-1.rocksclusters.org.
-Then, assign the location of the VM controller to the physical frontend:
 </para>
-
-<screen>
-# rocks add host attr localhost vm-controller espresso.rocksclusters.org
-</screen>
 
 <para>
 Now, we're ready to install compute nodes.
