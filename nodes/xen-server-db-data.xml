@@ -16,6 +16,9 @@ All rights reserved. Rocks(tm) v5.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-server-db-data.xml,v $
+Revision 1.2  2010/07/13 23:33:48  bruno
+automatically assign a VM Controller
+
 Revision 1.1  2009/12/16 22:14:26  bruno
 new
 
@@ -34,6 +37,9 @@ new
 /opt/rocks/bin/rocks set attr Xen_Dom0MinMem 768
 /opt/rocks/bin/rocks set host bootflags flags="dom0_mem=1024M"
 
+/opt/rocks/bin/rocks add host attr localhost vm-controller \
+	&Kickstart_PublicHostname;
+
 /opt/rocks/bin/rocks add bootaction action="install vm" \
 	kernel="file:///boot/kickstart/xen/vmlinuz-&rocks_version;-&arch;" \
 	ramdisk="file:///boot/kickstart/xen/initrd-xen.iso.gz-&rocks_version;-&arch;" \
@@ -42,7 +48,7 @@ new
 /opt/rocks/bin/rocks add bootaction action="install vm frontend" \
 	kernel="file:///boot/kickstart/xen/vmlinuz-&rocks_version;-&arch;" \
 	ramdisk="file:///boot/kickstart/xen/initrd-xen.iso.gz-&rocks_version;-&arch;" \
-	args="ramdisk_size=150000 lang= devfs=nomount pxe kssendmac selinux=0 noipv6 ks=http://&Kickstart_PublicHostname;/install/sbin/kickstart.cgi ksdevice=eth1 build"
+	args="ramdisk_size=150000 lang= devfs=nomount pxe kssendmac selinux=0 noipv6 ks=http://&Kickstart_PublicHostname;/install/sbin/kickstart.cgi ksdevice=eth1 build vmcontroller=&Kickstart_PublicHostname;"
 
 </post>
 
