@@ -472,8 +472,8 @@ Lastly, to power off a virtual compute node (e.g., compute-0-0), execute:
 
 
 <section id="using-virt-manager"
-	xreflabel="Using virt-manager">
-	<title>Using virt-manager</title>
+	xreflabel="Using RedHat's Virt-Manager (Root Users Only)">
+	<title>Using RedHat's Virt-Manager (Root Users Only)</title>
 
 <para>
 Virt-manager is a program produced by RedHat that is a desktop user interface
