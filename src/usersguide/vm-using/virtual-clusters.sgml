@@ -34,17 +34,51 @@ associated with "frontend-0-0-0" (they are all in the same VLAN).
 </para>
 
 <para>
-The names "frontend-0-0-0", "hosted-vm-0-0-0" and "hosted-vm-0-1-0" are
-names used by Dom0 (the physical machines).
-The names for the same machines, but this time from the perspective of DomU
-(the virtual machine perspective) are "vi-1.rocksclusters.org", "compute-0-0"
-and "compute-0-1".
+Depending on your perspective, the virtual machines have different names.
+Dom0 is a physical machine that hosts (multiple) virtual systems.
+DomU are guests and generally refer to names by usual convention.
+The equivalence is:
+
+<table>
+<title></title>
+<tgroup cols="3">
+	<thead>
+	<row>
+		<entry>Host</entry>
+		<entry>Dom0 Name (physical)</entry>
+		<entry>DomU Name (virtual)</entry>
+	</row>
+	</thead>
+
+	<tbody>
+	<row>
+		<entry>37:77:6e:c0:00:00</entry>
+		<entry>frontend-0-0-0</entry>
+		<entry>vi-1.rocksclusters.org</entry>
+	</row>
+
+	<row>
+		<entry>37:77:6e:c0:00:01</entry>
+		<entry>hosted-vm-0-0-0</entry>
+		<entry>compute-0-0</entry>
+	</row>
+
+	<row>
+		<entry>37:77:6e:c0:00:02</entry>
+		<entry>hosted-vm-0-1-0</entry>
+		<entry>compute-0-1</entry>
+	</row>
+	</tbody>
+
+</tgroup>
+</table>
+
 </para>
 
 <note>
 <para>
 An important point is that the only common thing between the physical side
-and the virtual side is the MAC address (in green).
+and the virtual side is the MAC address (in yellow).
 We will use the MAC address of a virtual machine to control it (e.g., to
 initially power it on).
 </para>
@@ -112,6 +146,53 @@ vi-1.rocksclusters.org:     ---------------- VM
 :                           hosted-vm-0-0-0  VM      
 :                           hosted-vm-0-1-0  VM
 </screen>
+
+</section>
+
+
+<section id="vm-controller"
+	xreflabel="The VM Controller">
+	<title>The VM Controller</title>
+
+<para>
+In Rocks, we've developed a service known as the "VM Controller" that resides
+on the physical frontend (in Dom0) and it allows non-root users to control 
+their VMs.
+The motivation for this service is that libvirt (a virtualization API written
+by RedHat that can control several different virtualization implementations)
+assumes "root" access to control and monitor VMs.
+</para>
+
+<para>
+The VM Controller in Rocks is a small service that uses digitally signed
+messages to give non-root users access to their virtual cluster (and
+only their virtual cluster). 
+The VM Controller relies upon public/private key pairs to validate messages.
+The administrator of the physical hosting cluster must issue a single command
+to associate a public key with a particular virtual cluster.
+At that point, the full process of booting and installing a virtual cluster
+can be controlled by the (authorized) non-root user.
+</para>
+
+<para>
+<mediaobject>
+	<imageobject>
+		<imagedata fileref="images/vm-controller.png" scale=50>
+	</imageobject>
+</mediaobject>
+</para>
+
+<para>
+In the above picture, a user that is logged in to vi-1.rocksclusters.org
+wants to power on compute-0-0 (one of the VMs associated with the virtual
+cluster).
+The user executes the "power on" command.
+The command creates a "power on" message, signs it with a private key, then
+sends it to the VM Controller that is running on espresso.rocksclusters.org.
+The VM Controller verifies the message signature.
+If the signature is valid, then the VM Controller instructs libvirt on
+vm-container-0-0 to start ("power on") compute-0-0.
+</para>
 
 </section>
 
