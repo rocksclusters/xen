@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.12 2010/07/07 23:18:39 bruno Exp $
+# $Id: __init__.py,v 1.13 2010/07/14 19:44:43 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,10 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.13  2010/07/14 19:44:43  bruno
+# open a new connection to the database on each received command. this prevents
+# the case where the connect can become 'stale'.
+#
 # Revision 1.12  2010/07/07 23:18:39  bruno
 # added 'power on + install' command
 #
@@ -634,19 +638,6 @@ class Command(rocks.commands.start.service.command):
 		if not self.str2bool(foreground):
 			self.daemonize()
 
-		#
-		# after this program becomes a daemon, we need to get a new
-		# connect to the database. that is because the parent closes
-		# the initial database connection
-		#
-		database = self.reconnect()
-
-		if not database:
-			self.abort("couldn't connect to the database")
-
-		self.db.database = database
-		self.db.link = database.cursor()
-
 		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 		sock.bind(('', port))
 		sock.listen(1)
@@ -663,7 +654,25 @@ class Command(rocks.commands.start.service.command):
 			#
 			pid = os.fork()
 			if pid == 0:
+				#
+				# after this program becomes a daemon, we need
+				# to get a new connect to the database. that
+				# is because the parent closes the initial
+				# database connection
+				#
+				database = self.reconnect()
+
+				if not database:
+					self.abort("couldn't connect to the " +
+						"database")
+
+				self.db.database = database
+				self.db.link = database.cursor()
+
 				self.dorequest(conn)
+
+				database.close()
+
 				os._exit(0)
 			else:
 				conn.close()
