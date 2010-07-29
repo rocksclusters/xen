@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.13 2010/07/14 19:44:43 bruno Exp $
+# $Id: __init__.py,v 1.14 2010/07/29 21:28:44 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.14  2010/07/29 21:28:44  bruno
+# make sure to cleanup completed children
+#
 # Revision 1.13  2010/07/14 19:44:43  bruno
 # open a new connection to the database on each received command. this prevents
 # the case where the connect can become 'stale'.
@@ -113,6 +116,7 @@ import rocks.commands
 import xml.sax.handler
 import subprocess
 import shlex
+import time
 
 sys.path.append('/usr/lib64/python2.4/site-packages')
 sys.path.append('/usr/lib/python2.4/site-packages')
@@ -632,6 +636,17 @@ class Command(rocks.commands.start.service.command):
 		conn.close()
 
 
+	def cleanupchildren(self):
+		done = 0
+		while not done:
+			try:
+				(pid, status) = os.waitpid(0, 0)
+				if pid == 0:
+					done = 1
+			except:
+				done = 1
+
+
 	def run(self, params, args):
 		foreground, = self.fillParams([ ('foreground', 'n') ])
 
@@ -639,12 +654,19 @@ class Command(rocks.commands.start.service.command):
 			self.daemonize()
 
 		sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+		sock.setblocking(0)
 		sock.bind(('', port))
 		sock.listen(1)
 
 		done = 0
 		while not done:
-			conn, addr = sock.accept()
+			conn = None
+			while not conn:
+				try:
+					conn, addr = sock.accept()
+				except:
+					self.cleanupchildren()
+					time.sleep(0.1)
 
 			print 'received message from: ', addr
 			sys.stdout.flush()
