@@ -16,6 +16,10 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-db.xml,v $
+Revision 1.10  2010/07/31 01:02:03  bruno
+first stab at putting in 'shadow' values in the database that non-root
+and non-apache users can't read
+
 Revision 1.9  2009/05/05 23:01:27  bruno
 another xen db fix
 
@@ -72,6 +76,9 @@ CREATE TABLE vm_nodes (
 	PRIMARY KEY (ID)
 ) TYPE=MyISAM;
 
+grant select on cluster.vm_nodes to ''@'localhost';
+grant select on cluster.vm_nodes to ''@'%.local';
+
 DROP TABLE IF EXISTS vm_disks;
 CREATE TABLE vm_disks (
 	ID		int(11) NOT NULL auto_increment,
@@ -84,6 +91,9 @@ CREATE TABLE vm_disks (
 	Size		int(11) NOT NULL default '0',
 	PRIMARY KEY (ID)
 ) TYPE=MyISAM;
+
+grant select on cluster.vm_disks to ''@'localhost';
+grant select on cluster.vm_disks to ''@'%.local';
 
 </file>
 
