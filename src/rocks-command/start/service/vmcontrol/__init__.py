@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.14 2010/07/29 21:28:44 bruno Exp $
+# $Id: __init__.py,v 1.15 2010/08/03 23:57:28 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.15  2010/08/03 23:57:28  bruno
+# tweaks
+#
 # Revision 1.14  2010/07/29 21:28:44  bruno
 # make sure to cleanup completed children
 #
@@ -151,6 +154,11 @@ class Command(rocks.commands.start.service.command):
 	</param>
 	"""
 
+	def Abort(self, msg):
+		print 'abort: msg: ', msg
+		sys.stdout.flush()
+		
+
 	def reconnect(self):
 		#
 		# reconnect to the database
@@ -214,7 +222,11 @@ class Command(rocks.commands.start.service.command):
 		#
 		macs = []
 
-		host = self.db.getHostname(dst_mac)
+		try:
+			host = self.db.getHostname(dst_mac)
+		except:
+			host = None
+		
 		if not host:
 			return macs
 
@@ -605,6 +617,13 @@ class Command(rocks.commands.start.service.command):
 		#
 		macs = self.getmacs(dst_mac)
 
+		if macs == []:
+			self.sendresponse(s, -1,
+				'MAC address %s not in database' % dst_mac)
+			s.close()
+			conn.close()
+			return
+
 		if self.check_signature(clear_text, signature, macs):
 			print '\tmessage signature is valid'
 			sys.stdout.flush()
@@ -685,15 +704,14 @@ class Command(rocks.commands.start.service.command):
 				database = self.reconnect()
 
 				if not database:
-					self.abort("couldn't connect to the " +
-						"database")
-
-				self.db.database = database
-				self.db.link = database.cursor()
-
-				self.dorequest(conn)
-
-				database.close()
+					print "couldn't connect to the " + \
+						"database"
+					sys.stdout.flush()
+				else:
+					self.db.database = database
+					self.db.link = database.cursor()
+					self.dorequest(conn)
+					database.close()
 
 				os._exit(0)
 			else:
