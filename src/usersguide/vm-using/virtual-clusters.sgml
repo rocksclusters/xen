@@ -150,12 +150,12 @@ vi-1.rocksclusters.org:     ---------------- VM
 </section>
 
 
-<section id="vm-controller"
-	xreflabel="The VM Controller">
-	<title>The VM Controller</title>
+<section id="airboss"
+	xreflabel="The Airboss">
+	<title>The Airboss</title>
 
 <para>
-In Rocks, we've developed a service known as the "VM Controller" that resides
+In Rocks, we've developed a service known as the "Airboss" that resides
 on the physical frontend (in Dom0) and it allows non-root users to control 
 their VMs.
 The motivation for this service is that libvirt (a virtualization API written
@@ -164,10 +164,10 @@ assumes "root" access to control and monitor VMs.
 </para>
 
 <para>
-The VM Controller in Rocks is a small service that uses digitally signed
+The Airboss in Rocks is a small service that uses digitally signed
 messages to give non-root users access to their virtual cluster (and
 only their virtual cluster). 
-The VM Controller relies upon public/private key pairs to validate messages.
+The Airboss relies upon public/private key pairs to validate messages.
 The administrator of the physical hosting cluster must issue a single command
 to associate a public key with a particular virtual cluster.
 At that point, the full process of booting and installing a virtual cluster
@@ -177,7 +177,7 @@ can be controlled by the (authorized) non-root user.
 <para>
 <mediaobject>
 	<imageobject>
-		<imagedata fileref="images/vm-controller.png" scale=50>
+		<imagedata fileref="images/airboss.png" scale=50>
 	</imageobject>
 </mediaobject>
 </para>
@@ -188,9 +188,9 @@ wants to power on compute-0-0 (one of the VMs associated with the virtual
 cluster).
 The user executes the "power on" command.
 The command creates a "power on" message, signs it with a private key, then
-sends it to the VM Controller that is running on espresso.rocksclusters.org.
-The VM Controller verifies the message signature.
-If the signature is valid, then the VM Controller instructs libvirt on
+sends it to the Airboss that is running on espresso.rocksclusters.org.
+The Airboss verifies the message signature.
+If the signature is valid, then the Airboss instructs libvirt on
 vm-container-0-0 to start ("power on") compute-0-0.
 </para>
 
@@ -203,7 +203,7 @@ vm-container-0-0 to start ("power on") compute-0-0.
 
 <para>
 Before we can install a VM, we must create an RSA key pair.
-These keys will be used to authenticate VM control commands.
+These keys will be used to authenticate Airboss commands.
 To create a key pair, execute:
 </para>
 
@@ -375,7 +375,7 @@ Select "Compute" as the appliance type.
 
 <para>
 In another terminal session on vi-1.rocksclusters.org, we'll need to set up
-the environment to send commands to the VM Controller on the physical frontend.
+the environment to send commands to the Airboss on the physical frontend.
 We'll do this by putting the RSA private key that we created in section
 <xref linkend="creating-keys"> (e.g., /root/private.key) in /root on
 vi-1.rocksclusters.org.
@@ -389,7 +389,7 @@ There are no other nodes in the virtual frontend's database.
 But the physical machine knows about the MAC addresses of the virtual
 compute nodes (e.g., hosted-vm-0-0-0 and hosted-vm-0-1-0) that are associated
 with this virtual cluster.
-The good news is, we can ask the VM controller on the physical frontend for a
+The good news is, we can ask the Airboss on the physical frontend for a
 list of MAC addresses that are assigned to our virtual cluster:
 </para>
 

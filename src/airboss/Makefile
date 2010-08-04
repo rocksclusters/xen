@@ -1,12 +1,5 @@
-#!/bin/sh
 #
-# $Id: rocks-vmcontrol,v 1.1 2010/06/30 21:19:11 bruno Exp $
-#
-# chkconfig: 35 99 01
-#
-# description: Start the service that will allow users to control their VMs.
-#
-# They'll be able to power on/off VMs and open a console to a VM.
+# $Id: Makefile,v 1.1 2010/08/04 23:37:44 bruno Exp $
 #
 # @Copyright@
 # 
@@ -61,53 +54,20 @@
 # 
 # @Copyright@
 #
-# $Log: rocks-vmcontrol,v $
-# Revision 1.1  2010/06/30 21:19:11  bruno
-# add 'rocks-vmcontrol' package. it is used to start/stop the rocks-vmcontrol
-# service
+# $Log: Makefile,v $
+# Revision 1.1  2010/08/04 23:37:44  bruno
+# in with the airboss, out with the vm controller
 #
 #
-. /etc/rc.d/init.d/functions
 
-start() {
-	action "Starting Rocks VM control: " \
-		/opt/rocks/bin/rocks start service vmcontrol
-	RETVAL=$?
+REDHAT.ROOT	= $(CURDIR)/../../
 
-	touch /var/lock/subsys/rocks-vmcontrol
-	return $RETVAL
-}
+-include $(ROCKSROOT)/etc/Rules.mk
+include Rules.mk
 
-stop() {
-	action "Stopping Rocks VM control: " \
-		/opt/rocks/bin/rocks stop service vmcontrol
-	RETVAL=$?
+build:
+	echo Nothing to build
 
-	rm -f /var/lock/subsys/rocks-vmcontrol
-	return $RETVAL
-}
-
-#
-# main
-#
-case "$1" in
-start)
-	start
-	;;
-
-stop)
-	stop
-	;;
-
-restart)
-	stop
-	start
-	;;
-
-*)
-	echo "Usage: $0 {start|stop|restart}"
-	RETVAL=1	
-esac
-
-exit $RETVAL
-
+install::
+	mkdir -p $(ROOT)/$(PKGROOT)
+	install -m 755 rocks-airboss $(ROOT)/$(PKGROOT)/

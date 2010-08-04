@@ -16,6 +16,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-server.xml,v $
+Revision 1.36  2010/08/04 23:37:44  bruno
+in with the airboss, out with the vm controller
+
 Revision 1.35  2010/06/30 21:19:11  bruno
 add 'rocks-vmcontrol' package. it is used to start/stop the rocks-vmcontrol
 service
@@ -141,7 +144,7 @@ Revision 1.1  2005/12/17 05:27:19  mjk
 
 <package>roll-xen-usersguide</package>
 <package>rocks-command-xen</package>
-<package>rocks-vmcontrol</package>
+<package>rocks-airboss</package>
 
 
 <post>
@@ -287,7 +290,7 @@ cp /etc/pki/CA/private/cakey.pem /tmp/cakey.pem
 <post>
 <!-- turn on the service that allows users to control their VMs -->
 
-/sbin/chkconfig --add rocks-vmcontrol
+/sbin/chkconfig --add rocks-airboss
 </post>
 
 </kickstart>

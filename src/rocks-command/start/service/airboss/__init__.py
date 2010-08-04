@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.15 2010/08/03 23:57:28 bruno Exp $
+# $Id: __init__.py,v 1.1 2010/08/04 23:37:44 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.1  2010/08/04 23:37:44  bruno
+# in with the airboss, out with the vm controller
+#
 # Revision 1.15  2010/08/03 23:57:28  bruno
 # tweaks
 #
