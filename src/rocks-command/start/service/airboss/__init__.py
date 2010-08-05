@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.2 2010/08/05 20:06:29 bruno Exp $
+# $Id: __init__.py,v 1.3 2010/08/05 22:22:32 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.3  2010/08/05 22:22:32  bruno
+# optionally get the status of the VMs
+#
 # Revision 1.2  2010/08/05 20:06:29  bruno
 # more airboss naming
 #
@@ -338,13 +341,7 @@ class Command(rocks.commands.start.service.command):
 		return fds[0].fileno()
 
 
-	def console(self, s, clientfd, dst_mac):
-		client = self.db.getHostname(dst_mac)
-		if not client:
-			self.sendresponse(s, -1,
-				'MAC address %s not in database' % dst_mac)
-			return
-
+	def getPhysNode(self, client):
 		#
 		# get the physical node that controls this VM
 		#
@@ -353,12 +350,26 @@ class Command(rocks.commands.start.service.command):
 			where name = '%s') and vn.physnode = n.id""" % client)
 
 		if rows == 0:
+			physnode = None
+		else:
+			physnode, = self.db.fetchone()
+
+		return physnode
+
+
+	def console(self, s, clientfd, dst_mac):
+		client = self.db.getHostname(dst_mac)
+		if not client:
+			self.sendresponse(s, -1,
+				'MAC address %s not in database' % dst_mac)
+			return
+
+		physnode = self.getPhysNode(client)
+		if not physnode:
 			msg = 'could not find the physical host that controls'
 			msg += ' the VM for MAC address %s' % dst_mac
 			self.sendresponse(s, -1, msg)
 			return
-
-		physnode, = self.db.fetchone()
 
 		fds = socket.socketpair()
 		fd = self.openTunnel(client, physnode, fds)
@@ -564,6 +575,65 @@ class Command(rocks.commands.start.service.command):
 			bytes += s.write(msg[bytes:])
 
 
+	def getState(self, physhost, host):
+		try:
+			hipervisor = libvirt.open('xen://%s/' % physhost)
+		except:
+			return 'nostate'
+	
+		found = 0
+		for id in hipervisor.listDomainsID():
+			if id == 0:
+				#
+				# skip dom0
+				#
+				continue
+			
+			domU = hipervisor.lookupByID(id)
+			if domU.name() == host:
+				found = 1
+				break
+
+		state = 'nostate'
+
+		if found:
+			status = domU.info()[0]	
+
+			if status == libvirt.VIR_DOMAIN_NOSTATE:
+				state = 'nostate'
+			elif status == libvirt.VIR_DOMAIN_RUNNING or \
+					status == libvirt.VIR_DOMAIN_BLOCKED:
+				state = 'active'
+			elif status == libvirt.VIR_DOMAIN_PAUSED:
+				state = 'paused'
+			elif status == libvirt.VIR_DOMAIN_SHUTDOWN:
+				state = 'shutdown'
+			elif status == libvirt.VIR_DOMAIN_SHUTOFF:
+				state = 'shutoff'
+			elif status == libvirt.VIR_DOMAIN_CRASHED:
+				state = 'crashed'
+
+		return state
+
+
+	def listmacs(self, s, macs, status):
+		resp = ''
+
+		for mac in macs:
+			if status:
+				client = self.db.getHostname(mac)
+				state = 'nostate'
+				if client:
+					physnode = self.getPhysNode(client)
+					state = self.getState(physnode, client)
+			else:
+				state = ''
+
+			resp += '%s %s\n' % (mac, state)
+
+		self.sendresponse(s, 0, resp)
+
+
 	def dorequest(self, conn):
 		s = ssl.wrap_socket(conn,
 			server_side = True,
@@ -642,8 +712,10 @@ class Command(rocks.commands.start.service.command):
 				self.command('set.host.boot', [ dst_mac,
 					'action=install'])
 				self.power(s, 'start', dst_mac)
+			elif op == 'list macs + status':
+				self.listmacs(s, macs, 1)
 			elif op == 'list macs':
-				self.sendresponse(s, 0, '\n'.join(macs))
+				self.listmacs(s, macs, 0)
 			elif op == 'console':
 				self.console(s, conn.fileno(), dst_mac)
 		else:
@@ -682,6 +754,9 @@ class Command(rocks.commands.start.service.command):
 		sock.setblocking(0)
 		sock.bind(('', port))
 		sock.listen(1)
+
+		print 'airboss started at %s\n' % time.asctime()
+		sys.stdout.flush()
 
 		done = 0
 		while not done:
