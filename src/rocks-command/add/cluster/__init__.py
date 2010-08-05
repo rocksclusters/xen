@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.20 2009/05/21 21:14:43 bruno Exp $
+# $Id: __init__.py,v 1.21 2010/08/05 22:48:49 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,10 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.21  2010/08/05 22:48:49  bruno
+# associate an alias for the FQDN with the frontend VM (rather than assigning
+# the FQDN to the public interface).
+#
 # Revision 1.20  2009/05/21 21:14:43  bruno
 # tweaks
 #
@@ -305,8 +309,7 @@ class Command(rocks.commands.add.command):
 			'eth1', 'public' ] )
 		self.command('set.host.interface.ip', [ self.frontendname,
 			'eth1', ip ] )
-		self.command('set.host.interface.name', [ self.frontendname,
-			'eth1', fqdn ] )
+		self.command('add.host.alias', [ self.frontendname, fqdn ] )
 		if not gateway:
 			gateway = self.db.getHostAttr(self.frontendname,
 				'Kickstart_PublicGateway')
