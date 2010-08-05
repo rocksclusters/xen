@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# $Id: rocks-airboss,v 1.1 2010/08/04 23:37:44 bruno Exp $
+# $Id: rocks-airboss,v 1.2 2010/08/05 18:31:30 bruno Exp $
 #
 # chkconfig: 35 99 01
 #
@@ -62,6 +62,9 @@
 # @Copyright@
 #
 # $Log: rocks-airboss,v $
+# Revision 1.2  2010/08/05 18:31:30  bruno
+# one more spot to change the name to airboss
+#
 # Revision 1.1  2010/08/04 23:37:44  bruno
 # in with the airboss, out with the vm controller
 #
@@ -70,7 +73,7 @@
 . /etc/rc.d/init.d/functions
 
 start() {
-	action "Starting Rocks VM control: " \
+	action "Starting Rocks Airboss: " \
 		/opt/rocks/bin/rocks start service airboss
 	RETVAL=$?
 
@@ -79,7 +82,7 @@ start() {
 }
 
 stop() {
-	action "Stopping Rocks VM control: " \
+	action "Stopping Rocks Airboss: " \
 		/opt/rocks/bin/rocks stop service airboss
 	RETVAL=$?
 
