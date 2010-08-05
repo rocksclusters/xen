@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.1 2010/06/15 19:38:45 bruno Exp $
+# $Id: __init__.py,v 1.1 2010/08/05 20:06:29 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,8 +54,8 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
-# Revision 1.1  2010/06/15 19:38:45  bruno
-# start/stop the vmcontrol service
+# Revision 1.1  2010/08/05 20:06:29  bruno
+# more airboss naming
 #
 #
 
@@ -65,7 +65,7 @@ import re
 
 class Command(rocks.commands.stop.service.command):
 	"""
-	Stop the VM Control service.
+	Stop the airboss service.
 	"""
 
 	def find_service(self, line):
@@ -74,7 +74,7 @@ class Command(rocks.commands.stop.service.command):
 		if len(l) > 5 and l[0] == '/opt/rocks/bin/python' and \
 				l[1] == '/opt/rocks/bin/rocks' and \
 				l[2] == 'start' and l[3] == 'service' and \
-				l[4] == 'vmcontrol':
+				l[4] == 'airboss':
 			return 1
 
 		return 0

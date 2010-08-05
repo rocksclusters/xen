@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.1 2010/08/04 23:37:44 bruno Exp $
+# $Id: __init__.py,v 1.2 2010/08/05 20:06:29 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.2  2010/08/05 20:06:29  bruno
+# more airboss naming
+#
 # Revision 1.1  2010/08/04 23:37:44  bruno
 # in with the airboss, out with the vm controller
 #
@@ -533,7 +536,7 @@ class Command(rocks.commands.start.service.command):
 		sys.stdout.flush()
 		sys.stderr.flush()
 		si = file('/dev/null', 'r')
-		so = file('/var/log/vm-control.log', 'a+')
+		so = file('/var/log/airboss.log', 'a+')
 		se = so
 		os.dup2(si.fileno(), sys.stdin.fileno())
 		os.dup2(so.fileno(), sys.stdout.fileno())
@@ -662,7 +665,7 @@ class Command(rocks.commands.start.service.command):
 		done = 0
 		while not done:
 			try:
-				(pid, status) = os.waitpid(0, 0)
+				(pid, status) = os.waitpid(0, os.WNOHANG)
 				if pid == 0:
 					done = 1
 			except:
