@@ -16,6 +16,9 @@
 
 <changelog>
 $Log: xen.xml,v $
+Revision 1.24  2010/08/06 23:06:07  bruno
+ordering issue
+
 Revision 1.23  2010/08/04 23:37:44  bruno
 in with the airboss, out with the vm controller
 
@@ -109,6 +112,10 @@ start of xen roll
 
 	<order head="pxe">
 		<tail>xen-server-db-data</tail>
+	</order> 
+
+	<order head="xen-server-db-data">
+		<tail>xen-base</tail>
 	</order> 
 
 	<order head="networking-server">
