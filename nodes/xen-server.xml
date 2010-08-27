@@ -16,6 +16,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-server.xml,v $
+Revision 1.37  2010/08/27 17:34:54  bruno
+firewall fixes
+
 Revision 1.36  2010/08/04 23:37:44  bruno
 in with the airboss, out with the vm controller
 
@@ -291,6 +294,14 @@ cp /etc/pki/CA/private/cakey.pem /tmp/cakey.pem
 <!-- turn on the service that allows users to control their VMs -->
 
 /sbin/chkconfig --add rocks-airboss
+</post>
+
+<post>
+
+/opt/rocks/bin/rocks add host firewall localhost network=all service="8677" \
+	protocol="tcp" action="REJECT" chain="INPUT" \
+	comment="block airboss traffic from non-private interfaces"
+
 </post>
 
 </kickstart>
