@@ -94,9 +94,9 @@ the difference between this virtual cluster and a traditional physical cluster.
 
 <warning>
 <para>
-You must select your own FQDN and IP address for your virtual frontend.
-The FQDN "vi-1.rocksclusters.org" and the IP address "137.110.119.118" are
-managed by UCSD and should not be used by you.
+You must select your own IP address for your virtual frontend.
+The IP address "137.110.119.118" is managed by UCSD and should not be used by
+you.
 </para>
 
 <para>
@@ -106,13 +106,12 @@ They are only used here to show you a concrete example.
 
 <para>
 First, we'll add a virtual cluster to the VM Server's database.
-In this example, we'll add a frontend with the FQDN of
-"vi-1.rocksclusters.org", IP of "137.110.119.118" and we'll associate
-2 compute nodes with it:
+In this example, we'll add a frontend with the IP of "137.110.119.118"
+and we'll associate 2 compute nodes with it:
 </para>
 
 <screen>
-# rocks add cluster fqdn="vi-1.rocksclusters.org" ip="137.110.119.118" num-computes=2
+# rocks add cluster ip="137.110.119.118" num-computes=2
 </screen>
 
 <para>
@@ -142,7 +141,7 @@ FRONTEND                    CLIENT NODES     TYPE
 espresso.rocksclusters.org: ---------------- physical
 :                           vm-container-0-0 physical
 :                           vm-container-0-1 physical
-vi-1.rocksclusters.org:     ---------------- VM      
+frontend-0-0-0-public:      ---------------- VM      
 :                           hosted-vm-0-0-0  VM      
 :                           hosted-vm-0-1-0  VM
 </screen>
@@ -269,7 +268,7 @@ To associate your public key with your virtual cluster, execute:
 </para>
 
 <screen>
-# rocks add host key vi-1.rocksclusters.org key=public.key
+# rocks add host key frontend-0-0-0 key=public.key
 </screen>
 
 <para>
@@ -302,28 +301,13 @@ the VM in Dom0).
 
 <para>
 Now, we'll want to install the virtual frontend.
-Prior to sending commands to the Airboss, we need to establish a ssh tunnel
-between the virtual frontend (e.g., vi-1) and the physical frontend (e.g.,
-espresso, where the Airboss runs).
-This tunnel is used to securely pass Airboss messages.
-On the virtual frontend (e.g., vi-1), execute:
-</para>
-
-<screen>
-# ssh -L 8677:localhost:8677 espresso.rocksclusters.org
-</screen>
-
-<para>
-Now we can securely send messages to the Airboss.
-</para>
-
-<para>
+First, login to the physical frontend (e.g., espresso).
 To start the VM frontend install, we'll need to power on and install the VM
 frontend:
 </para>
 
 <screen>
-# rocks set host power vi-1.rocksclusters.org action=install key=private.key
+# rocks set host power frontend-0-0-0 action=install key=private.key
 </screen>
 
 <note>
@@ -338,7 +322,7 @@ Then, to connect to the VM's console, execute:
 </para>
 
 <screen>
-# rocks open host console vi-1.rocksclusters.org key=private.key
+# rocks open host console frontend-0-0-0 key=private.key
 </screen>
 
 <para>
@@ -394,6 +378,22 @@ In another terminal session on vi-1.rocksclusters.org, we'll need to set up
 the environment to send commands to the Airboss on the physical frontend.
 We'll do this by putting the RSA private key that we created in section
 <xref linkend="creating-keys"> (e.g., private.key) on vi-1.rocksclusters.org.
+</para>
+
+<para>
+Prior to sending commands to the Airboss, we need to establish a ssh tunnel
+between the virtual frontend (e.g., vi-1) and the physical frontend (e.g.,
+espresso, where the Airboss runs).
+This tunnel is used to securely pass Airboss messages.
+On the virtual frontend (e.g., vi-1), execute:
+</para>
+
+<screen>
+# ssh -L 8677:localhost:8677 espresso.rocksclusters.org
+</screen>
+
+<para>
+Now we can securely send messages to the Airboss.
 </para>
 
 <para>
