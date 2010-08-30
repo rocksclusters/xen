@@ -208,7 +208,7 @@ To create a key pair, execute:
 </para>
 
 <screen>
-# rocks create keys key=/root/private.key
+# rocks create keys key=private.key
 </screen>
 
 <para>
@@ -217,23 +217,23 @@ If you would like a "passphraseless" private key, execute:
 </para>
 
 <screen>
-# rocks create keys key=/root/private.key passphrase=no
+# rocks create keys key=private.key passphrase=no
 </screen>
 
 <para>
-The above command will place your private key into the file /root/private.key
+The above command will place your private key into the file private.key
 and it will output the public key for your private key:
 </para>
 
 <screen>
-# rocks create keys key=/root/private.key
+# rocks create keys key=private.key
 Generating RSA private key, 1024 bit long modulus
 ............++++++
 .......++++++
 e is 65537 (0x10001)
-Enter pass phrase for /root/private.key:
-Verifying - Enter pass phrase for /root/private.key:
-Enter pass phrase for /root/private.key:
+Enter pass phrase for private.key:
+Verifying - Enter pass phrase for private.key:
+Enter pass phrase for private.key:
 writing RSA key
 -----BEGIN PUBLIC KEY-----
 MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQDMoCPmR/Kev64znRBxvtsniXIF
@@ -257,7 +257,7 @@ qErl9gyhhR7uDX+hgwIDAQAB
 </screen>
 
 <para>
-And save your public key into a file (e.g., /root/public.key).
+And save your public key into a file (e.g., $HOME/public.key).
 </para>
 
 <para>
@@ -269,7 +269,7 @@ To associate your public key with your virtual cluster, execute:
 </para>
 
 <screen>
-# rocks add host key vi-1.rocksclusters.org key=/root/public.key
+# rocks add host key vi-1.rocksclusters.org key=public.key
 </screen>
 
 <para>
@@ -307,7 +307,7 @@ frontend:
 </para>
 
 <screen>
-# rocks set host power vi-1.rocksclusters.org action=install key=/root/private.key
+# rocks set host power vi-1.rocksclusters.org action=install key=private.key
 </screen>
 
 <note>
@@ -322,7 +322,7 @@ Then, to connect to the VM's console, execute:
 </para>
 
 <screen>
-# rocks open host console vi-1.rocksclusters.org key=/root/private.key
+# rocks open host console vi-1.rocksclusters.org key=private.key
 </screen>
 
 <para>
@@ -377,8 +377,7 @@ Select "Compute" as the appliance type.
 In another terminal session on vi-1.rocksclusters.org, we'll need to set up
 the environment to send commands to the Airboss on the physical frontend.
 We'll do this by putting the RSA private key that we created in section
-<xref linkend="creating-keys"> (e.g., /root/private.key) in /root on
-vi-1.rocksclusters.org.
+<xref linkend="creating-keys"> (e.g., private.key) on vi-1.rocksclusters.org.
 </para>
 
 <para>
@@ -410,7 +409,7 @@ Now we can ask the Airboss for the list of MAC addresses:
 </para>
 
 <screen>
-# rocks list host macs vi-1.rocksclusters.org key=/root/private.key 
+# rocks list host macs vi-1.rocksclusters.org key=private.key 
 </screen>
 
 <para>
@@ -436,7 +435,7 @@ compute nodes:
 </para>
 
 <screen>
-# rocks set host power 36:77:6e:c0:00:02 key=/root/private.key action=install
+# rocks set host power 36:77:6e:c0:00:02 key=private.key action=install
 </screen>
 
 <note>
@@ -464,7 +463,7 @@ a console to the node by executing:
 </para>
 
 <screen>
-# rocks open host console compute-0-0 key=/root/private.key
+# rocks open host console compute-0-0 key=private.key
 </screen>
 
 <para>
@@ -472,7 +471,7 @@ Lastly, to power off a virtual compute node (e.g., compute-0-0), execute:
 </para>
 
 <screen>
-# rocks set host power compute-0-0 key=/root/private.key action=off
+# rocks set host power compute-0-0 key=private.key action=off
 </screen>
 
 </section>
