@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.21 2010/08/05 22:48:49 bruno Exp $
+# $Id: __init__.py,v 1.22 2010/08/30 22:58:41 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.22  2010/08/30 22:58:41  bruno
+# get rid of the FQDN requirement for 'rocks add cluster'
+#
 # Revision 1.21  2010/08/05 22:48:49  bruno
 # associate an alias for the FQDN with the frontend VM (rather than assigning
 # the FQDN to the public interface).
@@ -145,10 +148,6 @@ class Command(rocks.commands.add.command):
 	"""
 	Add a VM-based cluster to an existing physical cluster.
 	
-	<arg type='string' name='fqdn' optional='0'>
-	The FQDN for the virtual frontend.
-	</arg>
-
 	<arg type='string' name='ip' optional='0'>
 	The IP address for the virtual frontend.
 	</arg>
@@ -156,10 +155,6 @@ class Command(rocks.commands.add.command):
 	<arg type='string' name='num-computes' optional='0'>
 	The number of compute nodes VMs to associate with the frontend.
 	</arg>
-
-	<param type='string' name='fqdn'>
-	Can be used in place of the fqdn argument.
-	</param>
 
 	<param type='string' name='ip'>
 	Can be used in place of the ip argument.
@@ -287,7 +282,7 @@ class Command(rocks.commands.add.command):
 			pass
 
 
-	def createFrontend(self, vlan, fqdn, ip, disksize, gateway):
+	def createFrontend(self, vlan, ip, disksize, gateway):
 		output = self.command('add.host.vm', [ self.getFrontend(),
 			'membership=Frontend', 'num-macs=2',
 			'disksize=%s' % disksize, 'vlan=%d,0' % vlan,
@@ -309,7 +304,6 @@ class Command(rocks.commands.add.command):
 			'eth1', 'public' ] )
 		self.command('set.host.interface.ip', [ self.frontendname,
 			'eth1', ip ] )
-		self.command('add.host.alias', [ self.frontendname, fqdn ] )
 		if not gateway:
 			gateway = self.db.getHostAttr(self.frontendname,
 				'Kickstart_PublicGateway')
@@ -379,11 +373,9 @@ class Command(rocks.commands.add.command):
 	def run(self, params, args):
 		self.beginOutput()
 
-		(args, fqdn, ip, num_computes) = self.fillPositionalArgs(
-			('fqdn', 'ip', 'num-computes'))
+		(args, ip, num_computes) = self.fillPositionalArgs(
+			('ip', 'num-computes'))
 
-		if not fqdn:
-			self.abort('must supply an FQDN for the frontend')
 		if not ip:
 			self.abort('must supply an IP address for the frontend')
 		if not num_computes:
@@ -435,8 +427,7 @@ class Command(rocks.commands.add.command):
 		#
 		# create the frontend VM
 		#
-		self.createFrontend(vlanid, fqdn, ip, disk_per_frontend,
-			gateway)
+		self.createFrontend(vlanid, ip, disk_per_frontend, gateway)
 
 		#
 		# create the compute nodes
