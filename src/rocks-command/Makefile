@@ -1,13 +1,13 @@
 #
-# $Id: Makefile,v 1.5 2010/06/29 00:25:41 bruno Exp $
+# $Id: Makefile,v 1.6 2010/09/07 23:53:32 bruno Exp $
 #
 # @Copyright@
 # 
 # 				Rocks(r)
 # 		         www.rocksclusters.org
-# 		       version 5.2 (Chimichanga)
+# 		         version 5.4 (Maverick)
 # 
-# Copyright (c) 2000 - 2009 The Regents of the University of California.
+# Copyright (c) 2000 - 2010 The Regents of the University of California.
 # All rights reserved.	
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -55,6 +55,9 @@
 # @Copyright@
 #
 # $Log: Makefile,v $
+# Revision 1.6  2010/09/07 23:53:32  bruno
+# star power for gb
+#
 # Revision 1.5  2010/06/29 00:25:41  bruno
 # a little code restructuring and now the console can handle reboots
 #

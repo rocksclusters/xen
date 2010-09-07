@@ -1,12 +1,12 @@
-# $Id: __init__.py,v 1.12 2009/06/01 21:43:57 bruno Exp $
+# $Id: __init__.py,v 1.13 2010/09/07 23:53:33 bruno Exp $
 #
 # @Copyright@
 # 
 # 				Rocks(r)
 # 		         www.rocksclusters.org
-# 		       version 5.2 (Chimichanga)
+# 		         version 5.4 (Maverick)
 # 
-# Copyright (c) 2000 - 2009 The Regents of the University of California.
+# Copyright (c) 2000 - 2010 The Regents of the University of California.
 # All rights reserved.	
 # 
 # Redistribution and use in source and binary forms, with or without
@@ -54,6 +54,9 @@
 # @Copyright@ 
 #
 # $Log: __init__.py,v $
+# Revision 1.13  2010/09/07 23:53:33  bruno
+# star power for gb
+#
 # Revision 1.12  2009/06/01 21:43:57  bruno
 # restart the network after the xen bridge is created. this ensures our static
 # routes are reconstituted
