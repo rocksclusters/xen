@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.23 2010/09/07 23:53:33 bruno Exp $
+# $Id: __init__.py,v 1.24 2010/09/20 17:55:50 phil Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,10 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.24  2010/09/20 17:55:50  phil
+# Allow VMs to define interfaces with no MAC addresses. In this case, do
+# not bridge the interface in dom0.
+#
 # Revision 1.23  2010/09/07 23:53:33  bruno
 # star power for gb
 #
@@ -278,15 +282,17 @@ class Command(rocks.commands.start.host.command):
 		vifs = []
 		index = 0
 		for mac, subnetid, vlanid in macs:
-			xmlconfig.append("<interface type='bridge'>")
-
-			bridge = self.getBridgeName(physhost, subnetid, vlanid)
-			xmlconfig.append("<source bridge='%s'/>" % bridge)
-			xmlconfig.append("<mac address='%s'/>" % mac)
-			xmlconfig.append("<script path='vif-bridge'/>")
-
-			xmlconfig.append("</interface>")
-			index += 1
+			# allow VMs to have virtual and VLAN interfaces
+			if mac is not None:
+				xmlconfig.append("<interface type='bridge'>")
+	
+				bridge = self.getBridgeName(physhost, subnetid, vlanid)
+				xmlconfig.append("<source bridge='%s'/>" % bridge)
+				xmlconfig.append("<mac address='%s'/>" % mac)
+				xmlconfig.append("<script path='vif-bridge'/>")
+	
+				xmlconfig.append("</interface>")
+				index += 1
 
 		#
 		# disk config
