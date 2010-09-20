@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.13 2010/09/07 23:53:33 bruno Exp $
+# $Id: __init__.py,v 1.14 2010/09/20 18:01:48 phil Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,10 @@
 # @Copyright@ 
 #
 # $Log: __init__.py,v $
+# Revision 1.14  2010/09/20 18:01:48  phil
+# Move the service network restart from xenbrup to the main start stanza.
+# Restart the network only once after all bridges have been built
+#
 # Revision 1.13  2010/09/07 23:53:33  bruno
 # star power for gb
 #
@@ -126,16 +130,16 @@ xenbrup () {
 		/etc/xen/scripts/network-bridge start netdev=$1 \\
 			bridge=$2 vifnum=$VIFNUM
 
-		#
-		# needed in order to ensure all our static routes are in place
-		#
-		/sbin/service network restart
 	fi
 }
 
 case $1 in
 start)
 %s
+	#
+	# needed in order to ensure all our static routes are in place
+	#
+	/sbin/service network restart
 	;;
 
 esac
