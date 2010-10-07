@@ -16,6 +16,9 @@
 
 <changelog>
 $Log: xen.xml,v $
+Revision 1.26  2010/10/07 21:17:25  bruno
+any computing device can now host xen virtual machines
+
 Revision 1.25  2010/09/07 23:53:32  bruno
 star power for gb
 
@@ -146,12 +149,12 @@ start of xen roll
 		<to>vm-container</to>
 	</edge>
 
-	<edge from="vm-container-client">
-		<to>client</to>
+	<edge from="client" cond="xen">
+		<to>xen-base</to>
 		<to>xen-client</to>
 		<to>xen-client-extra</to>
-		<to>xen-base</to>
 		<to>vm-container</to>
+		<to>vm-container-client</to>
 	</edge>
 
 </graph>
