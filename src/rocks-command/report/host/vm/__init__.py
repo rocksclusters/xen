@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.48 2010/09/07 23:53:33 bruno Exp $
+# $Id: __init__.py,v 1.49 2010/10/15 19:20:36 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.49  2010/10/15 19:20:36  bruno
+# make sure only 1 DNS server is supplied to loader
+#
 # Revision 1.48  2010/09/07 23:53:33  bruno
 # star power for gb
 #
@@ -383,7 +386,12 @@ class Command(rocks.commands.report.host.command):
 		if netmask:
 			bootargs += ' netmask=%s ' % netmask
 		if dns:
-			bootargs += ' dns=%s ' % dns
+			#
+			# the user can enter in multiple DNS servers that are
+			# separated by a comma. we can only supply one DNS
+			# to anaconda, so let's just select the first one.
+			#
+			bootargs += ' dns=%s ' % dns.split(',')[0]
 		if gateway:
 			bootargs += ' gateway=%s ' % gateway
 
