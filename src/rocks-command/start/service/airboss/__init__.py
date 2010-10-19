@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.4 2010/09/07 23:53:33 bruno Exp $
+# $Id: __init__.py,v 1.5 2010/10/19 19:09:58 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,11 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.5  2010/10/19 19:09:58  bruno
+# a VM may not have a VLAN id associated with it (e.g., it may be controlled
+# by a physical frontend). in that case, don't check the vlanid field. thanks
+# to phil for identifying this bug.
+#
 # Revision 1.4  2010/09/07 23:53:33  bruno
 # star power for gb
 #
@@ -265,9 +270,21 @@ class Command(rocks.commands.start.service.command):
 					networks where node = (select id from
 					nodes where name = '%s') and subnet =
 					(select id from subnets where name =
-					'private')""" % host)
+					'private') and vlanid is not NULL""" %
+					host)
 
-			if rows > 0:
+			if rows == 0:
+				#
+				# this VM doesn't have a VLAN assigned to it.
+				# it may be controlled by a physical frontend,
+				# so just get the name and MAC from the
+				# database
+				#
+				rows = self.db.execute("""select n.name,
+					net.mac from networks net, nodes n
+					where net.node = n.id
+					and net.mac = '%s' """ % dst_mac)
+			elif rows > 0:
 				vlanid, = self.db.fetchone()
 
 				rows = self.db.execute("""select n.name,
@@ -275,6 +292,7 @@ class Command(rocks.commands.start.service.command):
 					where net.vlanid = %s and
 					net.node = n.id""" % vlanid)
 
+			if rows:
 				for client, mac in self.db.fetchall():
 					if vm.isVM(client):
 						macs.append(mac)
