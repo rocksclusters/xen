@@ -1,4 +1,4 @@
-# $Id: plugin_xen.py,v 1.5 2010/09/07 23:53:34 bruno Exp $
+# $Id: plugin_xen.py,v 1.6 2010/10/21 19:13:10 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: plugin_xen.py,v $
+# Revision 1.6  2010/10/21 19:13:10  bruno
+# nuke cut and paste comment
+#
 # Revision 1.5  2010/09/07 23:53:34  bruno
 # star power for gb
 #
@@ -81,9 +84,6 @@ class Plugin(rocks.commands.Plugin):
 
 	def run(self, args):
 		if len(args) > 0:
-			#
-			# remove all partitions for this host
-			#
 			try:
 				self.owner.command('sync.host.network.xen',
 					args)
