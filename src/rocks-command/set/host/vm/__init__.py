@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.11 2010/09/07 23:53:33 bruno Exp $
+# $Id: __init__.py,v 1.12 2010/10/25 22:28:23 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,10 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.12  2010/10/25 22:28:23  bruno
+# after we detemine a 'physnode' is in the cluster with getHostname, let's
+# be sure to set the phynode name to what is returned by getHostname
+#
 # Revision 1.11  2010/09/07 23:53:33  bruno
 # star power for gb
 #
@@ -190,6 +194,8 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.set.command):
 			if len(p) > 1:
 				self.abort('too many physnodes. ' +
 					'only supply one physnode')
+
+			physnode = p[0]
 		
 		hosts = self.getHostnames(args)
 
