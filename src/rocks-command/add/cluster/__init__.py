@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.23 2010/09/07 23:53:32 bruno Exp $
+# $Id: __init__.py,v 1.24 2011/01/04 23:53:01 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.24  2011/01/04 23:53:01  bruno
+# fix help
+#
 # Revision 1.23  2010/09/07 23:53:32  bruno
 # star power for gb
 #
@@ -202,9 +205,9 @@ class Command(rocks.commands.add.command):
 	across all the VM containers.
 	</param>
 
-	<example cmd='add cluster vm.cluster.org 1.2.3.4 2'>
-	Create one frontend VM and assign it the name 'vm.cluster.org' with
-	the IP address '1.2.3.4' and create 2 compute node VMs.
+	<example cmd='add cluster 1.2.3.4 2'>
+	Create one frontend VM, assign it the IP address '1.2.3.4', and
+	create 2 compute node VMs.
 	</example>
 	"""
 
