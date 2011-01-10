@@ -15,6 +15,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-base.xml,v $
+Revision 1.34  2011/01/10 21:00:38  bruno
+need to touch /var/lock/subsys/xendomains in order to save running VMs
+
 Revision 1.33  2009/10/08 18:27:06  bruno
 it turns out that the frontend needs dom0-min-mem set too.
 
@@ -608,6 +611,27 @@ signing_key
 rm /dev/random
 mv /dev/random.orig /dev/random
 
+</post>
+
+
+<post>
+
+<!--
+	there is a bug in the xendomains startup script. if there are no
+	"saved" VMs (previously running VMs that were saved on shutdown),
+	then the script never touches the /var/lock/subsys/xendomains
+	file. this means that after a vm container is first installed, the
+	/var/lock/subsys/xendomains file will not exist and if a VM is
+	running when the container is shutdown, the xendomains 'stop' script
+	will not be run and the running VM will not be saved, thus the
+	running VM will not be restarted when the container is rebooted.
+-->
+
+<file name="/etc/rc.d/rocksconfig.d/post-50-xendomains" perms="755">
+#!/bin/bash
+
+touch /var/lock/subsys/xendomains
+</file>
 </post>
 
 
