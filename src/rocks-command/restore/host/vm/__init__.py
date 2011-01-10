@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.7 2010/09/07 23:53:33 bruno Exp $
+# $Id: __init__.py,v 1.8 2011/01/10 22:40:11 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.8  2011/01/10 22:40:11  bruno
+# fix restore and resume
+#
 # Revision 1.7  2010/09/07 23:53:33  bruno
 # star power for gb
 #
@@ -137,6 +140,5 @@ class Command(rocks.commands.restore.host.command):
 				#
 				hipervisor = libvirt.open('xen://%s/'
 					% physhost)
-				domU = hipervisor.lookupByName(host)
-				domU.restore(file)
+				hipervisor.restore(file)
 
