@@ -16,6 +16,13 @@
 
 <changelog>
 $Log: xen.xml,v $
+Revision 1.27  2011/01/11 19:05:35  bruno
+save the CA key and CA certificate that are used to authenticate libvirt
+messages.
+
+this will allow us to upgrade a xen-based frontend and still be able to
+communicate with VMs on vm containers *before* we reinstall the vm containers.
+
 Revision 1.26  2010/10/07 21:17:25  bruno
 any computing device can now host xen virtual machines
 
@@ -125,6 +132,10 @@ start of xen roll
 	</order> 
 
 	<order head="networking-server">
+		<tail>xen-server</tail>
+	</order>
+
+	<order head="restore-user-files">
 		<tail>xen-server</tail>
 	</order>
 

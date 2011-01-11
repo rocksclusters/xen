@@ -16,6 +16,13 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-server.xml,v $
+Revision 1.38  2011/01/11 19:05:35  bruno
+save the CA key and CA certificate that are used to authenticate libvirt
+messages.
+
+this will allow us to upgrade a xen-based frontend and still be able to
+communicate with VMs on vm containers *before* we reinstall the vm containers.
+
 Revision 1.37  2010/08/27 17:34:54  bruno
 firewall fixes
 
@@ -252,7 +259,10 @@ mkdir -p /etc/pki/CA/private
 mv /dev/random /dev/random.orig
 ln -s /dev/urandom /dev/random
 
-/usr/bin/certtool --generate-privkey > /etc/pki/CA/private/cakey.pem
+if [ ! -f /etc/pki/CA/private/cakey.pem ]
+then
+	/usr/bin/certtool --generate-privkey > /etc/pki/CA/private/cakey.pem
+fi
 
 <file name="/tmp/ca.info">
 cn = &Info_CertificateOrganization;
@@ -261,9 +271,12 @@ ca
 cert_signing_key
 </file>
 
-/usr/bin/certtool --generate-self-signed \
-	--load-privkey /etc/pki/CA/private/cakey.pem \
-	--template /tmp/ca.info --outfile /etc/pki/CA/cacert.pem
+if [ ! -f /etc/pki/CA/cacert.pem ]
+then
+	/usr/bin/certtool --generate-self-signed \
+		--load-privkey /etc/pki/CA/private/cakey.pem \
+		--template /tmp/ca.info --outfile /etc/pki/CA/cacert.pem
+fi
 
 /bin/rm -f /tmp/ca.info
 
@@ -301,6 +314,18 @@ cp /etc/pki/CA/private/cakey.pem /tmp/cakey.pem
 /opt/rocks/bin/rocks add host firewall localhost network=all service="8677" \
 	protocol="tcp" action="REJECT" chain="INPUT" \
 	comment="block airboss traffic from non-private interfaces"
+
+</post>
+
+
+<post>
+
+<!-- save the CA key and CA certificate on the restore roll -->
+
+<file name="/export/site-roll/rocks/src/roll/restore/xen-restore.mk">
+FILES	+= /etc/pki/CA/private/cakey.pem
+FILES	+= /etc/pki/CA/cacert.pem
+</file>
 
 </post>
 
