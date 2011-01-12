@@ -16,6 +16,12 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-server.xml,v $
+Revision 1.39  2011/01/12 21:01:12  bruno
+added a report to create the xendomains configuration file
+
+nuked vm-container.xml and vm-container-client.xml. we don't need these
+since xen-enabled nodes are now configured with the xen attribute.
+
 Revision 1.38  2011/01/11 19:05:35  bruno
 save the CA key and CA certificate that are used to authenticate libvirt
 messages.
@@ -165,6 +171,15 @@ Revision 1.1  2005/12/17 05:27:19  mjk
 
 chmod a+x /tmp/do-xen-bridge.sh
 /tmp/do-xen-bridge.sh
+
+
+<!-- create the xendomains configuration file -->
+
+/opt/rocks/bin/rocks report host xen xendomains &hostname; | \
+        /opt/rocks/bin/rocks report script > /tmp/do-xen-xendomains.sh
+
+chmod a+x /tmp/do-xen-xendomains.sh
+/tmp/do-xen-xendomains.sh
 
 </post>
 

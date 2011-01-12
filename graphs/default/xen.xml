@@ -16,6 +16,12 @@
 
 <changelog>
 $Log: xen.xml,v $
+Revision 1.28  2011/01/12 21:01:12  bruno
+added a report to create the xendomains configuration file
+
+nuked vm-container.xml and vm-container-client.xml. we don't need these
+since xen-enabled nodes are now configured with the xen attribute.
+
 Revision 1.27  2011/01/11 19:05:35  bruno
 save the CA key and CA certificate that are used to authenticate libvirt
 messages.
@@ -157,15 +163,12 @@ start of xen roll
 		<to>xen-server-db-data</to>
 		<to>xen-db</to>
 		<to>xen-base</to>
-		<to>vm-container</to>
 	</edge>
 
 	<edge from="client" cond="xen">
 		<to>xen-base</to>
 		<to>xen-client</to>
 		<to>xen-client-extra</to>
-		<to>vm-container</to>
-		<to>vm-container-client</to>
 	</edge>
 
 </graph>

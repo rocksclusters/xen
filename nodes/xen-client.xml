@@ -16,6 +16,12 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-client.xml,v $
+Revision 1.2  2011/01/12 21:01:12  bruno
+added a report to create the xendomains configuration file
+
+nuked vm-container.xml and vm-container-client.xml. we don't need these
+since xen-enabled nodes are now configured with the xen attribute.
+
 Revision 1.1  2009/05/07 22:30:33  bruno
 get the certs built correctly for libvirtd
 
@@ -35,6 +41,24 @@ cat &gt; /tmp/cakey.pem &lt;&lt; 'EOF'
 cat /etc/pki/CA/private/cakey.pem
 </eval>
 EOF
+
+</post>
+
+
+<post>
+
+<!-- Create the rocks-network-bridge script for xen --> 
+
+<eval mode="xml">
+/opt/rocks/bin/rocks report host xen bridge &hostname;
+</eval>
+
+
+<!-- create the xendomains configuration file -->
+
+<eval mode="xml">
+/opt/rocks/bin/rocks report host xen xendomains &hostname;
+</eval>
 
 </post>
 
