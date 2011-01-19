@@ -15,6 +15,12 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-base.xml,v $
+Revision 1.36  2011/01/19 22:44:40  bruno
+no longer need 'rocks-create-vlan'.
+
+the xen folks have fixed their bug and now we can add vlans on-the-fly on a
+xen kernel just like you can on a non-xen kernel.
+
 Revision 1.35  2011/01/12 21:01:12  bruno
 added a report to create the xendomains configuration file
 
@@ -134,7 +140,6 @@ Revision 1.1  2005/12/17 05:27:19  mjk
 <package>virt-manager</package>
 <package>rocks-boot-xen</package>
 <package>rocks-pygrub</package>
-<package>rocks-create-vlan</package>
 <package>gnutls-utils</package>
 
 

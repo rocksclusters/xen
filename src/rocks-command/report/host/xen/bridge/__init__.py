@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.14 2010/09/20 18:01:48 phil Exp $
+# $Id: __init__.py,v 1.15 2011/01/19 22:44:40 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,12 @@
 # @Copyright@ 
 #
 # $Log: __init__.py,v $
+# Revision 1.15  2011/01/19 22:44:40  bruno
+# no longer need 'rocks-create-vlan'.
+#
+# the xen folks have fixed their bug and now we can add vlans on-the-fly on a
+# xen kernel just like you can on a non-xen kernel.
+#
 # Revision 1.14  2010/09/20 18:01:48  phil
 # Move the service network restart from xenbrup to the main start stanza.
 # Restart the network only once after all bridges have been built
@@ -121,9 +127,9 @@ xenbrup () {
 		# check if the vlan is configured, if not, then configure it
 		#
 		ip link show $1 > /dev/null 2>&amp;1
-		if [ $? != 0 ]
+		if [ $? != 0 -a $3 != "" ]
 		then
-			/opt/rocks/bin/rocks-create-vlan $1
+			/sbin/vconfig add $1 $3
 		fi
 		
 		next_free_vifnum
@@ -205,8 +211,9 @@ class Command(rocks.commands.report.host.command):
 					device = self.getVlanDevice(host,
 						subnetid, vlanid)
 
-					bridges += '\txenbrup %s xenbr.%s\n' \
-						% (device, device)
+					bridges += '\txenbrup '
+					bridges += '%s xenbr.%s %s\n' \
+						% (device, device, vlanid)
 
 		s = script % (bridges)
 		self.addText(s)
