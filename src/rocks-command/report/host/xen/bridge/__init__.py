@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.15 2011/01/19 22:44:40 bruno Exp $
+# $Id: __init__.py,v 1.16 2011/01/26 17:56:56 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@ 
 #
 # $Log: __init__.py,v $
+# Revision 1.16  2011/01/26 17:56:56  bruno
+# new code to successfully add vlans dynamically on xen-based nodes
+#
 # Revision 1.15  2011/01/19 22:44:40  bruno
 # no longer need 'rocks-create-vlan'.
 #
@@ -115,26 +118,71 @@ import rocks.commands
 script = """<file name="/etc/xen/scripts/rocks-network-bridge" perms="755">
 #!/bin/bash
 
+get_vifnum () {
+	GETVIFNUM=`brctl show | awk -v bname=$1 'BEGIN { insection = 0;
+		brname = bname; }
+	{
+		if (match($1, brname)) {
+			if (split($1, a, ".") == 2) {
+				insection = 1;
+			}
+		}
+	}
+
+	/vif/ {
+		if (insection == 1) {
+			if (split($1, a, ".") == 2) {
+				print a[2];
+			}
+			insection = 0;
+		}
+	}'`
+}
+
 next_free_vifnum () {
 	VIFNUM=`ifconfig -a | awk '/^veth/ {print $1}' | head -1 | sed -e 's/^veth//'`
 }
 
 xenbrup () {
-	ip link show $2 > /dev/null 2>&amp;1
+	DEV=$1
+	if [ "$2" != "" ]
+	then
+		DEV=$DEV.$2
+	fi
+	BRIDGE=xenbr.$DEV
+
+	ip link show $BRIDGE > /dev/null 2>&amp;1
 	if [ $? != 0 ]
 	then
 		#
-		# check if the vlan is configured, if not, then configure it
+		# check if the vlan is configured, if not, then configure it,
+		# but before we configure it, bring down the physical bridge
 		#
-		ip link show $1 > /dev/null 2>&amp;1
-		if [ $? != 0 -a $3 != "" ]
+		ip link show $DEV > /dev/null 2>&amp;1
+		if [ $? != 0 -a "$2" != "" ]
 		then
-			/sbin/vconfig add $1 $3
+			ip link show xenbr.$1 > /dev/null 2>&amp;1
+			if [ $? == 0 ]
+			then
+				get_vifnum xenbr.$1
+
+				/etc/xen/scripts/network-bridge stop \\
+					netdev=$1 bridge=xenbr.$1 \\
+					vifnum=$GETVIFNUM
+
+				/sbin/vconfig add $1 $2
+
+				/etc/xen/scripts/network-bridge start \\
+					netdev=$1 bridge=xenbr.$1 \\
+					vifnum=$GETVIFNUM
+			else
+				/sbin/vconfig add $1 $2
+			fi
 		fi
 		
 		next_free_vifnum
-		/etc/xen/scripts/network-bridge start netdev=$1 \\
-			bridge=$2 vifnum=$VIFNUM
+		/etc/xen/scripts/network-bridge start netdev=$DEV \\
+			bridge=$BRIDGE vifnum=$VIFNUM
 
 	fi
 }
@@ -172,14 +220,25 @@ class Command(rocks.commands.report.host.command):
 
 		if rows:
 			dev, = self.db.fetchone()
-			device = '%s.%d' % (dev, vlanid)
+			device = '%s' % (dev)
 
 		return device
 			
 
 	def run(self, params, args):
 		bridges = ''
+
 		for host in self.getHostnames(args):
+			#
+			# order is important here -- we want all the vlan
+			# bridges to be created first, then the bridge for
+			# the physical interfaces. this is because when we
+			# create a vlan on-the-fly (that is, not during the
+			# first boot), then we must bring the physical bridge
+			# down before we create the vlan. and by having the
+			# physical bridge brought up last, we'll ensure that
+			# bridge is restarted when we dynamicall create vlans.
+
 			#
 			# create bridges for all physical interfaces that
 			# are configured with an IP address
@@ -193,8 +252,8 @@ class Command(rocks.commands.report.host.command):
 
 			if rows > 0:
 				for device, in self.db.fetchall():
-					bridges += '\txenbrup %s xenbr.%s\n' \
-						% (device, device)
+					bridges += '\txenbrup %s\n' % (device)
+			#
 
 			#
 			# create bridges for all VLANs
@@ -212,8 +271,8 @@ class Command(rocks.commands.report.host.command):
 						subnetid, vlanid)
 
 					bridges += '\txenbrup '
-					bridges += '%s xenbr.%s %s\n' \
-						% (device, device, vlanid)
+					bridges += '%s %s\n' \
+						% (device, vlanid)
 
 		s = script % (bridges)
 		self.addText(s)
