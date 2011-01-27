@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.16 2011/01/26 17:56:56 bruno Exp $
+# $Id: __init__.py,v 1.17 2011/01/27 20:06:31 bruno Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@ 
 #
 # $Log: __init__.py,v $
+# Revision 1.17  2011/01/27 20:06:31  bruno
+# tighten up the code
+#
 # Revision 1.16  2011/01/26 17:56:56  bruno
 # new code to successfully add vlans dynamically on xen-based nodes
 #
@@ -122,7 +125,7 @@ get_vifnum () {
 	GETVIFNUM=`brctl show | awk -v bname=$1 'BEGIN { insection = 0;
 		brname = bname; }
 	{
-		if (match($1, brname)) {
+		if (match($1, "^" brname "$")) {
 			if (split($1, a, ".") == 2) {
 				insection = 1;
 			}
@@ -156,7 +159,8 @@ xenbrup () {
 	then
 		#
 		# check if the vlan is configured, if not, then configure it,
-		# but before we configure it, bring down the physical bridge
+		# but before we configure it, make sure the physical bridge
+		# is down
 		#
 		ip link show $DEV > /dev/null 2>&amp;1
 		if [ $? != 0 -a "$2" != "" ]
@@ -169,15 +173,9 @@ xenbrup () {
 				/etc/xen/scripts/network-bridge stop \\
 					netdev=$1 bridge=xenbr.$1 \\
 					vifnum=$GETVIFNUM
-
-				/sbin/vconfig add $1 $2
-
-				/etc/xen/scripts/network-bridge start \\
-					netdev=$1 bridge=xenbr.$1 \\
-					vifnum=$GETVIFNUM
-			else
-				/sbin/vconfig add $1 $2
 			fi
+
+			/sbin/vconfig add $1 $2
 		fi
 		
 		next_free_vifnum
@@ -236,23 +234,9 @@ class Command(rocks.commands.report.host.command):
 			# create a vlan on-the-fly (that is, not during the
 			# first boot), then we must bring the physical bridge
 			# down before we create the vlan. and by having the
-			# physical bridge brought up last, we'll ensure that
-			# bridge is restarted when we dynamicall create vlans.
-
-			#
-			# create bridges for all physical interfaces that
-			# are configured with an IP address
-			#
-			rows = self.db.execute("""select net.device from
-				networks net, nodes n where net.node = n.id and
-				n.name = "%s" and net.ip is not NULL and
-				(net.vlanid is NULL or (net.vlanid is not NULL
-				and net.device not like 'vlan%%'))
-				order by net.id""" % (host))
-
-			if rows > 0:
-				for device, in self.db.fetchall():
-					bridges += '\txenbrup %s\n' % (device)
+			# physical bridge brought up last, we'll ensure the
+			# physical bridge is restarted when we dynamically
+			# create vlans.
 			#
 
 			#
@@ -273,6 +257,21 @@ class Command(rocks.commands.report.host.command):
 					bridges += '\txenbrup '
 					bridges += '%s %s\n' \
 						% (device, vlanid)
+
+			#
+			# create bridges for all physical interfaces that
+			# are configured with an IP address
+			#
+			rows = self.db.execute("""select net.device from
+				networks net, nodes n where net.node = n.id and
+				n.name = "%s" and net.ip is not NULL and
+				(net.vlanid is NULL or (net.vlanid is not NULL
+				and net.device not like 'vlan%%'))
+				order by net.id""" % (host))
+
+			if rows > 0:
+				for device, in self.db.fetchall():
+					bridges += '\txenbrup %s\n' % (device)
 
 		s = script % (bridges)
 		self.addText(s)
