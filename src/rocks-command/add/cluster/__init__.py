@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.24 2011/01/04 23:53:01 bruno Exp $
+# $Id: __init__.py,v 1.25 2011/02/14 04:36:22 phil Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.25  2011/02/14 04:36:22  phil
+# create cluster needs  a virt-type parameter, too.
+#
 # Revision 1.24  2011/01/04 23:53:01  bruno
 # fix help
 #
@@ -168,6 +171,11 @@ class Command(rocks.commands.add.command):
 
 	<param type='string' name='num-computes'>
 	Can be used in place of the num-computes argument.
+	</param>
+
+	<param type='string' name='virt-type'>
+	Defines the virtualization type as either paravirtualized (para) or
+        Hardware Virtualized (hvm).
 	</param>
 
 	<param type='string' name='cpus-per-compute'>
@@ -288,11 +296,11 @@ class Command(rocks.commands.add.command):
 			pass
 
 
-	def createFrontend(self, vlan, ip, disksize, gateway):
+	def createFrontend(self, vlan, ip, disksize, gateway, virtType):
 		output = self.command('add.host.vm', [ self.getFrontend(),
 			'membership=Frontend', 'num-macs=2',
 			'disksize=%s' % disksize, 'vlan=%d,0' % vlan,
-			'sync-config=n' ] )
+			'sync-config=n', 'virt-type=%s' % virtType ] )
 
 		self.frontendname = None
 
@@ -335,7 +343,7 @@ class Command(rocks.commands.add.command):
 
 
 	def createComputes(self, vlan, computes, containers,
-		cpus_per_compute, mem_per_compute, disk_per_compute):
+		cpus_per_compute, mem_per_compute, disk_per_compute,virtType):
 
 		self.computenames = []
 
@@ -348,7 +356,7 @@ class Command(rocks.commands.add.command):
 				'mem=%s' % mem_per_compute,
 				'disksize=%s' % disk_per_compute,
 				'vlan=%d' % vlan,
-				'sync-config=n' ] )
+				'sync-config=n', 'virt-type=%s' % virtType ] )
 
 			line = output.split()
 			if line[0] == 'added' and line[1] == 'VM':
@@ -396,7 +404,7 @@ class Command(rocks.commands.add.command):
 		# fillParams with the above default values
 		#
 		(cpus_per_compute, mem_per_compute, disk_per_compute,
-			disk_per_frontend, container_hosts, vlan, gateway) = \
+			disk_per_frontend, container_hosts, vlan, gateway,virtType) = \
 			self.fillParams(
 				[('cpus-per-compute', 1),
 				('mem-per-compute', 1024),
@@ -404,8 +412,14 @@ class Command(rocks.commands.add.command):
 				('disk-per-frontend', 36),
 				('container-hosts', None),
 				('vlan', None),
-				('gateway', None)
+				('gateway', None),
+				('virt-type','para')
 				])
+
+		
+		virtType=virtType.lower()
+		if virtType != 'para' and virtType != 'hvm':
+			self.abort("Virtualization type must be either 'para' or 'hvm'")
 
 		if vlan:
 			try:
@@ -433,13 +447,13 @@ class Command(rocks.commands.add.command):
 		#
 		# create the frontend VM
 		#
-		self.createFrontend(vlanid, ip, disk_per_frontend, gateway)
+		self.createFrontend(vlanid, ip, disk_per_frontend, gateway, virtType)
 
 		#
 		# create the compute nodes
 		#
 		self.createComputes(vlanid, computes, containers,
-			cpus_per_compute, mem_per_compute, disk_per_compute)
+			cpus_per_compute, mem_per_compute, disk_per_compute, virtType)
 
 		#
 		# reconfigure and restart the appropriate rocks services
