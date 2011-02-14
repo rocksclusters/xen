@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.35 2010/09/07 23:53:32 bruno Exp $
+# $Id: __init__.py,v 1.36 2011/02/14 04:19:14 phil Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,10 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.36  2011/02/14 04:19:14  phil
+# Now support HVM as well as paravirtual instances.
+# Preliminary testing on 64bit complete.
+#
 # Revision 1.35  2010/09/07 23:53:32  bruno
 # star power for gb
 #
@@ -207,6 +211,11 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 	Can be used in place of the membership argument.
 	</param>
 
+	<param type='string' name='virt-type'>
+	Virtualization Type. Valid Values are [para,hvm]. Defaults
+	to para for paravirtualized. 
+	</param>
+
 	<param type='string' name='name'>
 	The name to assign to the VM (e.g., 'compute-0-0-0').
 	</param>
@@ -285,7 +294,7 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 
 	def addToDB(self, nodename, membership, ip, subnet, physnodeid, rack,
 		rank, mem, cpus, slice, mac, num_macs, disk, disksize, vlanids,
-		module):
+		module, virt_type):
 
 		#
 		# need to add entry in node and networks tables here
@@ -381,8 +390,8 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 				vlanindex += 1
 
 		rows = self.db.execute("""insert into vm_nodes (physnode, node,
-			mem, slice) values (%s, %s, %s, %s)""" %
-			(physnodeid, vmnodeid, mem, slice))
+			mem, slice, virt_type) values (%s, %s, %s, %s, '%s')""" %
+			(physnodeid, vmnodeid, mem, slice, virt_type))
 
 		if rows == 1:
 			rows = self.db.execute("""select last_insert_id()""")
@@ -588,7 +597,7 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 				
 
 	def addVMHost(self, host, membership, nodename, ip, subnet, mem, cpus,
-		slice, mac, num_macs, disk, disksize, vlan, module):
+		slice, mac, num_macs, disk, disksize, vlan, module, virt_type):
 
 		rows = self.db.execute("""select id, rack, rank from nodes where
 			name = '%s'""" % (host))
@@ -691,14 +700,19 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 		#
 		self.addToDB(nodename, membership, ip, subnet, nodeid, rack,
 			rank, mem, cpus, slice, mac, num_macs, disk, disksize,
-			vlanids, module)
+			vlanids, module, virt_type)
 
 		#
 		# set the default installaction
 		#
-		self.command('set.host.installaction', [ nodename,
-			'install vm' ] )
+		if virt_type == 'para':
+			self.command('set.host.installaction', [ nodename,
+				'install vm' ] )
 
+		# HVMs boot just like real hardware
+		if virt_type == 'hvm':
+			self.command('set.host.installaction', [ nodename, 'install' ] )
+			self.command('set.host.runaction', [ nodename, 'os' ] )
 		#
 		# set the first boot state to 'install'
 		#
@@ -726,7 +740,7 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 		# fillParams with the above default values
 		#
 		(nodename, ip, subnet, mem, cpus, slice, mac, macs, disk,
-			disksize, vlan, sync_config) = self.fillParams(
+			disksize, vlan, sync_config, virt_type) = self.fillParams(
 				[('name', None),
 				('ip', None),
 				('subnet', 'private'),
@@ -738,8 +752,11 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 				('disk', None),
 				('disksize', 36),
 				('vlan', None),
-				('sync-config', 'y')
+				('sync-config', 'y'),
+				('virt-type', 'para')
 				])
+
+		virt_type=virt_type.lower()
 
 		hosts = self.getHostnames(args)
 
@@ -756,7 +773,8 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 			if mac:
 				self.abort("can't supply the 'mac' " +
 					"parameter with more than one host")
-
+			if virt_type != 'para' and virt_type != 'hvm':
+				self.abort("Virtualization type must be either 'hvm' or 'para'")
 		try:
 			num_macs = int(macs)
 		except:
@@ -772,7 +790,7 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 		for host in hosts:
 			self.addVMHost(host, membership, nodename, ip, subnet,
 				mem, cpus, slice, mac, num_macs, disk, disksize,
-				vlan, module)
+				vlan, module,virt_type)
 
 		syncit = self.str2bool(sync_config)
 

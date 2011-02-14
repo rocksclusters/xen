@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.15 2010/09/07 23:53:32 bruno Exp $
+# $Id: __init__.py,v 1.16 2011/02/14 04:19:14 phil Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,10 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.16  2011/02/14 04:19:14  phil
+# Now support HVM as well as paravirtual instances.
+# Preliminary testing on 64bit complete.
+#
 # Revision 1.15  2010/09/07 23:53:32  bruno
 # star power for gb
 #
@@ -234,14 +238,15 @@ class Command(rocks.commands.list.host.command):
 			# get the VM configuration parameters
 			#
 			rows = self.db.execute("""select vn.id, vn.mem,
-				n.cpus, vn.slice from nodes n, vm_nodes vn
+				n.cpus, vn.slice, vn.virt_type 
+				from nodes n, vm_nodes vn
 				where vn.node = n.id and n.name = '%s'""" %
 				host)
 
 			if rows < 1:
 				continue
 
-			for vmnodeid, mem, cpus, slice in self.db.fetchall():
+			for vmnodeid, mem, cpus, slice, virt_type in self.db.fetchall():
 				if not vmnodeid:
 					continue
 
@@ -282,7 +287,12 @@ class Command(rocks.commands.list.host.command):
 					disk = ''
 					disksize = ''
 
-				info = (slice, mem, cpus, mac, physhost)
+				if not virt_type or virt_type is None:
+					virtType = "para"
+				else:
+					virtType = virt_type
+
+				info = (slice, mem, cpus, mac, physhost, virtType)
 				if showstatus:
 					info += (self.getStatus(physhost,
 						host),)
@@ -314,7 +324,7 @@ class Command(rocks.commands.list.host.command):
 
 					index += 1
 
-		header = [ 'vm-host', 'slice', 'mem', 'cpus', 'mac', 'host' ]
+		header = [ 'vm-host', 'slice', 'mem', 'cpus', 'mac', 'host', 'virt-type' ]
 
 		if showstatus:
 			header.append('status')

@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.12 2010/10/25 22:28:23 bruno Exp $
+# $Id: __init__.py,v 1.13 2011/02/14 04:19:14 phil Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,10 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.13  2011/02/14 04:19:14  phil
+# Now support HVM as well as paravirtual instances.
+# Preliminary testing on 64bit complete.
+#
 # Revision 1.12  2010/10/25 22:28:23  bruno
 # after we detemine a 'physnode' is in the cluster with getHostname, let's
 # be sure to set the phynode name to what is returned by getHostname
@@ -140,7 +144,7 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.set.command):
 
 	<param type='string' name='virt-type'>
 	Set the virtualization type for this VM. This can be 'para' or
-	'hardware'.
+	'hvm'.
 	</param>
 
 	<example cmd='set host vm compute-0-0-0 mem=4096'>
@@ -315,7 +319,10 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.set.command):
 				(slice, vmnodeid))
 
 		if virt_type and virt_type != 'None':
-			rows = self.db.execute("""update vm_nodes set
-				virt_type = %s where id = %d""" %
-				(virt_type, vmnodeid))
-
+			virt_type=virt_type.lower()
+			if virt_type == 'para' or virt_type == 'hvm':
+				rows = self.db.execute("""update vm_nodes set
+					virt_type = '%s' where id = %d""" %
+					(virt_type, vmnodeid))
+			else:
+				self.abort("virt-type must be either 'hvm' or 'para'")	

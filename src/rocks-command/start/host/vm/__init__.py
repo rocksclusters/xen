@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.24 2010/09/20 17:55:50 phil Exp $
+# $Id: __init__.py,v 1.25 2011/02/14 04:19:14 phil Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,10 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.25  2011/02/14 04:19:14  phil
+# Now support HVM as well as paravirtual instances.
+# Preliminary testing on 64bit complete.
+#
 # Revision 1.24  2010/09/20 17:55:50  phil
 # Allow VMs to define interfaces with no MAC addresses. In this case, do
 # not bridge the interface in dom0.
@@ -184,191 +188,6 @@ class Command(rocks.commands.start.host.command):
 	</example>
 	"""
 
-	def getBridgeName(self, host, subnetid, vlanid):
-		bridge = None
-
-		if vlanid:
-			#
-			# first make sure the vlan is defined for the physical
-			# host and get the logical subnet where the vlan is tied
-			#
-			rows = self.db.execute("""select net.subnet from
-				networks net, nodes n where net.node = n.id and
-				n.name = '%s' and (net.device like 'vlan%%' or
-				net.device like '%%.%d') and
-				net.vlanid = %d""" % (host, vlanid, vlanid))
-
-			if rows == 0:
-				self.abort('vlan %d not defined for host %s' %
-					(vlanid, host))
-			vlanOnLogical, = self.db.fetchone()
-
-			rows = self.db.execute("""select net.device from
-				networks net, nodes n where net.node = n.id
-				and n.name = '%s' and
-				net.device not like 'vlan%%' and
-				net.subnet = %d""" % (host, vlanOnLogical))
-		else:
-			rows = self.db.execute("""select net.device from
-				networks net, nodes n where net.node = n.id and
-				n.name = '%s' and net.ip is not NULL and
-				net.device not like 'vlan%%' and
-				net.subnet = %d""" % (host, subnetid))
-		if rows:
-			dev, = self.db.fetchone()
-			bridge = 'xenbr.%s' % (dev)
-			if vlanid:
-				reg = re.compile('.*\.%d' % vlanid)
-				if not reg.match(dev):
-					bridge = 'xenbr.%s.%d' % (dev, vlanid)
-
-		return bridge
-
-	def getXMLconfig(self, physhost, host):
-		xmlconfig = []
-
-		xmlconfig.append("<domain type='xen'>")
-		xmlconfig.append("<name>%s</name>" % host)
-
-		a = "<bootloader>/opt/rocks/bin/rocks-pygrub</bootloader>"
-		xmlconfig.append(a)
-
-		a = "<bootloader_args>--hostname=%s</bootloader_args>" % host
-		xmlconfig.append(a)
-
-		#
-		# get the VM parameters
-		#
-		vmnodeid = None
-		mem = None
-		cpus = None
-		slice = None
-		macs = None
-		disks = None
-
-		rows = self.db.execute("""select vn.id, vn.mem, n.cpus
-			from nodes n, vm_nodes vn where vn.node = n.id and
-			n.name = '%s'""" % host)
-
-		vmnodeid, mem, cpus = self.db.fetchone()
-		if not vmnodeid or not mem or not cpus:
-			return
-
-		try:
-			memory = int(mem) * 1024
-		except:
-			return
-
-		xmlconfig.append("<memory>%s</memory>" % memory)	
-		xmlconfig.append("<vcpu>%s</vcpu>" % cpus)	
-
-		#
-		# configure the devices
-		#
-		xmlconfig.append("<devices>")
-
-		#
-		# network config
-		#
-		rows = self.db.execute("""select net.mac, net.subnet, net.vlanid
-			from networks net, nodes n, vm_nodes vn
-			where vn.node = n.id and net.node = n.id and
-			n.name = '%s' order by net.id""" % host)
-
-		macs = self.db.fetchall()
-		if not macs:
-			return
-
-		vifs = []
-		index = 0
-		for mac, subnetid, vlanid in macs:
-			# allow VMs to have virtual and VLAN interfaces
-			if mac is not None:
-				xmlconfig.append("<interface type='bridge'>")
-	
-				bridge = self.getBridgeName(physhost, subnetid, vlanid)
-				xmlconfig.append("<source bridge='%s'/>" % bridge)
-				xmlconfig.append("<mac address='%s'/>" % mac)
-				xmlconfig.append("<script path='vif-bridge'/>")
-	
-				xmlconfig.append("</interface>")
-				index += 1
-
-		#
-		# disk config
-		#
-		rows = self.db.execute("""select vbd_type, prefix, name,
-			device, mode, size from vm_disks where vm_node = %s
-			order by id""" % vmnodeid)
-		disks = self.db.fetchall()
-		if not disks:
-			return
-
-		vmdisks = []
-		index = 0
-		bootdisk = None
-		bootdevice = None
-		for vbd_type,prefix,name,device,mode,size in disks:
-			#
-			# if the disk specification is a 'regular' file, then
-			# make sure the file for the disk space exists. if
-			# it doesn't, create a sparse file for the disk space.
-			#
-			file = os.path.join(prefix, name)
-
-			if vbd_type in [ 'file', 'tap:aio' ]:
-				a = "<disk type='file' device='disk'>"
-				xmlconfig.append(a)
-
-				if vbd_type == 'file':
-					a = "<driver name='file'/>"
-				elif vbd_type == 'tap:aio':
-					a = "<driver name='tap' type='aio'/>"
-				xmlconfig.append(a)
-
-				a = "<source file='%s'/>" % file
-				xmlconfig.append(a)
-
-				a = "<target dev='%s'/>" % device
-				xmlconfig.append(a)
-
-				a = "</disk>"
-				xmlconfig.append(a)
-
-			elif vbd_type == 'phy':
-				a = "<disk type='block' device='disk'>"
-				xmlconfig.append(a)
-
-				a = "<source dev='/dev/%s'/>" % name
-				xmlconfig.append(a)
-
-				a = "<target dev='%s'/>" % device
-				xmlconfig.append(a)
-
-				a = "</disk>"
-				xmlconfig.append(a)
-				
-		#
-		# the extra devices
-		#
-		xmlconfig.append("<input type='mouse' bus='xen'/>")
-		xmlconfig.append("<graphics type='vnc' port='-1'/>")
-		xmlconfig.append("<console tty='/dev/pts/0'/>")
-
-		xmlconfig.append("</devices>")
-
-		#
-		# what to do on power on/off and crashes
-		#
-		xmlconfig.append("<on_poweroff>destroy</on_poweroff>")
-		xmlconfig.append("<on_reboot>restart</on_reboot>")
-		xmlconfig.append("<on_crash>preserve</on_crash>")
-
-		xmlconfig.append("</domain>")
-
-		return '\n'.join(xmlconfig)
-
-
 	def bootVM(self, physhost, host, xmlconfig):
 		hipervisor = libvirt.open('xen://%s/' % physhost)
 
@@ -380,13 +199,18 @@ class Command(rocks.commands.start.host.command):
 
 		retry = 0
 
+		virtType = self.command('report.host.vm.virt_type', [ host,]).strip()
+
 		try:
 			hipervisor.createLinux(xmlconfig, 0)
-			self.command('set.host.boot',
-				[ host, "action=os" ])
+			if virtType != 'hvm' :
+				self.command('set.host.boot',[ host, "action=os" ])
+
 		except libvirt.libvirtError, m:
 			str = '%s' % m
-			if str.find("Disk isn't accessible") >= 1:
+			NoDisk = str.find("Disk isn't accessible") >= 1 or \
+					 str.find("Disk image does not exist") >= 1
+			if NoDisk:
 				#
 				# the disk hasn't been created yet,
 				# call a program to set them up, then
@@ -404,7 +228,8 @@ class Command(rocks.commands.start.host.command):
 
 		if retry:
 			hipervisor.createLinux(xmlconfig, 0)
-			self.command('set.host.boot', [ host, "action=os" ])
+			if virtType != 'hvm' :
+				self.command('set.host.boot',[ host, "action=os" ])
 
 		return
 
@@ -451,7 +276,7 @@ class Command(rocks.commands.start.host.command):
 			#
 			# get the VM configuration (in XML format for libvirt)
 			#
-			xmlconfig = self.getXMLconfig(physhost, host)
+			xmlconfig = self.command('report.host.vm.config', [ host ])
 
 			#
 			# boot the VM
