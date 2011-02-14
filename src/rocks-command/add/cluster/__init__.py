@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.25 2011/02/14 04:36:22 phil Exp $
+# $Id: __init__.py,v 1.26 2011/02/14 04:38:39 phil Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.26  2011/02/14 04:38:39  phil
+# Explicitly state default for virtualization type
+#
 # Revision 1.25  2011/02/14 04:36:22  phil
 # create cluster needs  a virt-type parameter, too.
 #
@@ -175,7 +178,7 @@ class Command(rocks.commands.add.command):
 
 	<param type='string' name='virt-type'>
 	Defines the virtualization type as either paravirtualized (para) or
-        Hardware Virtualized (hvm).
+        Hardware Virtualized (hvm). Default is para.
 	</param>
 
 	<param type='string' name='cpus-per-compute'>
