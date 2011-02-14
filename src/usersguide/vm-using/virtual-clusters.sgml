@@ -345,7 +345,7 @@ Then click "Download".
 
 <para>
 From here, you want to follow the
-<ulink url="/roll-documentation/base/&document_version;/install-frontend.html">standard procedure for bringing up a frontend</ulink> starting at Step 8.
+<ulink url="/roll-documentation/base/&document-version;/install-frontend.html">standard procedure for bringing up a frontend</ulink> starting at Step 8.
 </para>
 
 <para>

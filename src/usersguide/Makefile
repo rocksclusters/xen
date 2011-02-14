@@ -1,5 +1,5 @@
 # 
-# $Id: Makefile,v 1.12 2010/09/07 23:53:34 bruno Exp $
+# $Id: Makefile,v 1.13 2011/02/14 22:14:17 mjk Exp $
 #
 # @Copyright@
 # 
@@ -55,6 +55,13 @@
 # @Copyright@
 #
 # $Log: Makefile,v $
+# Revision 1.13  2011/02/14 22:14:17  mjk
+# - Build Env
+#   - ROLLNAME defaults to ROLL
+#   - Fixes for docbook
+# - All userguides build again
+# - All userguides are now NOARCH rpms
+#
 # Revision 1.12  2010/09/07 23:53:34  bruno
 # star power for gb
 #
@@ -129,10 +136,10 @@ include Rules.mk
 
 default: $(NAME).spec ../$(NAME)-$(VERSION).tar.gz
 
-html:
+html: predoc
 	jw --backend html --dsl $(PWD)/rocks.dsl#html index.sgml 
 
-pdf:
+pdf: predoc
 	jw --backend pdf --dsl $(PWD)/rocks.dsl#print index.sgml
 
 build: html pdf

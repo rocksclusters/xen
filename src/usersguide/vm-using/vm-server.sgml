@@ -11,7 +11,7 @@ Building a VM Server is just like building a traditional frontend, except
 that you <emphasis>must supply the Xen Roll during the frontend
 installation</emphasis>.
 Follow the procedure
-<ulink url="/roll-documentation/base/&document_version;/install-frontend.html">
+<ulink url="/roll-documentation/base/&document-version;/install-frontend.html">
 Install and Configure Your Frontend</ulink> and be sure to supply the Xen Roll.
 </para>
 
