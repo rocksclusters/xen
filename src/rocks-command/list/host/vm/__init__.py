@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.16 2011/02/14 04:19:14 phil Exp $
+# $Id: __init__.py,v 1.17 2011/03/24 23:30:01 bruno Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,10 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.17  2011/03/24 23:30:01  bruno
+# make sure the 'virt-type' field is set to None for every
+# disk specification that is not the first one.
+#
 # Revision 1.16  2011/02/14 04:19:14  phil
 # Now support HVM as well as paravirtual instances.
 # Preliminary testing on 64bit complete.
@@ -318,7 +322,7 @@ class Command(rocks.commands.list.host.command):
 					if showstatus:
 						info += (None,)
 					if showdisks:
-						info += (disk, disksize)
+						info += (None, disk, disksize)
 
 					self.addOutput(host, info)
 
