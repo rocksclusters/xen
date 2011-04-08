@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.26 2011/02/14 04:38:39 phil Exp $
+# $Id: __init__.py,v 1.27 2011/04/08 23:22:50 phil Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,11 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.27  2011/04/08 23:22:50  phil
+# Ability to put frontend on arbitrary vm-container and set its name.
+# If no Vm-containers specified and none exist, put "computes" on frontend so
+# one can build a virtual cluster on a single physical node.
+#
 # Revision 1.26  2011/02/14 04:38:39  phil
 # Explicitly state default for virtualization type
 #
@@ -216,6 +221,15 @@ class Command(rocks.commands.add.command):
 	across all the VM containers.
 	</param>
 
+	<param type='string' name='fe-name'>
+	name to for labeling the frontend. defaults to frontend-0-0-n, where
+	n is assigned
+	</param>
+
+	<param type='string' name='fe-container'>
+	Hosting machine for virtual frontend. Defaults to the physical frontend
+	</param>
+
 	<example cmd='add cluster 1.2.3.4 2'>
 	Create one frontend VM, assign it the IP address '1.2.3.4', and
 	create 2 compute node VMs.
@@ -299,11 +313,17 @@ class Command(rocks.commands.add.command):
 			pass
 
 
-	def createFrontend(self, vlan, ip, disksize, gateway, virtType):
-		output = self.command('add.host.vm', [ self.getFrontend(),
-			'membership=Frontend', 'num-macs=2',
+	def createFrontend(self, vlan, ip, disksize, gateway, virtType, FEName, FEContainer):
+		
+		args = [ FEContainer, 'membership=Frontend', 'num-macs=2',
 			'disksize=%s' % disksize, 'vlan=%d,0' % vlan,
-			'sync-config=n', 'virt-type=%s' % virtType ] )
+			'sync-config=n', 'virt-type=%s' % virtType ]
+
+		if FEName is not None:
+			args.append('name=%s' % FEName)
+		  
+	
+		output = self.command('add.host.vm', args)
 
 		self.frontendname = None
 
@@ -312,7 +332,7 @@ class Command(rocks.commands.add.command):
 			self.frontendname = line[2]
 		else:
 			self.abort('failed to create a frontend VM on host %s'
-				% self.getFrontend())
+				% FEContainer)
 
 		#
 		# configure the public network for the VM frontend
@@ -349,6 +369,12 @@ class Command(rocks.commands.add.command):
 		cpus_per_compute, mem_per_compute, disk_per_compute,virtType):
 
 		self.computenames = []
+		
+		# If we have no VM-containers, then put all compute
+                # VM's on the frontend
+
+		if containers == []:
+			containers.append(self.getFrontend())
 
 		for i in range(0, computes):
 			host = containers[i % len(containers)]
@@ -407,7 +433,8 @@ class Command(rocks.commands.add.command):
 		# fillParams with the above default values
 		#
 		(cpus_per_compute, mem_per_compute, disk_per_compute,
-			disk_per_frontend, container_hosts, vlan, gateway,virtType) = \
+			disk_per_frontend, container_hosts, vlan, gateway,
+			virtType,FEName, FEContainer) = \
 			self.fillParams(
 				[('cpus-per-compute', 1),
 				('mem-per-compute', 1024),
@@ -416,7 +443,9 @@ class Command(rocks.commands.add.command):
 				('container-hosts', None),
 				('vlan', None),
 				('gateway', None),
-				('virt-type','para')
+				('virt-type','para'),
+				('fe-name',None),
+				('fe-container',self.getFrontend())
 				])
 
 		
@@ -450,7 +479,7 @@ class Command(rocks.commands.add.command):
 		#
 		# create the frontend VM
 		#
-		self.createFrontend(vlanid, ip, disk_per_frontend, gateway, virtType)
+		self.createFrontend(vlanid, ip, disk_per_frontend, gateway, virtType, FEName, FEContainer)
 
 		#
 		# create the compute nodes
