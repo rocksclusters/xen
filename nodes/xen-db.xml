@@ -16,6 +16,9 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-db.xml,v $
+Revision 1.11  2011/06/08 19:51:51  anoop
+Database security now moved away from node files into scriptable format
+
 Revision 1.10  2010/07/31 01:02:03  bruno
 first stab at putting in 'shadow' values in the database that non-root
 and non-apache users can't read
@@ -76,9 +79,6 @@ CREATE TABLE vm_nodes (
 	PRIMARY KEY (ID)
 ) TYPE=MyISAM;
 
-grant select on cluster.vm_nodes to ''@'localhost';
-grant select on cluster.vm_nodes to ''@'%.local';
-
 DROP TABLE IF EXISTS vm_disks;
 CREATE TABLE vm_disks (
 	ID		int(11) NOT NULL auto_increment,
@@ -92,15 +92,13 @@ CREATE TABLE vm_disks (
 	PRIMARY KEY (ID)
 ) TYPE=MyISAM;
 
-grant select on cluster.vm_disks to ''@'localhost';
-grant select on cluster.vm_disks to ''@'%.local';
-
 </file>
 
-/opt/rocks/bin/mysql --user=root --password='' cluster &lt; /tmp/xen-tables.sql
+/opt/rocks/bin/mysql --defaults-extra-file=/root/.rocks.my.cnf \
+	--user=root cluster &lt; /tmp/xen-tables.sql
 
+/opt/rocks/sbin/rocks-db-perms
 </post>
-
 
 </kickstart>
 
