@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.36 2011/02/14 04:19:14 phil Exp $
+# $Id: __init__.py,v 1.37 2011/06/23 20:29:07 phil Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.37  2011/06/23 20:29:07  phil
+# Call add.host command instead of inserting manually.
+#
 # Revision 1.36  2011/02/14 04:19:14  phil
 # Now support HVM as well as paravirtual instances.
 # Preliminary testing on 64bit complete.
@@ -334,16 +337,22 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 		#
 		# we're good to go -- add the VM to the nodes table
 		#
-		rows = self.db.execute("""insert into nodes (name, membership,
-			cpus, rack, rank) values ('%s', %s, %s, %s, %s)""" %
-			(nodename, membershipid, cpus, rack, rank))
+		# use add host command directly
+
+		success = self.command('add.host', [ nodename, 
+				'membership=%s' % membership, 
+				'cpus=%d' % int(cpus),
+				'rack=%d' % int(rack),
+				'rank=%d' % int(rank),
+				'os=linux'])
+
+		rows = self.db.execute("""SELECT ID FROM nodes WHERE
+			name='%s'""" % nodename) 
 
 		if rows == 1:
-			rows = self.db.execute("""select last_insert_id()""")
-			if rows == 1:
-				vmnodeid, = self.db.fetchone()
-			else:
-				self.abort('could not get node id for new VM')
+			vmnodeid, = self.db.fetchone()
+		else:
+			self.abort('could not get node id for new VM')
 
 		rows = self.db.execute("""insert into networks (node, mac, ip,
 			name, device, subnet, module) values (%s, '%s', %s,
