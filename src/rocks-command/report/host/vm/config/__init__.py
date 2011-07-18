@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.1 2011/02/14 04:19:14 phil Exp $
+# $Id: __init__.py,v 1.2 2011/07/18 20:21:34 phil Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,10 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.2  2011/07/18 20:21:34  phil
+# Give some diagnostics when creating a cluster.
+# Support HVM_Features attribute to turn on/off services.
+#
 # Revision 1.1  2011/02/14 04:19:14  phil
 # Now support HVM as well as paravirtual instances.
 # Preliminary testing on 64bit complete.
@@ -183,9 +187,11 @@ class Command(rocks.commands.report.host.command):
 		xmlconfig.append("<vcpu>%s</vcpu>" % cpus)	
 
 		if virtType == 'hvm':
+			features = self.db.getHostAttr(host,'HVM_Features')
+			if features is None :
+				features = """\t<acpi/>\n\t<apic/>\n\t<pae/>"""
 			xmlconfig.append("<features>")
-			xmlconfig.append("   <acpi/>")
-			xmlconfig.append("   <pae/>")
+			xmlconfig.append(features)
 			xmlconfig.append("</features>")
 
 		#
@@ -329,3 +335,5 @@ class Command(rocks.commands.report.host.command):
 
 		self.endOutput(padChar='')
 	
+
+RollName = "xen"

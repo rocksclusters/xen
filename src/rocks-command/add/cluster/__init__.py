@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.27 2011/04/08 23:22:50 phil Exp $
+# $Id: __init__.py,v 1.28 2011/07/18 20:21:34 phil Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,10 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.28  2011/07/18 20:21:34  phil
+# Give some diagnostics when creating a cluster.
+# Support HVM_Features attribute to turn on/off services.
+#
 # Revision 1.27  2011/04/08 23:22:50  phil
 # Ability to put frontend on arbitrary vm-container and set its name.
 # If no Vm-containers specified and none exist, put "computes" on frontend so
@@ -279,41 +283,27 @@ class Command(rocks.commands.add.command):
 		return fqdn.split('.')[0]
 
 
-	def configVlan(self, vlan):
-		hosts = []
-
+	def addVlanToHost(self, host, vlan, subnet, syncHosts):
 		#
-		# create a list of all the physical machines that can host
-		# VMs. we'll assume the local machine can host VMs.
+		# configure the vlan on host 
 		#
-		hosts.append(self.getFrontend())
-		hosts += self.getVMContainers()
-
-		#
-		# configure the vlan for each host
-		#
-		for host in hosts:
-			#
-			# add the vlan definition to the database
-			#
-			self.command('add.host.interface', [ host,
-				'iface=vlan%d' % vlan, 'subnet=private',
-				'vlan=%d' % vlan])
-
-		#
-		# reconfigure the network stack on the host
-		#
-		# need to catch exceptions -- when the network is
-		# reconfigured on a remote host, the connection is
-		# dropped, which results in an I/O error
-		#
+		self.db.execute("""SELECT net.vlanid FROM networks net,nodes n 
+			WHERE net.vlanid=%d 
+			AND net.node=n.id AND n.name='%s' """ %(vlan,host))
+		if self.db.fetchone() :
+				# interface already exists. That's OK
+				return
 		try:
-			self.command('sync.host.network', hosts)
+			output = self.command('add.host.interface', [ host,
+				'iface=vlan%d' % vlan, 'subnet=%s' % subnet,
+				'vlan=%d' % vlan])
+			if host not in syncHosts:
+				syncHosts.append(host)
 		except:
-			pass
+			self.abort ("could not add vlan %d \
+			(network=%s) for host %s\n" % (vlan, subnet,host))
 
-
-	def createFrontend(self, vlan, ip, disksize, gateway, virtType, FEName, FEContainer):
+	def createFrontend(self, vlan, subnet, ip, disksize, gateway, virtType, FEName, FEContainer, syncHosts):
 		
 		args = [ FEContainer, 'membership=Frontend', 'num-macs=2',
 			'disksize=%s' % disksize, 'vlan=%d,0' % vlan,
@@ -323,6 +313,8 @@ class Command(rocks.commands.add.command):
 			args.append('name=%s' % FEName)
 		  
 	
+		self.addVlanToHost( FEContainer, vlan, subnet, syncHosts)
+
 		output = self.command('add.host.vm', args)
 
 		self.frontendname = None
@@ -350,10 +342,16 @@ class Command(rocks.commands.add.command):
 		#
 		# set the run and install actions for this VM
 		#
-		self.command('set.host.runaction', [ self.frontendname,
-			'none' ] )
-		self.command('set.host.installaction', [ self.frontendname,
-			'install vm frontend' ] )
+		if virtType == 'hvm' :
+			self.command('set.host.runaction', [ self.frontendname,
+				'os' ] )
+			self.command('set.host.installaction', [ self.frontendname,
+				'install frontend' ] )
+		else:
+			self.command('set.host.runaction', [ self.frontendname,
+				'none' ] )
+			self.command('set.host.installaction', [ self.frontendname,
+				'install vm frontend' ] )
 
 		#
 		# set the default boot action to be 'install'
@@ -361,12 +359,12 @@ class Command(rocks.commands.add.command):
 		self.command('set.host.boot', [ self.frontendname,
 			'action=install' ] )
 
-		self.addOutput('', 'created frontend VM named: %s' % 
-			self.frontendname)
+		print  '\tcreated frontend VM named: %s' % self.frontendname
 
 
-	def createComputes(self, vlan, computes, containers,
-		cpus_per_compute, mem_per_compute, disk_per_compute,virtType):
+	def createComputes(self, vlan, subnet, computes, containers,
+		cpus_per_compute, mem_per_compute, 
+		disk_per_compute, virtType, syncHosts):
 
 		self.computenames = []
 		
@@ -379,6 +377,7 @@ class Command(rocks.commands.add.command):
 		for i in range(0, computes):
 			host = containers[i % len(containers)]
 
+			self.addVlanToHost( host, vlan, subnet, syncHosts)
 			output = self.command('add.host.vm', [ host,
 				'membership=Hosted VM', 'num-macs=1',
 				'cpus=%s' % cpus_per_compute,
@@ -400,8 +399,13 @@ class Command(rocks.commands.add.command):
 			#
 			self.command('set.host.runaction', [ line[2], 
 				'none' ] )
+			if virtType == 'hvm' :
+				installaction='install'
+			else:
+				installaction='install vm'
+
 			self.command('set.host.installaction', [ line[2], 
-				'install vm' ] )
+				installaction ] )
 
 			#
 			# set the default boot action to be 'install'
@@ -409,12 +413,10 @@ class Command(rocks.commands.add.command):
 			self.command('set.host.boot', [ line[2], 
 				'action=install' ] )
 
-			self.addOutput('', '\tcreated compute VM named: %s' % 
-				line[2])
+			print  '\tcreated compute VM named: %s' % line[2]
 
 
 	def run(self, params, args):
-		self.beginOutput()
 
 		(args, ip, num_computes) = self.fillPositionalArgs(
 			('ip', 'num-computes'))
@@ -433,7 +435,7 @@ class Command(rocks.commands.add.command):
 		# fillParams with the above default values
 		#
 		(cpus_per_compute, mem_per_compute, disk_per_compute,
-			disk_per_frontend, container_hosts, vlan, gateway,
+			disk_per_frontend, container_hosts, vlan, subnet, gateway,
 			virtType,FEName, FEContainer) = \
 			self.fillParams(
 				[('cpus-per-compute', 1),
@@ -442,6 +444,7 @@ class Command(rocks.commands.add.command):
 				('disk-per-frontend', 36),
 				('container-hosts', None),
 				('vlan', None),
+				('subnet', 'private'),
 				('gateway', None),
 				('virt-type','para'),
 				('fe-name',None),
@@ -460,7 +463,9 @@ class Command(rocks.commands.add.command):
 				self.abort('Vlan ID (%s) must be an integer'
 					% vlan)
 		else:
+			print "Getting Free VLAN --> "
 			vlanid = self.getFreeVlan()
+			print "<-- Done"
 
 			if not vlanid:
 				self.abort('could not find a free Vlan ID')
@@ -469,28 +474,37 @@ class Command(rocks.commands.add.command):
 			containers = container_hosts.split()
 		else:
 			containers = self.getVMContainers()
-
-		#
-		# configure the vlan on each physical node that can hold
-		# a VM
-		#
-		self.configVlan(vlanid)
+	
+		syncHosts = []
 
 		#
 		# create the frontend VM
 		#
-		self.createFrontend(vlanid, ip, disk_per_frontend, gateway, virtType, FEName, FEContainer)
+		print "Creating Virtual Frontend on Physical Host %s --> " % FEContainer 
+		self.createFrontend(vlanid, subnet, ip, disk_per_frontend, gateway, 
+				virtType, FEName, FEContainer, syncHosts)
+		print "<-- Done."
 
 		#
 		# create the compute nodes
 		#
-		self.createComputes(vlanid, computes, containers,
-			cpus_per_compute, mem_per_compute, disk_per_compute, virtType)
+		if computes > 0 :
+			print "Creating %d Virtual Cluster nodes  --> " % computes 
+			self.createComputes(vlanid, subnet, computes, containers,
+				cpus_per_compute, mem_per_compute, 
+				disk_per_compute, virtType, syncHosts)
+			print "<-- Done."
 
 		#
 		# reconfigure and restart the appropriate rocks services
 		#
+		print "Syncing Network Configuration --> " 
+		if len(syncHosts) > 0:
+			print "\tSyncing Bringing Up New VLAN interfaces --> " 
+			self.command('sync.host.network', syncHosts)
+			print "\t<-- Done."
 		self.command('sync.config')
+		print "<-- Done."
 
-		self.endOutput()
 
+RollName = "xen"
