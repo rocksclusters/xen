@@ -1,2 +1,2 @@
 NAME	= rocks-command-xen
-RELEASE	= 2
+RELEASE	= 3
