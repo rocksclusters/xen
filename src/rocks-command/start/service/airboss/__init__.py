@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.6 2011/07/23 02:31:46 phil Exp $
+# $Id: __init__.py,v 1.7 2011/08/16 15:05:13 anoop Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,14 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.7  2011/08/16 15:05:13  anoop
+# Bug fix.
+# - Airboss service couldn't connect to the database
+#   because it would fail to parse the password line in my.cnf
+#   file correctly.
+# - OperationalError needs to be scoped to the MySQLdb class. It
+#   isn't available in the global context.
+#
 # Revision 1.6  2011/07/23 02:31:46  phil
 # Viper Copyright
 #
@@ -192,8 +200,8 @@ class Command(rocks.commands.start.service.command):
 			file = open('/opt/rocks/etc/my.cnf','r')
 			for line in file.readlines():
 				l = line[:-1].split('=')
-				if len(l) > 1 and l[0] == "password":
-					passwd = l[1]	
+				if len(l) > 1 and l[0].strip() == "password":
+					passwd = l[1].strip()
 					break
 			file.close()
 		except:
@@ -230,7 +238,7 @@ class Command(rocks.commands.start.service.command):
 
 		except ImportError:
 			Database = None
-		except OperationalError:
+		except MySQLdb.OperationalError:
 			Database = None
 	
 		return (Database)
