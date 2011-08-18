@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.3 2011/07/23 02:31:44 phil Exp $
+# $Id: __init__.py,v 1.4 2011/08/18 00:58:19 anoop Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,10 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.4  2011/08/18 00:58:19  anoop
+# Minor cleanup.
+# Re-up the Release number
+#
 # Revision 1.3  2011/07/23 02:31:44  phil
 # Viper Copyright
 #
@@ -339,4 +343,3 @@ class Command(rocks.commands.report.host.command):
 		self.endOutput(padChar='')
 	
 
-RollName = "xen"
