@@ -16,6 +16,10 @@ All rights reserved. Rocks(tm) v4.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-server.xml,v $
+Revision 1.40  2011/10/03 21:35:13  phil
+Firewall rule fix (add rulename and source)
+Fix for 9000 Byte bridged interfaces. (should be fixed when centos 5.8 is out)
+
 Revision 1.39  2011/01/12 21:01:12  bruno
 added a report to create the xendomains configuration file
 
@@ -328,7 +332,8 @@ cp /etc/pki/CA/private/cakey.pem /tmp/cakey.pem
 
 /opt/rocks/bin/rocks add host firewall localhost network=all service="8677" \
 	protocol="tcp" action="REJECT" chain="INPUT" \
-	comment="block airboss traffic from non-private interfaces"
+	comment="block airboss traffic from non-private interfaces" \
+	rulename="R100-AIRBOSS" rulesrc="system"
 
 </post>
 
