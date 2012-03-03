@@ -2,7 +2,7 @@
 #
 # This file should remain OS independent
 #
-# $Id: bootstrap.sh,v 1.2 2011/07/23 02:31:41 phil Exp $
+# $Id: bootstrap.sh,v 1.3 2012/03/03 01:16:06 clem Exp $
 #
 # @Copyright@
 # 
@@ -58,6 +58,9 @@
 # @Copyright@
 #
 # $Log: bootstrap.sh,v $
+# Revision 1.3  2012/03/03 01:16:06  clem
+# in this way it doesn't stop for user input
+#
 # Revision 1.2  2011/07/23 02:31:41  phil
 # Viper Copyright
 #
@@ -68,4 +71,4 @@
 
 . $ROLLSROOT/etc/bootstrap-functions.sh
 
-/usr/bin/yum install libvirt libvirt-devel libvirt-python
+/usr/bin/yum -y install libvirt libvirt-devel libvirt-python
