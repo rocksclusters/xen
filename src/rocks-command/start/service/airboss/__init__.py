@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.7 2011/08/16 15:05:13 anoop Exp $
+# $Id: __init__.py,v 1.8 2012/03/09 01:45:24 clem Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.8  2012/03/09 01:45:24  clem
+# Rocks command xen is not compatible with 5.7 and 6.2
+#
 # Revision 1.7  2011/08/16 15:05:13  anoop
 # Bug fix.
 # - Airboss service couldn't connect to the database
@@ -149,8 +152,8 @@ import subprocess
 import shlex
 import time
 
-sys.path.append('/usr/lib64/python2.4/site-packages')
-sys.path.append('/usr/lib/python2.4/site-packages')
+sys.path.append('/usr/lib64/python2.' + str(sys.version_info[1]) + '/site-packages')
+sys.path.append('/usr/lib/python2.' + str(sys.version_info[1]) + '/site-packages')
 import libvirt
 
 #

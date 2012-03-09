@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.9 2011/07/23 02:31:45 phil Exp $
+# $Id: __init__.py,v 1.10 2012/03/09 01:45:23 clem Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.10  2012/03/09 01:45:23  clem
+# Rocks command xen is not compatible with 5.7 and 6.2
+#
 # Revision 1.9  2011/07/23 02:31:45  phil
 # Viper Copyright
 #
@@ -88,8 +91,8 @@ import rocks.commands
 import rocks.vm
 
 import sys
-sys.path.append('/usr/lib64/python2.4/site-packages')
-sys.path.append('/usr/lib/python2.4/site-packages')
+sys.path.append('/usr/lib64/python2.' + str(sys.version_info[1]) + '/site-packages')
+sys.path.append('/usr/lib/python2.' + str(sys.version_info[1]) + '/site-packages')
 import libvirt
 
 class Command(rocks.commands.restore.host.command):
