@@ -16,6 +16,9 @@ All rights reserved. Rocks(tm) v5.3 www.rocksclusters.org
 
 <changelog>
 $Log: xen-server-db-data.xml,v $
+Revision 1.6  2012/03/16 21:09:43  clem
+Fix for HVM based virtual cluster on xen
+
 Revision 1.5  2010/10/07 21:17:26  bruno
 any computing device can now host xen virtual machines
 
@@ -57,6 +60,11 @@ new
 /opt/rocks/bin/rocks add bootaction action="install vm frontend" \
 	kernel="file:///boot/kickstart/xen/vmlinuz-&rocks_version;-&arch;" \
 	ramdisk="file:///boot/kickstart/xen/initrd-xen.iso.gz-&rocks_version;-&arch;" \
+	args="ramdisk_size=150000 lang= devfs=nomount pxe kssendmac selinux=0 noipv6 ks=http://&Kickstart_PublicHostname;/install/sbin/kickstart.cgi ksdevice=eth1 build airboss=localhost"
+
+/opt/rocks/bin/rocks add bootaction action="install frontend" 
+	kernel="vmlinuz-&rocks_version;-&arch;" 
+	ramdisk="initrd.img-&rocks_version;-&arch;" 
 	args="ramdisk_size=150000 lang= devfs=nomount pxe kssendmac selinux=0 noipv6 ks=http://&Kickstart_PublicHostname;/install/sbin/kickstart.cgi ksdevice=eth1 build airboss=localhost"
 
 </post>
