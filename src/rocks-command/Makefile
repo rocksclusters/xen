@@ -1,5 +1,5 @@
 #
-# $Id: Makefile,v 1.7 2011/07/23 02:31:43 phil Exp $
+# $Id: Makefile,v 1.8 2012/03/17 02:42:01 clem Exp $
 #
 # @Copyright@
 # 
@@ -55,6 +55,9 @@
 # @Copyright@
 #
 # $Log: Makefile,v $
+# Revision 1.8  2012/03/17 02:42:01  clem
+# Added a vmconstant.py to keep some constant usefull in kvm
+#
 # Revision 1.7  2011/07/23 02:31:43  phil
 # Viper Copyright
 #
@@ -88,8 +91,9 @@ build:
 
 install::
 	mkdir -p $(ROOT)/$(PY.ROCKS)/rocks/commands/
-	find -name "*.py" | \
+	find ./*/ -name "*.py" | \
 		cpio -pduv $(ROOT)/$(PY.ROCKS)/rocks/commands/
+	install -m444 vmconstant.py $(ROOT)/$(PY.ROCKS)/rocks/
 	find $(ROOT)/$(PY.ROCKS)/rocks/commands -name "*.py" | awk \
 		'{ print "\nRollName = \"$(ROLL)\"" >> $$1; }'
 	find $(ROOT) -type d -exec chmod a+rx {} \;
