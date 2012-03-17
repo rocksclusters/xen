@@ -57,6 +57,9 @@
 # @Copyright@
 #
 # $Log: rocks-create-vm-disks,v $
+# Revision 1.5  2012/03/17 03:01:04  clem
+# Now rocks-create-vm-disks support both kvm and xen
+#
 # Revision 1.4  2011/07/23 02:31:46  phil
 # Viper Copyright
 #
@@ -78,6 +81,7 @@ import string
 import tempfile
 import urllib
 import getopt
+import pwd
 
 try:
 	opts, args = getopt.gnu_getopt(sys.argv[1:], '',
@@ -141,16 +145,32 @@ except:
 #
 # Create the disk file(s), if it doesn't exist
 #
+kvm=False
+try:
+	pwd.getpwnam("qemu")[2]
+	#kvm we need to change ownership
+	kvm=True
+except:
+	pass
 i = 0
 for diskfile in vmParameters['disk']:
 	if not os.path.exists(diskfile):
 		if not os.path.exists(os.path.dirname(diskfile)):
 			os.makedirs(os.path.dirname(diskfile), 0700)
+		if kvm:
+			cmd = "chown qemu " + os.path.dirname(os.path.dirname(diskfile))
+			os.system(cmd)
+			cmd = "chown qemu " + os.path.dirname(diskfile)
+			os.system(cmd)
 
 		cmd = 'dd if=/dev/zero of=%s bs=1 count=1 ' % diskfile
 		cmd += 'seek=%d ' % (vmParameters['disksize'][i] - 1)
 		cmd += '> /dev/null 2>&1'
 		os.system(cmd)
+		if kvm:
+			#qemu system we need to change file ownership
+			cmd = "chown qemu:qemu " + str(diskfile)
+			os.system(cmd)
 
 	i += 1
 
