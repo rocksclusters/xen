@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.38 2011/07/23 02:31:43 phil Exp $
+# $Id: __init__.py,v 1.39 2012/04/07 00:22:47 clem Exp $
 # 
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.39  2012/04/07 00:22:47  clem
+# virt_type must always be checked
+#
 # Revision 1.38  2011/07/23 02:31:43  phil
 # Viper Copyright
 #
@@ -785,8 +788,8 @@ class Command(rocks.commands.HostArgumentProcessor, rocks.commands.add.command):
 			if mac:
 				self.abort("can't supply the 'mac' " +
 					"parameter with more than one host")
-			if virt_type != 'para' and virt_type != 'hvm':
-				self.abort("Virtualization type must be either 'hvm' or 'para'")
+		if virt_type != 'para' and virt_type != 'hvm':
+			self.abort("Virtualization type must be either 'hvm' or 'para'")
 		try:
 			num_macs = int(macs)
 		except:
