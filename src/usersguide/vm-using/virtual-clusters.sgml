@@ -40,7 +40,7 @@ DomU are guests and generally refer to names by usual convention.
 The equivalence is:
 
 <table>
-<title></title>
+<title>Virtual Machine Names</title>
 <tgroup cols="3">
 	<thead>
 	<row>
@@ -389,7 +389,7 @@ On the virtual frontend (e.g., vi-1), execute:
 </para>
 
 <screen>
-# ssh -L 8677:localhost:8677 espresso.rocksclusters.org
+# ssh -f -N -L 8677:localhost:8677 espresso.rocksclusters.org
 </screen>
 
 <para>
