@@ -1,5 +1,5 @@
 <!-- 
-$Id: networking-xen.sgml,v 1.1 2012/04/19 22:49:37 clem Exp $
+$Id: networking-xen.sgml,v 1.2 2012/04/20 00:54:47 clem Exp $
 
 Administration guide
 
@@ -7,6 +7,9 @@ Administration guide
 @Copyright@
 
 $Log: networking-xen.sgml,v $
+Revision 1.2  2012/04/20 00:54:47  clem
+Little modification to properly merge this new section in the xen docs
+
 Revision 1.1  2012/04/19 22:49:37  clem
 Moving xen networking doc into the XEN documentation
 
@@ -32,16 +35,17 @@ First edition of Networking Docs
 
 <section><title>Networking with XEN Roll</title>
 <para>
-Rocks support of Virtual Machines requires the proper setup of networking bridges. Rocks supports multiple
-network adapters for Virtual Machines, In this section, we describe the various kinds of bridging scenarios 
+In order to support XEN Virtual machines, it is necessary to have a particular network configuration on the 
+hosting servers. In particular bridges must be set up to provide Virtual Machine with network connectivity.
+In this section, we describe the various kinds of bridging scenarios 
 for virtual machines and how to set them up. For these examples, the physical machine will be called
-vm-container-0-0,
+vm-container-0-0.
 </para>
 <section>
 <title>VM Network Bridging to Physical Devices</title>
 <para>
 When a VM is bridged to the physical device, it must be assigned in the same subnet as the physical device with 
-a compatible IP address
+a compatible IP address (this case is exactly what is described in <xref linkend="using-vm-physical-frontend"> ).
 </para>
 <para>
         <mediaobject>
@@ -73,8 +77,8 @@ vm-container-0-0: private   eth0     00:09:6b:89:39:68 172.16.254.238 255.255.25
 <section>
 <title>Logical VLAN Devices</title>
 <para>
-In this scenario, The guest (hosted-vm-0-0-2) and the host (vm-container-0-0) are not in the same logical
-network.
+In this scenario, The guest (hosted-vm-0-0-0) and the host (vm-container-0-0) are not in the same logical
+network (this is the scenario described in <xref linkend="provisioning-virtual-cluster">).
 </para>
 
 <para>
