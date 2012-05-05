@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.11 2012/03/09 01:45:24 clem Exp $
+# $Id: __init__.py,v 1.12 2012/05/05 00:28:03 clem Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.12  2012/05/05 00:28:03  clem
+# minor code refactoring: libvirt url is now in a global variable
+#
 # Revision 1.11  2012/03/09 01:45:24  clem
 # Rocks command xen is not compatible with 5.7 and 6.2
 #
@@ -153,7 +156,8 @@ class Command(rocks.commands.stop.host.command):
 			else:
 				continue
 
-			hipervisor = libvirt.open('xen://%s/' % physhost)
+			import rocks.vmconstant
+			hipervisor = libvirt.open( rocks.vmconstant.connectionURL % physhost)
 			libvirt.registerErrorHandler(handler, 'context')
 
 			try:

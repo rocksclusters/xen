@@ -1,4 +1,4 @@
-# $Id: __init__.py,v 1.8 2012/03/09 01:45:24 clem Exp $
+# $Id: __init__.py,v 1.9 2012/05/05 00:28:03 clem Exp $
 #
 # @Copyright@
 # 
@@ -54,6 +54,9 @@
 # @Copyright@
 #
 # $Log: __init__.py,v $
+# Revision 1.9  2012/05/05 00:28:03  clem
+# minor code refactoring: libvirt url is now in a global variable
+#
 # Revision 1.8  2012/03/09 01:45:24  clem
 # Rocks command xen is not compatible with 5.7 and 6.2
 #
@@ -315,7 +318,8 @@ class Command(rocks.commands.start.service.command):
 
 
 	def getVNCport(self, client, physnode):
-		h = libvirt.open('xen://%s/' % physnode)
+		import rocks.vmconstant
+		h = libvirt.open( rocks.vmconstant.connectionURL % physnode )
 
 		for id in h.listDomainsID():
 			if id == 0:
@@ -612,7 +616,8 @@ class Command(rocks.commands.start.service.command):
 
 	def getState(self, physhost, host):
 		try:
-			hipervisor = libvirt.open('xen://%s/' % physhost)
+			import rocks.vmconstant
+			hipervisor = libvirt.open( rocks.vmconstant.connectionURL % physhost)
 		except:
 			return 'nostate'
 	
